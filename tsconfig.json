@@ -18,16 +18,11 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],
-      "@/react-app/*": ["./src/react-app/*"],
+      "@/react-app/*": ["./src/react-app/*", "./*"],
       "@/shared/*": ["./shared/*", "./src/shared/*", "./*"]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx"],
   "exclude": [
-    "node_modules",
-    "dist",
-    "build",
-    ".vercel",
     "server/**",
     "workers/**",
     "functions/**",
