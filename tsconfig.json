@@ -17,17 +17,21 @@
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@/react-app/*": ["./src/react-app/*"],
+      "@/shared/*": ["./shared/*", "./src/shared/*", "./*"]
     }
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx"
-  ],
+  "include": ["**/*.ts", "**/*.tsx"],
   "exclude": [
     "node_modules",
     "dist",
     "build",
-    ".vercel"
+    ".vercel",
+    "server/**",
+    "workers/**",
+    "functions/**",
+    "api/**",
+    "index.ts"
   ]
 }
