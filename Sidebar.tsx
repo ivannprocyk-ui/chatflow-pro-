@@ -1,5 +1,5 @@
-import { AppSection } from "@/react-app/App";
-import { AppConfig } from "@/react-app/utils/storage";
+import { AppSection } from "@/App";
+import { AppConfig } from "@/storage";
 
 interface SidebarProps {
   isOpen: boolean;
