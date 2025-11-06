@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { MoreVertical, Smile } from 'lucide-react';
-import type { Message, MessageReaction } from '@/shared/types';
+import type { Message, MessageReaction } from '@/react-app/types';
 import clsx from 'clsx';
 
 interface MessageBubbleProps {

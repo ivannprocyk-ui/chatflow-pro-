@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { Send, Settings, Users, Menu } from 'lucide-react';
 import ConversationList from '@/react-app/components/ConversationList';
 import ChatArea from '@/react-app/components/ChatArea';
-import BulkMessaging from '@/react-app/components/BulkMessaging';
+import BulkMessaging from '@/react-app/pages/BulkMessaging';
 import NewConversationModal from '@/react-app/components/NewConversationModal';
-import type { Conversation } from '@/shared/types';
+import type { Conversation } from '@/react-app/types';
 export default function Chat() {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [showBulkMessaging, setShowBulkMessaging] = useState(false);

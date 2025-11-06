@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Send, AlertCircle, CheckCircle, X } from 'lucide-react';
 import { Dialog } from '@headlessui/react';
-import type { WhatsAppTemplate, ContactList } from '@/shared/types';
+import type { WhatsAppTemplate, ContactList } from '@/react-app/types';
 
 interface BulkMessagingProps {
   isOpen: boolean;
