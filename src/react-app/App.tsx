@@ -48,6 +48,16 @@ export default function App() {
     root.style.setProperty('--primary-color', config.branding.primaryColor);
     root.style.setProperty('--secondary-color', config.branding.secondaryColor);
     root.style.setProperty('--accent-color', config.branding.accentColor);
+
+    // Listen for navigation events
+    const handleNavigate = (e: any) => {
+      if (e.detail) {
+        setCurrentSection(e.detail as AppSection);
+      }
+    };
+
+    window.addEventListener('navigate-to', handleNavigate as EventListener);
+    return () => window.removeEventListener('navigate-to', handleNavigate as EventListener);
   }, [config]);
 
   const renderCurrentSection = () => {

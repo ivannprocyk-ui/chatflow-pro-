@@ -56,6 +56,14 @@ export default function BulkMessaging() {
     // Load CRM contacts
     const crmData = loadCRMData();
     setCrmContacts(crmData);
+
+    // Check if there's a pre-selected template
+    const preSelected = localStorage.getItem('selected_template');
+    if (preSelected) {
+      setSelectedTemplate(preSelected);
+      localStorage.removeItem('selected_template');
+      showInfo(`Plantilla "${preSelected}" cargada. Selecciona contactos para enviar.`);
+    }
   };
 
   const getSelectedTemplateDetails = () => {

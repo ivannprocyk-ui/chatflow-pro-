@@ -102,6 +102,40 @@ export default function Templates() {
     await loadTemplatesFromAPI();
   };
 
+  const handleUseTemplate = (template: WhatsAppTemplate) => {
+    // Navigate to Bulk Messaging and pre-select this template
+    localStorage.setItem('selected_template', template.name);
+    showSuccess(`Plantilla "${template.name}" seleccionada. Ve a Envío Masivo para usarla.`);
+    // Trigger navigation event
+    window.dispatchEvent(new CustomEvent('navigate-to', { detail: 'bulk-messaging' }));
+  };
+
+  const handleViewDetails = (template: WhatsAppTemplate) => {
+    const bodyComponent = template.components.find((c: any) => c.type === 'BODY');
+    const headerComponent = template.components.find((c: any) => c.type === 'HEADER');
+    const footerComponent = template.components.find((c: any) => c.type === 'FOOTER');
+
+    let details = `📋 Plantilla: ${template.name}\n`;
+    details += `🌐 Idioma: ${template.language}\n`;
+    details += `📁 Categoría: ${template.category}\n`;
+    details += `✅ Estado: ${template.status}\n\n`;
+
+    if (headerComponent) {
+      details += `📌 Header: ${headerComponent.format || 'TEXT'}\n`;
+      if (headerComponent.text) details += `   ${headerComponent.text}\n`;
+    }
+
+    if (bodyComponent) {
+      details += `\n💬 Cuerpo:\n${bodyComponent.text || 'Sin texto'}\n`;
+    }
+
+    if (footerComponent) {
+      details += `\n👣 Footer: ${footerComponent.text || 'Sin footer'}\n`;
+    }
+
+    alert(details);
+  };
+
   const getStatusBadge = (status: WhatsAppTemplate['status']) => {
     const statusConfig = {
       APPROVED: { color: 'bg-green-100 text-green-800', label: 'Aprobado', icon: 'fas fa-check-circle' },
@@ -250,12 +284,18 @@ export default function Templates() {
               {/* Actions */}
               <div className="flex space-x-2">
                 {template.status === 'APPROVED' && (
-                  <button className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:from-green-600 hover:to-green-700 transition-all">
+                  <button
+                    onClick={() => handleUseTemplate(template)}
+                    className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:from-green-600 hover:to-green-700 transition-all"
+                  >
                     <i className="fas fa-paper-plane mr-2"></i>
                     Usar Plantilla
                   </button>
                 )}
-                <button className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:from-blue-600 hover:to-blue-700 transition-all">
+                <button
+                  onClick={() => handleViewDetails(template)}
+                  className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:from-blue-600 hover:to-blue-700 transition-all"
+                >
                   <i className="fas fa-eye mr-2"></i>
                   Ver Detalles
                 </button>

@@ -608,7 +608,7 @@ export default function CRMPanel() {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                {config.fields.filter(f => f.visible && ['name', 'phone', 'email', 'company', 'cost'].includes(f.name)).map(field => (
+                {config.fields.filter(f => f.visible).sort((a, b) => a.order - b.order).map(field => (
                   <th key={field.name} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     {field.label}
                   </th>
@@ -627,12 +627,16 @@ export default function CRMPanel() {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredContacts.map((contact) => (
                 <tr key={contact.id} className="hover:bg-gray-50 transition-colors">
-                  {config.fields.filter(f => f.visible && ['name', 'phone', 'email', 'company', 'cost'].includes(f.name)).map(field => (
+                  {config.fields.filter(f => f.visible).sort((a, b) => a.order - b.order).map(field => (
                     <td key={field.name} className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                       {field.type === 'currency' ? (
                         <span className="font-semibold text-green-600">
                           ${contact[field.name]?.toLocaleString()} {contact.currency || 'USD'}
                         </span>
+                      ) : field.type === 'textarea' ? (
+                        <div className="max-w-xs truncate">{contact[field.name] || '-'}</div>
+                      ) : field.type === 'date' && contact[field.name] ? (
+                        new Date(contact[field.name]).toLocaleDateString()
                       ) : (
                         contact[field.name] || '-'
                       )}
