@@ -27,7 +27,17 @@ export type AppSection =
 export default function App() {
   const [currentSection, setCurrentSection] = useState<AppSection>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    // Load collapsed state from localStorage
+    const saved = localStorage.getItem('sidebar_collapsed');
+    return saved === 'true';
+  });
   const [config, setConfig] = useState(loadConfig());
+
+  // Save collapsed state to localStorage
+  useEffect(() => {
+    localStorage.setItem('sidebar_collapsed', sidebarCollapsed.toString());
+  }, [sidebarCollapsed]);
 
   useEffect(() => {
     // Initialize demo data on first load
@@ -69,11 +79,13 @@ export default function App() {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar 
+      <Sidebar
         isOpen={sidebarOpen}
+        isCollapsed={sidebarCollapsed}
         currentSection={currentSection}
         onSectionChange={setCurrentSection}
         onToggle={() => setSidebarOpen(!sidebarOpen)}
+        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
         config={config}
       />
       

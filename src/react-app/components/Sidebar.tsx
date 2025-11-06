@@ -3,9 +3,11 @@ import { AppConfig } from "@/react-app/utils/storage";
 
 interface SidebarProps {
   isOpen: boolean;
+  isCollapsed?: boolean;
   currentSection: AppSection;
   onSectionChange: (section: AppSection) => void;
   onToggle: () => void;
+  onToggleCollapse?: () => void;
   config: AppConfig;
 }
 
@@ -22,22 +24,23 @@ const menuItems = [
   { id: 'configuration', icon: 'fas fa-cog', label: 'Configuración' },
 ] as const;
 
-export default function Sidebar({ isOpen, currentSection, onSectionChange, config }: SidebarProps) {
+export default function Sidebar({ isOpen, isCollapsed = false, currentSection, onSectionChange, onToggleCollapse, config }: SidebarProps) {
   return (
     <div
       className={`
         fixed lg:relative z-50 h-full transition-all duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-        w-72 bg-gradient-to-b from-green-600 to-green-700 text-white shadow-xl
+        ${isCollapsed ? 'lg:w-20' : 'w-72'}
+        bg-gradient-to-b from-green-600 to-green-700 text-white shadow-xl
       `}
     >
       {/* Header */}
       <div className="p-6 border-b border-green-500/30">
-        <div className="flex items-center space-x-3">
+        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'}`}>
           {config.branding.logoUrl ? (
-            <img 
-              src={config.branding.logoUrl} 
-              alt="Logo" 
+            <img
+              src={config.branding.logoUrl}
+              alt="Logo"
               className="w-10 h-10 rounded-lg object-cover"
             />
           ) : (
@@ -45,22 +48,25 @@ export default function Sidebar({ isOpen, currentSection, onSectionChange, confi
               <i className="fas fa-comments text-white text-lg"></i>
             </div>
           )}
-          <div>
-            <h1 className="text-xl font-bold">{config.branding.appName}</h1>
-            <p className="text-green-100 text-sm">WhatsApp Business Platform</p>
-          </div>
+          {!isCollapsed && (
+            <div>
+              <h1 className="text-xl font-bold">{config.branding.appName}</h1>
+              <p className="text-green-100 text-sm">WhatsApp Business Platform</p>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 py-6">
+      <nav className="flex-1 py-6 overflow-y-auto">
         <ul className="space-y-2 px-4">
           {menuItems.map((item) => (
             <li key={item.id}>
               <button
                 onClick={() => onSectionChange(item.id as AppSection)}
+                title={isCollapsed ? item.label : undefined}
                 className={`
-                  w-full flex items-center space-x-3 px-4 py-3 rounded-xl
+                  w-full flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} px-4 py-3 rounded-xl
                   transition-all duration-200 text-left
                   ${currentSection === item.id
                     ? 'bg-white/20 text-white font-semibold shadow-lg'
@@ -68,8 +74,8 @@ export default function Sidebar({ isOpen, currentSection, onSectionChange, confi
                   }
                 `}
               >
-                <i className={`${item.icon} text-lg w-5`}></i>
-                <span>{item.label}</span>
+                <i className={`${item.icon} text-lg ${isCollapsed ? '' : 'w-5'}`}></i>
+                {!isCollapsed && <span>{item.label}</span>}
               </button>
             </li>
           ))}
@@ -77,11 +83,25 @@ export default function Sidebar({ isOpen, currentSection, onSectionChange, confi
       </nav>
 
       {/* Footer */}
-      <div className="p-6 border-t border-green-500/30">
-        <div className="text-center text-green-100 text-sm">
-          <p>ChatFlow Pro v2.0</p>
-          <p>WhatsApp Business Solution</p>
-        </div>
+      <div className="p-6 border-t border-green-500/30 space-y-3">
+        {/* Collapse Button - Hidden on mobile */}
+        {onToggleCollapse && (
+          <button
+            onClick={onToggleCollapse}
+            className="hidden lg:flex w-full items-center justify-center space-x-2 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors text-green-100 hover:text-white"
+            title={isCollapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
+          >
+            <i className={`fas ${isCollapsed ? 'fa-angle-right' : 'fa-angle-left'}`}></i>
+            {!isCollapsed && <span className="text-sm">Colapsar</span>}
+          </button>
+        )}
+
+        {!isCollapsed && (
+          <div className="text-center text-green-100 text-sm">
+            <p>ChatFlow Pro v2.0</p>
+            <p>WhatsApp Business Solution</p>
+          </div>
+        )}
       </div>
     </div>
   );
