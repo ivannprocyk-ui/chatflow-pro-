@@ -48,11 +48,27 @@ export interface CRMFieldStatusRelation {
   autoApply: boolean; // Si se aplica automáticamente al cumplir la condición
 }
 
+export interface ChartColors {
+  primary: string;
+  secondary: string;
+  success: string;
+  danger: string;
+  warning: string;
+  info: string;
+}
+
+export interface CRMChartConfig {
+  colors: ChartColors;
+  dateRangeStart?: string;
+  dateRangeEnd?: string;
+}
+
 export interface CRMConfig {
   fields: CRMFieldConfig[];
   statuses: CRMStatusConfig[];
   currencies: string[];
   fieldStatusRelations?: CRMFieldStatusRelation[];
+  chartConfig?: CRMChartConfig;
 }
 
 const defaultCRMConfig: CRMConfig = {
@@ -73,7 +89,17 @@ const defaultCRMConfig: CRMConfig = {
     { id: 'blocked', name: 'blocked', label: 'Bloqueado', color: 'red' },
   ],
   currencies: ['USD', 'ARS', 'EUR', 'MXN', 'BRL', 'CLP'],
-  fieldStatusRelations: []
+  fieldStatusRelations: [],
+  chartConfig: {
+    colors: {
+      primary: '#8B5CF6',
+      secondary: '#10B981',
+      success: '#10B981',
+      danger: '#EF4444',
+      warning: '#F59E0B',
+      info: '#3B82F6'
+    }
+  }
 };
 
 const defaultConfig: AppConfig = {
@@ -122,6 +148,10 @@ export function loadCRMConfig(): CRMConfig {
       // Ensure fieldStatusRelations exists
       if (!config.fieldStatusRelations) {
         config.fieldStatusRelations = [];
+      }
+      // Ensure chartConfig exists with defaults
+      if (!config.chartConfig) {
+        config.chartConfig = defaultCRMConfig.chartConfig;
       }
       return config;
     }
