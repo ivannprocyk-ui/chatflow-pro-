@@ -243,7 +243,7 @@ export default function CRMPanel() {
       .map(f => f.label);
 
     if (missingFields.length > 0) {
-      alert(`Campos requeridos faltantes: ${missingFields.join(', ')}`);
+      showSuccess(`⚠️ Campos requeridos: ${missingFields.join(', ')}`);
       return;
     }
 

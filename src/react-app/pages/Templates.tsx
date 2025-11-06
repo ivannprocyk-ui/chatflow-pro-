@@ -115,25 +115,20 @@ export default function Templates() {
     const headerComponent = template.components.find((c: any) => c.type === 'HEADER');
     const footerComponent = template.components.find((c: any) => c.type === 'FOOTER');
 
-    let details = `📋 Plantilla: ${template.name}\n`;
-    details += `🌐 Idioma: ${template.language}\n`;
-    details += `📁 Categoría: ${template.category}\n`;
-    details += `✅ Estado: ${template.status}\n\n`;
+    const infoLines = [
+      `📋 ${template.name}`,
+      `🌐 ${template.language} | 📁 ${template.category} | ✅ ${template.status}`
+    ];
 
     if (headerComponent) {
-      details += `📌 Header: ${headerComponent.format || 'TEXT'}\n`;
-      if (headerComponent.text) details += `   ${headerComponent.text}\n`;
+      infoLines.push(`📌 Header: ${headerComponent.format || 'TEXT'}`);
     }
 
-    if (bodyComponent) {
-      details += `\n💬 Cuerpo:\n${bodyComponent.text || 'Sin texto'}\n`;
+    if (bodyComponent?.text) {
+      infoLines.push(`💬 ${bodyComponent.text.substring(0, 100)}${bodyComponent.text.length > 100 ? '...' : ''}`);
     }
 
-    if (footerComponent) {
-      details += `\n👣 Footer: ${footerComponent.text || 'Sin footer'}\n`;
-    }
-
-    alert(details);
+    showInfo(infoLines.join(' • '));
   };
 
   const getStatusBadge = (status: WhatsAppTemplate['status']) => {

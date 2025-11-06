@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { loadContactLists, saveContactLists } from '@/react-app/utils/storage';
+import { useToast } from '@/react-app/components/Toast';
 
 interface ContactList {
   id: string;
@@ -25,6 +26,7 @@ export default function ContactLists() {
     description: '',
     contactsText: ''
   });
+  const { showSuccess, showError } = useToast();
 
   useEffect(() => {
     setContactLists(loadContactLists());
@@ -35,9 +37,16 @@ export default function ContactLists() {
     saveContactLists(lists);
   };
 
+  const handleUseList = (list: ContactList) => {
+    // Pre-select this list for bulk messaging
+    localStorage.setItem('selected_contact_list', list.id);
+    showSuccess(`Lista "${list.name}" seleccionada. Ve a Envío Masivo para usarla.`);
+    window.dispatchEvent(new CustomEvent('navigate-to', { detail: 'bulk-messaging' }));
+  };
+
   const handleCreateList = () => {
     if (!newList.name.trim()) {
-      alert('El nombre de la lista es requerido');
+      showError('El nombre de la lista es requerido');
       return;
     }
 
@@ -147,7 +156,10 @@ export default function ContactLists() {
 
               {/* Actions */}
               <div className="flex space-x-2">
-                <button className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:from-green-600 hover:to-green-700 transition-all">
+                <button
+                  onClick={() => handleUseList(list)}
+                  className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:from-green-600 hover:to-green-700 transition-all"
+                >
                   <i className="fas fa-paper-plane mr-2"></i>
                   Usar
                 </button>

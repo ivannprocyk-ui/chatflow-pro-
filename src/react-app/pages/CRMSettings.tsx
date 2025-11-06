@@ -176,6 +176,46 @@ export default function CRMSettings() {
     setShowRelationModal(true);
   };
 
+  const handleMoveFieldUp = (fieldId: string) => {
+    const fieldIndex = config.fields.findIndex(f => f.id === fieldId);
+    if (fieldIndex <= 0) return;
+
+    const updatedFields = [...config.fields];
+    const temp = updatedFields[fieldIndex - 1];
+    updatedFields[fieldIndex - 1] = updatedFields[fieldIndex];
+    updatedFields[fieldIndex] = temp;
+
+    // Update order property
+    updatedFields.forEach((field, idx) => {
+      field.order = idx + 1;
+    });
+
+    const updatedConfig = { ...config, fields: updatedFields };
+    setConfig(updatedConfig);
+    saveCRMConfig(updatedConfig);
+    showSuccess('Campo movido hacia arriba');
+  };
+
+  const handleMoveFieldDown = (fieldId: string) => {
+    const fieldIndex = config.fields.findIndex(f => f.id === fieldId);
+    if (fieldIndex >= config.fields.length - 1) return;
+
+    const updatedFields = [...config.fields];
+    const temp = updatedFields[fieldIndex + 1];
+    updatedFields[fieldIndex + 1] = updatedFields[fieldIndex];
+    updatedFields[fieldIndex] = temp;
+
+    // Update order property
+    updatedFields.forEach((field, idx) => {
+      field.order = idx + 1;
+    });
+
+    const updatedConfig = { ...config, fields: updatedFields };
+    setConfig(updatedConfig);
+    saveCRMConfig(updatedConfig);
+    showSuccess('Campo movido hacia abajo');
+  };
+
   const handleEditField = (field: CRMFieldConfig) => {
     setEditingField(field);
     setNewField({ ...field });
@@ -246,14 +286,32 @@ export default function CRMSettings() {
                 </div>
                 <div className="flex space-x-1">
                   <button
+                    onClick={() => handleMoveFieldUp(field.id)}
+                    disabled={config.fields.indexOf(field) === 0}
+                    className="text-gray-600 hover:text-gray-800 p-1 disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Mover arriba"
+                  >
+                    <i className="fas fa-arrow-up"></i>
+                  </button>
+                  <button
+                    onClick={() => handleMoveFieldDown(field.id)}
+                    disabled={config.fields.indexOf(field) === config.fields.length - 1}
+                    className="text-gray-600 hover:text-gray-800 p-1 disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Mover abajo"
+                  >
+                    <i className="fas fa-arrow-down"></i>
+                  </button>
+                  <button
                     onClick={() => handleEditField(field)}
                     className="text-blue-600 hover:text-blue-800 p-1"
+                    title="Editar"
                   >
                     <i className="fas fa-edit"></i>
                   </button>
                   <button
                     onClick={() => handleDeleteField(field.id)}
                     className="text-red-600 hover:text-red-800 p-1"
+                    title="Eliminar"
                   >
                     <i className="fas fa-trash"></i>
                   </button>

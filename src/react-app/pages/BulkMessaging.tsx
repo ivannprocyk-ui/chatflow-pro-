@@ -64,6 +64,18 @@ export default function BulkMessaging() {
       localStorage.removeItem('selected_template');
       showInfo(`Plantilla "${preSelected}" cargada. Selecciona contactos para enviar.`);
     }
+
+    // Check if there's a pre-selected contact list
+    const preSelectedList = localStorage.getItem('selected_contact_list');
+    if (preSelectedList) {
+      setSelectedContactList(preSelectedList);
+      setInputMethod('list');
+      localStorage.removeItem('selected_contact_list');
+      const list = storedLists.find(l => l.id === preSelectedList);
+      if (list) {
+        showInfo(`Lista "${list.name}" cargada con ${list.contacts?.length || 0} contactos.`);
+      }
+    }
   };
 
   const getSelectedTemplateDetails = () => {
