@@ -10,10 +10,20 @@ interface MetaInsightsData {
     messaging_limit: string;
   }>;
   analytics?: {
-    messages_sent: number;
-    messages_delivered: number;
-    messages_read: number;
-    cost_per_message: number;
+    sent: number;
+    delivered: number;
+    read: number;
+    failed: number;
+  };
+  conversations?: {
+    cost: number;
+    conversation_analytics: Array<{
+      conversation_category: string;
+      conversation_type: string;
+      conversation_direction: string;
+      cost: number;
+      count: number;
+    }>;
   };
 }
 
@@ -35,6 +45,9 @@ export default function Dashboard() {
     loadLocalStats();
     if (config.api.accessToken && config.api.wabaId) {
       loadMetaAnalytics();
+    } else {
+      // Create charts with local data only
+      setTimeout(() => createCharts([], undefined, undefined), 100);
     }
   }, []);
 
@@ -68,29 +81,88 @@ export default function Dashboard() {
   const loadMetaAnalytics = async () => {
     setIsLoading(true);
     try {
+      const headers = { 'Authorization': `Bearer ${config.api.accessToken}` };
+
       // Fetch WABA phone numbers and their status
-      const response = await fetch(
+      const phoneResponse = await fetch(
         `https://graph.facebook.com/${config.api.apiVersion}/${config.api.wabaId}/phone_numbers`,
-        {
-          headers: {
-            'Authorization': `Bearer ${config.api.accessToken}`
-          }
-        }
+        { headers }
       );
 
-      if (response.ok) {
-        const data = await response.json();
-        setMetaData({
-          phone_numbers: data.data || [],
-          analytics: undefined // Meta doesn't provide direct analytics in basic tier
-        });
-
-        // Create charts with available data
-        createCharts(data.data);
-      } else {
-        const errorData = await response.json();
+      if (!phoneResponse.ok) {
+        const errorData = await phoneResponse.json();
         showError(errorData.error?.message || 'Error al cargar datos de Meta');
+        setIsLoading(false);
+        return;
       }
+
+      const phoneData = await phoneResponse.json();
+      const phoneNumbers = phoneData.data || [];
+
+      // Prepare date range (last 7 days)
+      const endDate = Math.floor(Date.now() / 1000);
+      const startDate = endDate - (7 * 24 * 60 * 60);
+
+      let analyticsData = { sent: 0, delivered: 0, read: 0, failed: 0 };
+      let conversationsData = undefined;
+
+      // Try to fetch analytics if we have a phone number
+      if (phoneNumbers.length > 0 && config.api.phoneNumberId) {
+        try {
+          const analyticsResponse = await fetch(
+            `https://graph.facebook.com/${config.api.apiVersion}/${config.api.phoneNumberId}?fields=analytics.start(${startDate}).end(${endDate}).granularity(DAY)`,
+            { headers }
+          );
+
+          if (analyticsResponse.ok) {
+            const analyticsResult = await analyticsResponse.json();
+            if (analyticsResult.analytics?.analytics_data) {
+              const data = analyticsResult.analytics.analytics_data;
+              analyticsData = {
+                sent: data.reduce((sum: number, d: any) => sum + (d.sent || 0), 0),
+                delivered: data.reduce((sum: number, d: any) => sum + (d.delivered || 0), 0),
+                read: 0, // Not available in basic analytics
+                failed: 0
+              };
+            }
+          }
+        } catch (e) {
+          console.log('Analytics endpoint not available or requires permissions');
+        }
+
+        // Try to fetch conversation analytics
+        try {
+          const convResponse = await fetch(
+            `https://graph.facebook.com/${config.api.apiVersion}/${config.api.wabaId}/conversation_analytics?start=${startDate}&end=${endDate}&granularity=DAILY`,
+            { headers }
+          );
+
+          if (convResponse.ok) {
+            const convResult = await convResponse.json();
+            if (convResult.data) {
+              const totalCost = convResult.data.reduce((sum: number, item: any) =>
+                sum + (item.cost || 0), 0
+              );
+              conversationsData = {
+                cost: totalCost,
+                conversation_analytics: convResult.data || []
+              };
+            }
+          }
+        } catch (e) {
+          console.log('Conversation analytics not available or requires permissions');
+        }
+      }
+
+      setMetaData({
+        phone_numbers: phoneNumbers,
+        analytics: analyticsData,
+        conversations: conversationsData
+      });
+
+      // Create charts with available data
+      createCharts(phoneNumbers, analyticsData, conversationsData);
+
     } catch (error: any) {
       console.error('Error loading Meta analytics:', error);
       showError(`Error de conexión: ${error.message}`);
@@ -99,7 +171,7 @@ export default function Dashboard() {
     }
   };
 
-  const createCharts = (phoneNumbers: any[]) => {
+  const createCharts = (phoneNumbers: any[], analytics?: any, conversations?: any) => {
     const loadChartScript = () => {
       return new Promise((resolve) => {
         // @ts-ignore
@@ -119,28 +191,39 @@ export default function Dashboard() {
       // @ts-ignore
       const Chart = window.Chart;
 
-      // Quality rating distribution
-      if (donutChartRef.current && Chart && phoneNumbers.length > 0) {
-        const qualityRatings = phoneNumbers.map(p => p.quality_rating || 'Unknown');
-        const qualityCounts: { [key: string]: number } = {};
+      // Destroy existing charts before creating new ones
+      if (chartRef.current) {
+        // @ts-ignore
+        const existingChart = Chart.getChart(chartRef.current);
+        if (existingChart) existingChart.destroy();
+      }
+      if (donutChartRef.current) {
+        // @ts-ignore
+        const existingChart = Chart.getChart(donutChartRef.current);
+        if (existingChart) existingChart.destroy();
+      }
 
-        qualityRatings.forEach(rating => {
-          qualityCounts[rating] = (qualityCounts[rating] || 0) + 1;
-        });
-
-        new Chart(donutChartRef.current, {
-          type: 'doughnut',
+      // Message Analytics Chart (if data available)
+      if (chartRef.current && Chart && analytics) {
+        new Chart(chartRef.current, {
+          type: 'bar',
           data: {
-            labels: Object.keys(qualityCounts),
+            labels: ['Enviados', 'Entregados'],
             datasets: [{
-              data: Object.values(qualityCounts),
-              backgroundColor: [
-                '#25D366',  // Green
-                '#128C7E',  // Teal
-                '#8B5CF6',  // Purple
-                '#EF4444'   // Red
+              label: 'Mensajes (últimos 7 días)',
+              data: [
+                analytics.sent || 0,
+                analytics.delivered || 0
               ],
-              borderWidth: 0
+              backgroundColor: [
+                'rgba(37, 211, 102, 0.8)',   // Green
+                'rgba(59, 130, 246, 0.8)'    // Blue
+              ],
+              borderColor: [
+                '#25D366',
+                '#3B82F6'
+              ],
+              borderWidth: 2
             }]
           },
           options: {
@@ -148,34 +231,44 @@ export default function Dashboard() {
             maintainAspectRatio: false,
             plugins: {
               legend: {
-                position: 'bottom'
+                display: false
               },
               title: {
                 display: true,
-                text: 'Calidad de Números de Teléfono'
+                text: 'Análisis de Mensajes (Meta Insights)',
+                font: {
+                  size: 16,
+                  weight: 'bold'
+                }
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  stepSize: 1
+                }
               }
             }
           }
         });
-      }
-
-      // Local stats chart - Templates, Lists, CRM Contacts
-      if (chartRef.current && Chart) {
+      } else if (chartRef.current && Chart) {
+        // Fallback to local stats if no analytics
         new Chart(chartRef.current, {
           type: 'bar',
           data: {
-            labels: ['Plantillas', 'Listas', 'Contactos CRM'],
+            labels: ['Plantillas', 'Listas', 'Contactos'],
             datasets: [{
-              label: 'Recursos Disponibles',
+              label: 'Recursos Locales',
               data: [
                 localStats.totalTemplates,
                 localStats.totalContactLists,
                 localStats.totalCRMContacts
               ],
               backgroundColor: [
-                'rgba(37, 211, 102, 0.8)',   // Green
-                'rgba(139, 92, 246, 0.8)',   // Purple
-                'rgba(59, 130, 246, 0.8)'    // Blue
+                'rgba(37, 211, 102, 0.8)',
+                'rgba(139, 92, 246, 0.8)',
+                'rgba(59, 130, 246, 0.8)'
               ],
               borderColor: [
                 '#25D366',
@@ -194,7 +287,11 @@ export default function Dashboard() {
               },
               title: {
                 display: true,
-                text: 'Recursos del Sistema'
+                text: 'Recursos del Sistema',
+                font: {
+                  size: 16,
+                  weight: 'bold'
+                }
               }
             },
             scales: {
@@ -208,10 +305,128 @@ export default function Dashboard() {
           }
         });
       }
+
+      // Quality rating or conversation types
+      if (donutChartRef.current && Chart) {
+        if (conversations?.conversation_analytics && conversations.conversation_analytics.length > 0) {
+          // Group by conversation type
+          const typeCounts: { [key: string]: number } = {};
+          conversations.conversation_analytics.forEach((item: any) => {
+            const type = item.conversation_type || 'Unknown';
+            typeCounts[type] = (typeCounts[type] || 0) + item.count;
+          });
+
+          new Chart(donutChartRef.current, {
+            type: 'doughnut',
+            data: {
+              labels: Object.keys(typeCounts),
+              datasets: [{
+                data: Object.values(typeCounts),
+                backgroundColor: [
+                  '#25D366',
+                  '#128C7E',
+                  '#8B5CF6',
+                  '#EF4444',
+                  '#F59E0B'
+                ],
+                borderWidth: 0
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'bottom'
+                },
+                title: {
+                  display: true,
+                  text: 'Conversaciones por Tipo (Meta Insights)',
+                  font: {
+                    size: 16,
+                    weight: 'bold'
+                  }
+                }
+              }
+            }
+          });
+        } else if (phoneNumbers.length > 0) {
+          // Fallback to quality ratings
+          const qualityRatings = phoneNumbers.map(p => p.quality_rating || 'Unknown');
+          const qualityCounts: { [key: string]: number } = {};
+
+          qualityRatings.forEach(rating => {
+            qualityCounts[rating] = (qualityCounts[rating] || 0) + 1;
+          });
+
+          new Chart(donutChartRef.current, {
+            type: 'doughnut',
+            data: {
+              labels: Object.keys(qualityCounts),
+              datasets: [{
+                data: Object.values(qualityCounts),
+                backgroundColor: [
+                  '#25D366',
+                  '#F59E0B',
+                  '#EF4444',
+                  '#9CA3AF'
+                ],
+                borderWidth: 0
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'bottom'
+                },
+                title: {
+                  display: true,
+                  text: 'Calidad del Número',
+                  font: {
+                    size: 16,
+                    weight: 'bold'
+                  }
+                }
+              }
+            }
+          });
+        }
+      }
     });
   };
 
-  const stats = [
+  const stats = metaData?.analytics ? [
+    {
+      title: 'Mensajes Enviados',
+      value: metaData.analytics.sent,
+      icon: 'fas fa-paper-plane',
+      color: 'from-green-500 to-green-600',
+      description: 'Últimos 7 días'
+    },
+    {
+      title: 'Mensajes Entregados',
+      value: metaData.analytics.delivered,
+      icon: 'fas fa-check-circle',
+      color: 'from-blue-500 to-blue-600',
+      description: 'Últimos 7 días'
+    },
+    {
+      title: 'Conversaciones',
+      value: metaData.conversations?.conversation_analytics?.reduce((sum: number, item: any) => sum + item.count, 0) || 0,
+      icon: 'fas fa-comments',
+      color: 'from-purple-500 to-purple-600',
+      description: 'Últimos 7 días'
+    },
+    {
+      title: 'Costo Total',
+      value: `$${(metaData.conversations?.cost || 0).toFixed(2)}`,
+      icon: 'fas fa-dollar-sign',
+      color: 'from-orange-500 to-orange-600',
+      description: 'Últimos 7 días'
+    }
+  ] : [
     {
       title: 'Plantillas Aprobadas',
       value: localStats.totalTemplates,

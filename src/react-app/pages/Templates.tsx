@@ -292,7 +292,7 @@ export default function Templates() {
                   className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:from-blue-600 hover:to-blue-700 transition-all"
                 >
                   <i className="fas fa-eye mr-2"></i>
-                  Ver Detalles
+                  Ver Plantilla
                 </button>
               </div>
             </div>

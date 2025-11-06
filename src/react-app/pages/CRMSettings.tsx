@@ -343,46 +343,17 @@ export default function CRMSettings() {
 
       {/* Statuses Section */}
       <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">🏷️ Estados Personalizados</h2>
-            <p className="text-gray-600 text-sm mt-1">Define los estados para clasificar tus contactos</p>
-          </div>
-          <button
-            onClick={() => {
-              setEditingStatus(null);
-              setNewStatus({ name: '', label: '', color: 'blue' });
-              setShowStatusModal(true);
-            }}
-            className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-6 py-3 rounded-xl font-medium hover:from-purple-600 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
-          >
-            <i className="fas fa-plus"></i>
-            <span>Nuevo Estado</span>
-          </button>
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">🏷️ Estados Predefinidos</h2>
+          <p className="text-gray-600 text-sm mt-1">Estados del sistema para clasificar tus contactos</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {config.statuses.map((status) => (
             <div key={status.id} className={`border-2 border-${status.color}-500 rounded-lg p-4 hover:shadow-md transition-shadow`}>
-              <div className="flex justify-between items-start mb-2">
-                <div>
-                  <h3 className="font-semibold text-gray-900">{status.label}</h3>
-                  <p className="text-sm text-gray-500">{status.name}</p>
-                </div>
-                <div className="flex space-x-1">
-                  <button
-                    onClick={() => handleEditStatus(status)}
-                    className="text-blue-600 hover:text-blue-800 p-1"
-                  >
-                    <i className="fas fa-edit"></i>
-                  </button>
-                  <button
-                    onClick={() => handleDeleteStatus(status.id)}
-                    className="text-red-600 hover:text-red-800 p-1"
-                  >
-                    <i className="fas fa-trash"></i>
-                  </button>
-                </div>
+              <div className="mb-2">
+                <h3 className="font-semibold text-gray-900">{status.label}</h3>
+                <p className="text-sm text-gray-500">{status.name}</p>
               </div>
               <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium bg-${status.color}-100 text-${status.color}-800`}>
                 {status.color}
@@ -390,21 +361,6 @@ export default function CRMSettings() {
             </div>
           ))}
         </div>
-      </div>
-
-      {/* Currencies Section */}
-      <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">💱 Monedas Disponibles</h2>
-        <div className="flex flex-wrap gap-2">
-          {config.currencies.map((currency) => (
-            <span key={currency} className="px-4 py-2 bg-green-100 text-green-800 rounded-lg font-medium">
-              {currency}
-            </span>
-          ))}
-        </div>
-        <p className="text-sm text-gray-500 mt-4">
-          Las monedas se pueden usar en campos de tipo "currency"
-        </p>
       </div>
 
       {/* Field-Status Relations Section */}
@@ -652,79 +608,6 @@ export default function CRMSettings() {
                 className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:from-blue-600 hover:to-blue-700"
               >
                 {editingField ? 'Actualizar' : 'Crear'} Campo
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Status Modal */}
-      {showStatusModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
-            <div className="p-6 border-b border-gray-100">
-              <h2 className="text-2xl font-bold text-gray-900">
-                {editingStatus ? 'Editar Estado' : 'Nuevo Estado'}
-              </h2>
-            </div>
-
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nombre (ID) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={newStatus.name}
-                  onChange={(e) => setNewStatus({ ...newStatus, name: e.target.value.toLowerCase().replace(/\s+/g, '_') })}
-                  placeholder="ej: prospecto"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  disabled={!!editingStatus}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Etiqueta <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={newStatus.label}
-                  onChange={(e) => setNewStatus({ ...newStatus, label: e.target.value })}
-                  placeholder="ej: Prospecto"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Color</label>
-                <select
-                  value={newStatus.color}
-                  onChange={(e) => setNewStatus({ ...newStatus, color: e.target.value })}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  {colorOptions.map(option => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="p-6 border-t border-gray-100 flex space-x-4">
-              <button
-                onClick={() => {
-                  setShowStatusModal(false);
-                  setEditingStatus(null);
-                }}
-                className="flex-1 bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-200"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSaveStatus}
-                className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white py-3 px-6 rounded-lg font-medium hover:from-purple-600 hover:to-purple-700"
-              >
-                {editingStatus ? 'Actualizar' : 'Crear'} Estado
               </button>
             </div>
           </div>
