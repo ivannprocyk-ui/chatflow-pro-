@@ -40,10 +40,19 @@ export interface CRMStatusConfig {
   icon?: string;
 }
 
+export interface CRMFieldStatusRelation {
+  id: string;
+  fieldId: string;
+  fieldValue: string;
+  statusId: string;
+  autoApply: boolean; // Si se aplica automáticamente al cumplir la condición
+}
+
 export interface CRMConfig {
   fields: CRMFieldConfig[];
   statuses: CRMStatusConfig[];
   currencies: string[];
+  fieldStatusRelations?: CRMFieldStatusRelation[];
 }
 
 const defaultCRMConfig: CRMConfig = {
@@ -63,7 +72,8 @@ const defaultCRMConfig: CRMConfig = {
     { id: 'customer', name: 'customer', label: 'Cliente', color: 'purple' },
     { id: 'blocked', name: 'blocked', label: 'Bloqueado', color: 'red' },
   ],
-  currencies: ['USD', 'ARS', 'EUR', 'MXN', 'BRL', 'CLP']
+  currencies: ['USD', 'ARS', 'EUR', 'MXN', 'BRL', 'CLP'],
+  fieldStatusRelations: []
 };
 
 const defaultConfig: AppConfig = {
@@ -108,7 +118,12 @@ export function loadCRMConfig(): CRMConfig {
   try {
     const stored = localStorage.getItem('chatflow_crm_config');
     if (stored) {
-      return JSON.parse(stored);
+      const config = JSON.parse(stored);
+      // Ensure fieldStatusRelations exists
+      if (!config.fieldStatusRelations) {
+        config.fieldStatusRelations = [];
+      }
+      return config;
     }
   } catch (error) {
     console.error('Error loading CRM config:', error);
