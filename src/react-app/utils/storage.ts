@@ -18,6 +18,54 @@ export interface AppConfig {
   branding: BrandingConfig;
 }
 
+// CRM Field Configuration
+export interface CRMFieldConfig {
+  id: string;
+  name: string;
+  label: string;
+  type: 'text' | 'number' | 'email' | 'phone' | 'date' | 'select' | 'currency' | 'textarea';
+  required: boolean;
+  options?: string[]; // For select fields
+  currencyType?: string; // For currency fields
+  defaultValue?: any;
+  visible: boolean;
+  order: number;
+}
+
+export interface CRMStatusConfig {
+  id: string;
+  name: string;
+  label: string;
+  color: string;
+  icon?: string;
+}
+
+export interface CRMConfig {
+  fields: CRMFieldConfig[];
+  statuses: CRMStatusConfig[];
+  currencies: string[];
+}
+
+const defaultCRMConfig: CRMConfig = {
+  fields: [
+    { id: 'name', name: 'name', label: 'Nombre', type: 'text', required: true, visible: true, order: 1 },
+    { id: 'phone', name: 'phone', label: 'Teléfono', type: 'phone', required: true, visible: true, order: 2 },
+    { id: 'email', name: 'email', label: 'Email', type: 'email', required: false, visible: true, order: 3 },
+    { id: 'company', name: 'company', label: 'Empresa', type: 'text', required: false, visible: true, order: 4 },
+    { id: 'position', name: 'position', label: 'Cargo', type: 'text', required: false, visible: true, order: 5 },
+    { id: 'cost', name: 'cost', label: 'Costo/Valor', type: 'currency', required: false, visible: true, order: 6, currencyType: 'USD' },
+    { id: 'notes', name: 'notes', label: 'Notas', type: 'textarea', required: false, visible: true, order: 7 },
+  ],
+  statuses: [
+    { id: 'active', name: 'active', label: 'Activo', color: 'green' },
+    { id: 'inactive', name: 'inactive', label: 'Inactivo', color: 'yellow' },
+    { id: 'lead', name: 'lead', label: 'Lead', color: 'blue' },
+    { id: 'customer', name: 'customer', label: 'Cliente', color: 'purple' },
+    { id: 'blocked', name: 'blocked', label: 'Bloqueado', color: 'red' },
+  ],
+  currencies: ['USD', 'ARS', 'EUR', 'MXN', 'BRL', 'CLP']
+};
+
 const defaultConfig: AppConfig = {
   api: {
     phoneNumberId: '',
@@ -52,6 +100,27 @@ export function saveConfig(config: AppConfig): void {
     localStorage.setItem('chatflow_config', JSON.stringify(config));
   } catch (error) {
     console.error('Error saving config:', error);
+  }
+}
+
+// CRM Configuration
+export function loadCRMConfig(): CRMConfig {
+  try {
+    const stored = localStorage.getItem('chatflow_crm_config');
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (error) {
+    console.error('Error loading CRM config:', error);
+  }
+  return defaultCRMConfig;
+}
+
+export function saveCRMConfig(config: CRMConfig): void {
+  try {
+    localStorage.setItem('chatflow_crm_config', JSON.stringify(config));
+  } catch (error) {
+    console.error('Error saving CRM config:', error);
   }
 }
 
@@ -244,9 +313,14 @@ const demoCRMData = [
     name: 'Juan Pérez',
     phone: '+5491123456789',
     email: 'juan@example.com',
+    company: 'Tech Solutions SA',
+    position: 'CEO',
+    cost: 5000,
+    currency: 'USD',
+    notes: 'Cliente potencial VIP, interesado en soluciones enterprise',
     messagesSent: 15,
     lastInteraction: new Date(Date.now() - 86400000 * 2).toISOString(),
-    status: 'active',
+    status: 'customer',
     createdAt: new Date(Date.now() - 86400000 * 30).toISOString()
   },
   {
@@ -254,9 +328,14 @@ const demoCRMData = [
     name: 'María González',
     phone: '+5491198765432',
     email: 'maria@example.com',
+    company: 'Marketing Digital Pro',
+    position: 'Directora de Marketing',
+    cost: 3500,
+    currency: 'USD',
+    notes: 'Muy activa, excelente engagement en campañas',
     messagesSent: 22,
     lastInteraction: new Date(Date.now() - 86400000).toISOString(),
-    status: 'active',
+    status: 'customer',
     createdAt: new Date(Date.now() - 86400000 * 45).toISOString()
   },
   {
@@ -264,10 +343,45 @@ const demoCRMData = [
     name: 'Carlos Rodríguez',
     phone: '+5491155554444',
     email: 'carlos@example.com',
+    company: 'Retail Express',
+    position: 'Gerente de Ventas',
+    cost: 1500,
+    currency: 'ARS',
+    notes: 'Contacto inicial, requiere seguimiento',
     messagesSent: 8,
     lastInteraction: new Date(Date.now() - 86400000 * 7).toISOString(),
-    status: 'inactive',
+    status: 'lead',
     createdAt: new Date(Date.now() - 86400000 * 60).toISOString()
+  },
+  {
+    id: '4',
+    name: 'Ana Martínez',
+    phone: '+5491166677788',
+    email: 'ana@example.com',
+    company: 'Consultora ABC',
+    position: 'Socia',
+    cost: 8000,
+    currency: 'USD',
+    notes: 'Cliente premium, contratos recurrentes',
+    messagesSent: 45,
+    lastInteraction: new Date(Date.now() - 86400000 * 1).toISOString(),
+    status: 'customer',
+    createdAt: new Date(Date.now() - 86400000 * 90).toISOString()
+  },
+  {
+    id: '5',
+    name: 'Roberto Silva',
+    phone: '+5491177788899',
+    email: 'roberto@example.com',
+    company: 'E-commerce Plus',
+    position: 'Owner',
+    cost: 2500,
+    currency: 'USD',
+    notes: 'Interesado en automatización',
+    messagesSent: 12,
+    lastInteraction: new Date(Date.now() - 86400000 * 3).toISOString(),
+    status: 'lead',
+    createdAt: new Date(Date.now() - 86400000 * 20).toISOString()
   }
 ];
 
@@ -282,6 +396,9 @@ export function initializeDemoData(): void {
     }
     if (!localStorage.getItem('chatflow_crm_data')) {
       saveCRMData(demoCRMData);
+    }
+    if (!localStorage.getItem('chatflow_crm_config')) {
+      saveCRMConfig(defaultCRMConfig);
     }
   } catch (error) {
     console.error('Error initializing demo data:', error);

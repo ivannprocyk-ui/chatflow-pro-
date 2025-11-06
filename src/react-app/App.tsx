@@ -9,17 +9,19 @@ import CampaignHistory from "@/react-app/pages/CampaignHistory";
 import MessageScheduler from "@/react-app/pages/MessageScheduler";
 import Templates from "@/react-app/pages/Templates";
 import Configuration from "@/react-app/pages/Configuration";
+import CRMSettings from "@/react-app/pages/CRMSettings";
 import { loadConfig, initializeDemoData } from "@/react-app/utils/storage";
 
-export type AppSection = 
-  | 'dashboard' 
-  | 'chat' 
-  | 'bulk-messaging' 
-  | 'contact-lists' 
-  | 'crm-panel' 
-  | 'campaign-history' 
-  | 'message-scheduler' 
-  | 'templates' 
+export type AppSection =
+  | 'dashboard'
+  | 'chat'
+  | 'bulk-messaging'
+  | 'contact-lists'
+  | 'crm-panel'
+  | 'crm-settings'
+  | 'campaign-history'
+  | 'message-scheduler'
+  | 'templates'
   | 'configuration';
 
 export default function App() {
@@ -50,6 +52,8 @@ export default function App() {
         return <ContactLists />;
       case 'crm-panel':
         return <CRMPanel />;
+      case 'crm-settings':
+        return <CRMSettings />;
       case 'campaign-history':
         return <CampaignHistory />;
       case 'message-scheduler':

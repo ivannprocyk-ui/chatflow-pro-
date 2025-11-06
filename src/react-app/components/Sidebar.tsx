@@ -15,6 +15,7 @@ const menuItems = [
   { id: 'bulk-messaging', icon: 'fas fa-paper-plane', label: 'Envío Masivo' },
   { id: 'contact-lists', icon: 'fas fa-address-book', label: 'Listas de Contactos' },
   { id: 'crm-panel', icon: 'fas fa-chart-line', label: 'Panel CRM' },
+  { id: 'crm-settings', icon: 'fas fa-sliders-h', label: 'Configurar CRM' },
   { id: 'campaign-history', icon: 'fas fa-bullhorn', label: 'Historial de Campañas' },
   { id: 'message-scheduler', icon: 'fas fa-clock', label: 'Programador de Mensajes' },
   { id: 'templates', icon: 'fas fa-file-alt', label: 'Plantillas' },
