@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { loadCRMData, saveCRMData, loadCRMConfig, CRMFieldConfig, CRMConfig } from '@/react-app/utils/storage';
+import { loadCRMData, saveCRMData, loadCRMConfig, saveCRMConfig, CRMFieldConfig, CRMConfig } from '@/react-app/utils/storage';
+import { useToast } from '@/react-app/components/Toast';
 
 export default function CRMPanel() {
   const [contacts, setContacts] = useState<any[]>([]);
@@ -9,9 +10,13 @@ export default function CRMPanel() {
   const [showModal, setShowModal] = useState(false);
   const [editingContact, setEditingContact] = useState<any | null>(null);
   const [formData, setFormData] = useState<any>({});
+  const [showChartConfig, setShowChartConfig] = useState(false);
+  const [dateRangeStart, setDateRangeStart] = useState(config.chartConfig?.dateRangeStart || '');
+  const [dateRangeEnd, setDateRangeEnd] = useState(config.chartConfig?.dateRangeEnd || '');
   const chartRef = useRef<HTMLCanvasElement>(null);
   const statusChartRef = useRef<HTMLCanvasElement>(null);
   const costChartRef = useRef<HTMLCanvasElement>(null);
+  const { showSuccess } = useToast();
 
   useEffect(() => {
     const data = loadCRMData();
@@ -24,13 +29,13 @@ export default function CRMPanel() {
   }, []);
 
   useEffect(() => {
-    // Recreate charts when contacts change
+    // Recreate charts when contacts change or date filters change
     if (contacts.length > 0) {
       setTimeout(() => {
         createCharts();
       }, 100);
     }
-  }, [contacts, config]);
+  }, [contacts, config, dateRangeStart, dateRangeEnd]);
 
   const loadCharts = async () => {
     const script = document.createElement('script');
@@ -51,6 +56,17 @@ export default function CRMPanel() {
     // @ts-ignore
     const Chart = window.Chart;
     if (!Chart) return;
+
+    // Get filtered contacts by date range
+    const filteredContacts = getFilteredContactsByDate();
+    const chartColors = config.chartConfig?.colors || {
+      primary: '#8B5CF6',
+      secondary: '#10B981',
+      success: '#10B981',
+      danger: '#EF4444',
+      warning: '#F59E0B',
+      info: '#3B82F6'
+    };
 
     // Clear existing charts
     if (chartRef.current) {
@@ -78,8 +94,8 @@ export default function CRMPanel() {
           datasets: [{
             label: 'Mensajes por Mes',
             data: messageData,
-            borderColor: '#8B5CF6',
-            backgroundColor: 'rgba(139, 92, 246, 0.1)',
+            borderColor: chartColors.primary,
+            backgroundColor: chartColors.primary + '20',
             tension: 0.4,
             fill: true
           }]
@@ -97,9 +113,9 @@ export default function CRMPanel() {
     }
 
     // Status distribution chart
-    if (statusChartRef.current && Chart && contacts.length > 0) {
+    if (statusChartRef.current && Chart && filteredContacts.length > 0) {
       const statusCounts: Record<string, number> = {};
-      contacts.forEach(contact => {
+      filteredContacts.forEach(contact => {
         const status = contact.status || 'unknown';
         statusCounts[status] = (statusCounts[status] || 0) + 1;
       });
@@ -134,10 +150,10 @@ export default function CRMPanel() {
     }
 
     // Cost/Revenue chart
-    if (costChartRef.current && Chart && contacts.length > 0) {
+    if (costChartRef.current && Chart && filteredContacts.length > 0) {
       const costByMonth: Record<string, number> = {};
 
-      contacts.forEach(contact => {
+      filteredContacts.forEach(contact => {
         if (contact.cost && contact.createdAt) {
           const date = new Date(contact.createdAt);
           const monthKey = `${date.getMonth() + 1}/${date.getFullYear()}`;
@@ -155,7 +171,7 @@ export default function CRMPanel() {
           datasets: [{
             label: 'Revenue Total',
             data: costData,
-            backgroundColor: '#10B981',
+            backgroundColor: chartColors.secondary,
             borderRadius: 8
           }]
         },
@@ -184,6 +200,40 @@ export default function CRMPanel() {
       data.createdAt = contact.createdAt;
     }
     return data;
+  };
+
+  const getFilteredContactsByDate = () => {
+    if (!dateRangeStart && !dateRangeEnd) {
+      return contacts;
+    }
+
+    return contacts.filter(contact => {
+      if (!contact.createdAt) return false;
+      const contactDate = new Date(contact.createdAt);
+
+      if (dateRangeStart && dateRangeEnd) {
+        return contactDate >= new Date(dateRangeStart) && contactDate <= new Date(dateRangeEnd);
+      } else if (dateRangeStart) {
+        return contactDate >= new Date(dateRangeStart);
+      } else if (dateRangeEnd) {
+        return contactDate <= new Date(dateRangeEnd);
+      }
+      return true;
+    });
+  };
+
+  const saveChartConfig = () => {
+    const updatedConfig = {
+      ...config,
+      chartConfig: {
+        ...(config.chartConfig || { colors: {} }),
+        dateRangeStart,
+        dateRangeEnd
+      }
+    };
+    setConfig(updatedConfig);
+    saveCRMConfig(updatedConfig);
+    showSuccess('Configuración de gráficos guardada');
   };
 
   const handleAddOrEditContact = () => {
@@ -436,6 +486,70 @@ export default function CRMPanel() {
             <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
           </div>
         ))}
+      </div>
+
+      {/* Chart Configuration Bar */}
+      <div className="bg-white rounded-2xl p-6 shadow-lg mb-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-1">Gráficos y Análisis</h3>
+            <p className="text-sm text-gray-600">Filtra y personaliza la visualización de datos</p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4">
+            {/* Date Range Filters */}
+            <div className="flex items-center gap-3">
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Desde</label>
+                <input
+                  type="date"
+                  value={dateRangeStart}
+                  onChange={(e) => setDateRangeStart(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1">Hasta</label>
+                <input
+                  type="date"
+                  value={dateRangeEnd}
+                  onChange={(e) => setDateRangeEnd(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              {(dateRangeStart || dateRangeEnd) && (
+                <button
+                  onClick={() => {
+                    setDateRangeStart('');
+                    setDateRangeEnd('');
+                  }}
+                  className="mt-5 px-3 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300 transition"
+                  title="Limpiar filtros"
+                >
+                  <i className="fas fa-times"></i>
+                </button>
+              )}
+            </div>
+
+            {/* Save & Config Buttons */}
+            <div className="flex gap-2">
+              <button
+                onClick={saveChartConfig}
+                className="px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 transition shadow-lg"
+              >
+                <i className="fas fa-save mr-2"></i>
+                Guardar
+              </button>
+              <button
+                onClick={() => setShowChartConfig(true)}
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm font-medium hover:bg-blue-600 transition shadow-lg"
+              >
+                <i className="fas fa-palette mr-2"></i>
+                Colores
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Charts Row */}
