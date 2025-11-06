@@ -13,7 +13,6 @@ interface SidebarProps {
 
 const menuItems = [
   { id: 'dashboard', icon: 'fas fa-chart-pie', label: 'Dashboard' },
-  { id: 'chat', icon: 'fas fa-comments', label: 'Chat' },
   { id: 'bulk-messaging', icon: 'fas fa-paper-plane', label: 'Envío Masivo' },
   { id: 'contact-lists', icon: 'fas fa-address-book', label: 'Listas de Contactos' },
   { id: 'crm-panel', icon: 'fas fa-chart-line', label: 'Panel CRM' },

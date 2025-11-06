@@ -1,94 +1,115 @@
 import { useState, useEffect } from 'react';
 import { Send, AlertCircle, CheckCircle } from 'lucide-react';
-import { loadTemplates, loadContactLists, loadSendLog, appendToSendLog } from '@/react-app/utils/storage';
+import { loadContactLists, loadSendLog, appendToSendLog, loadConfig, loadCRMData } from '@/react-app/utils/storage';
+import { useToast } from '@/react-app/components/Toast';
 
 interface WhatsAppTemplate {
-  id: number;
+  id: string;
   name: string;
   language: string;
   status: string;
   category: string;
-  components: string;
+  components: any[];
 }
 
 interface ContactList {
-  id: number;
+  id: string;
   name: string;
   description?: string;
-  contact_count: number;
+  contacts: any[];
 }
 
 export default function BulkMessaging() {
   const [templates, setTemplates] = useState<WhatsAppTemplate[]>([]);
   const [contactLists, setContactLists] = useState<ContactList[]>([]);
+  const [crmContacts, setCrmContacts] = useState<any[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [selectedContactList, setSelectedContactList] = useState<string>('');
   const [phoneNumbers, setPhoneNumbers] = useState<string>('');
   const [imageUrl, setImageUrl] = useState<string>('');
   const [delaySeconds, setDelaySeconds] = useState<number>(2);
-  const [inputMethod, setInputMethod] = useState<'list' | 'manual'>('list');
+  const [inputMethod, setInputMethod] = useState<'list' | 'manual' | 'crm'>('list');
   const [loading, setLoading] = useState(false);
   const [campaign, setCampaign] = useState<any>(null);
+  const config = loadConfig();
+  const { showSuccess, showError, showInfo } = useToast();
 
   useEffect(() => {
-    // Load templates and contact lists from localStorage
-    const storedTemplates = loadTemplates();
-    const storedLists = loadContactLists();
-
-    setTemplates(storedTemplates);
-    setContactLists(storedLists.map((list: any) => ({
-      id: parseInt(list.id),
-      name: list.name,
-      description: list.description,
-      contact_count: list.contacts?.length || 0
-    })));
+    loadData();
   }, []);
+
+  const loadData = () => {
+    // Load cached templates from Meta API
+    const cached = localStorage.getItem('chatflow_cached_templates');
+    if (cached) {
+      try {
+        setTemplates(JSON.parse(cached));
+      } catch (error) {
+        console.error('Error parsing cached templates:', error);
+      }
+    }
+
+    // Load contact lists
+    const storedLists = loadContactLists();
+    setContactLists(storedLists);
+
+    // Load CRM contacts
+    const crmData = loadCRMData();
+    setCrmContacts(crmData);
+  };
 
   const getSelectedTemplateDetails = () => {
     const template = templates.find(t => t.name === selectedTemplate);
     if (!template) return null;
 
-    try {
-      const components = JSON.parse(template.components);
-      const bodyComponent = components.find((c: any) => c.type === 'BODY');
-      const headerComponent = components.find((c: any) => c.type === 'HEADER');
+    const components = template.components;
+    const bodyComponent = components.find((c: any) => c.type === 'BODY');
+    const headerComponent = components.find((c: any) => c.type === 'HEADER');
 
-      return {
-        ...template,
-        parsedComponents: components,
-        bodyText: bodyComponent?.text || '',
-        hasImageHeader: headerComponent?.format === 'IMAGE'
-      };
-    } catch (error) {
-      console.error('Error parsing template components:', error);
-      return null;
+    return {
+      ...template,
+      parsedComponents: components,
+      bodyText: bodyComponent?.text || '',
+      hasImageHeader: headerComponent?.format === 'IMAGE'
+    };
+  };
+
+  const getContactsToSend = () => {
+    if (inputMethod === 'list') {
+      const list = contactLists.find(l => l.id === selectedContactList);
+      return list?.contacts || [];
+    } else if (inputMethod === 'crm') {
+      return crmContacts;
+    } else {
+      return phoneNumbers.split('\n').filter(n => n.trim()).map(phone => ({ phone_number: phone.trim() }));
     }
   };
 
   const validateForm = () => {
+    if (!config.api.accessToken || !config.api.phoneNumberId) {
+      showError('Configura tu API de Meta en Configuración primero');
+      return false;
+    }
+
     if (!selectedTemplate) {
-      alert('Por favor selecciona una plantilla');
+      showError('Por favor selecciona una plantilla');
       return false;
     }
 
-    if (inputMethod === 'list' && !selectedContactList) {
-      alert('Por favor selecciona una lista de contactos');
-      return false;
-    }
-
-    if (inputMethod === 'manual' && !phoneNumbers.trim()) {
-      alert('Por favor ingresa los números de teléfono');
+    const contacts = getContactsToSend();
+    if (contacts.length === 0) {
+      showError('No hay contactos para enviar');
       return false;
     }
 
     const templateDetails = getSelectedTemplateDetails();
     if (templateDetails?.hasImageHeader && !imageUrl.trim()) {
-      alert('Esta plantilla requiere una URL de imagen');
+      showError('Esta plantilla requiere una URL de imagen');
       return false;
     }
 
     if (imageUrl.trim() && !imageUrl.startsWith('https://')) {
-      alert('La URL de la imagen debe usar HTTPS');
+      showError('La URL de la imagen debe usar HTTPS');
       return false;
     }
 
@@ -99,19 +120,92 @@ export default function BulkMessaging() {
     if (!validateForm()) return;
 
     setLoading(true);
+    showInfo('Iniciando envío masivo...');
 
-    // Simulate bulk send with demo data
-    setTimeout(() => {
-      const numbers = inputMethod === 'manual'
-        ? phoneNumbers.split('\n').filter(n => n.trim()).length
-        : parseInt(selectedContactList) || 0;
+    const contacts = getContactsToSend();
+    const templateDetails = getSelectedTemplateDetails();
+
+    let sentCount = 0;
+    let failedCount = 0;
+    const errors: string[] = [];
+
+    try {
+      for (let i = 0; i < contacts.length; i++) {
+        const contact = contacts[i];
+        const phoneNumber = contact.phone_number || contact.phone;
+
+        if (!phoneNumber) {
+          failedCount++;
+          continue;
+        }
+
+        try {
+          // Build message body
+          const messageBody: any = {
+            messaging_product: 'whatsapp',
+            to: phoneNumber,
+            type: 'template',
+            template: {
+              name: selectedTemplate,
+              language: {
+                code: templateDetails?.language || 'es'
+              }
+            }
+          };
+
+          // Add header component with image if needed
+          if (templateDetails?.hasImageHeader && imageUrl) {
+            messageBody.template.components = [
+              {
+                type: 'header',
+                parameters: [
+                  {
+                    type: 'image',
+                    image: {
+                      link: imageUrl
+                    }
+                  }
+                ]
+              }
+            ];
+          }
+
+          // Send message via Meta API
+          const response = await fetch(`https://graph.facebook.com/${config.api.apiVersion}/${config.api.phoneNumberId}/messages`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${config.api.accessToken}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(messageBody)
+          });
+
+          if (response.ok) {
+            sentCount++;
+          } else {
+            failedCount++;
+            const errorData = await response.json();
+            errors.push(`${phoneNumber}: ${errorData.error?.message || 'Error desconocido'}`);
+          }
+
+          // Delay between messages
+          if (i < contacts.length - 1) {
+            await new Promise(resolve => setTimeout(resolve, delaySeconds * 1000));
+          }
+
+        } catch (error: any) {
+          failedCount++;
+          errors.push(`${phoneNumber}: ${error.message}`);
+        }
+      }
 
       const result = {
-        total_contacts: numbers,
-        sent_count: numbers,
-        failed_count: 0,
+        total_contacts: contacts.length,
+        sent_count: sentCount,
+        failed_count: failedCount,
         template_name: selectedTemplate,
-        completed_at: new Date().toISOString()
+        completed_at: new Date().toISOString(),
+        errors: errors.slice(0, 5) // Only save first 5 errors
       };
 
       // Save to log
@@ -122,10 +216,20 @@ export default function BulkMessaging() {
       });
 
       setCampaign(result);
-      setLoading(false);
 
-      alert(`✅ Campaña completada!\n\n📊 Estadísticas:\n• Total: ${result.total_contacts}\n• Enviados: ${result.sent_count}\n• Errores: ${result.failed_count}`);
-    }, 2000);
+      if (failedCount === 0) {
+        showSuccess(`✅ Campaña completada! ${sentCount} mensajes enviados`);
+      } else if (sentCount > 0) {
+        showInfo(`⚠️ Campaña completada con errores: ${sentCount} enviados, ${failedCount} fallidos`);
+      } else {
+        showError(`❌ Error: Todos los envíos fallaron`);
+      }
+
+    } catch (error: any) {
+      showError(`Error en envío masivo: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const templateDetails = getSelectedTemplateDetails();
@@ -201,10 +305,10 @@ export default function BulkMessaging() {
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-gray-900">2️⃣ Selecciona Contactos</h3>
 
-          <div className="flex space-x-4">
+          <div className="grid grid-cols-3 gap-4">
             <button
               onClick={() => setInputMethod('list')}
-              className={`flex-1 p-3 border-2 rounded-lg transition-colors ${
+              className={`p-3 border-2 rounded-lg transition-colors ${
                 inputMethod === 'list'
                   ? 'border-green-500 bg-green-50 text-green-700'
                   : 'border-gray-300 hover:border-gray-400'
@@ -214,8 +318,19 @@ export default function BulkMessaging() {
               📋 Lista de Contactos
             </button>
             <button
+              onClick={() => setInputMethod('crm')}
+              className={`p-3 border-2 rounded-lg transition-colors ${
+                inputMethod === 'crm'
+                  ? 'border-green-500 bg-green-50 text-green-700'
+                  : 'border-gray-300 hover:border-gray-400'
+              }`}
+              disabled={loading}
+            >
+              👥 Contactos CRM ({crmContacts.length})
+            </button>
+            <button
               onClick={() => setInputMethod('manual')}
-              className={`flex-1 p-3 border-2 rounded-lg transition-colors ${
+              className={`p-3 border-2 rounded-lg transition-colors ${
                 inputMethod === 'manual'
                   ? 'border-green-500 bg-green-50 text-green-700'
                   : 'border-gray-300 hover:border-gray-400'
@@ -226,7 +341,7 @@ export default function BulkMessaging() {
             </button>
           </div>
 
-          {inputMethod === 'list' ? (
+          {inputMethod === 'list' && (
             <>
               <select
                 value={selectedContactList}
@@ -236,8 +351,8 @@ export default function BulkMessaging() {
               >
                 <option value="">-- Selecciona una lista de contactos --</option>
                 {contactLists.map((list) => (
-                  <option key={list.id} value={list.id.toString()}>
-                    {list.name} ({list.contact_count} contactos)
+                  <option key={list.id} value={list.id}>
+                    {list.name} ({list.contacts?.length || 0} contactos)
                   </option>
                 ))}
               </select>
@@ -250,7 +365,26 @@ export default function BulkMessaging() {
                 </div>
               )}
             </>
-          ) : (
+          )}
+
+          {inputMethod === 'crm' && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex items-center space-x-2 mb-2">
+                <CheckCircle className="w-5 h-5 text-blue-600" />
+                <h4 className="font-medium text-blue-900">Contactos del CRM seleccionados</h4>
+              </div>
+              <p className="text-blue-700 text-sm">
+                Se enviarán mensajes a {crmContacts.length} contactos del CRM.
+              </p>
+              {crmContacts.length === 0 && (
+                <p className="text-yellow-700 text-sm mt-2">
+                  ⚠️ No hay contactos en el CRM. Ve a "Panel CRM" para agregar contactos.
+                </p>
+              )}
+            </div>
+          )}
+
+          {inputMethod === 'manual' && (
             <div>
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-3">
                 <div className="flex items-start space-x-2">

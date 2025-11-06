@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import Sidebar from "@/react-app/components/Sidebar";
 import Dashboard from "@/react-app/pages/Dashboard";
-import Chat from "@/react-app/pages/Chat";
 import BulkMessaging from "@/react-app/pages/BulkMessaging";
 import ContactLists from "@/react-app/pages/ContactLists";
 import CRMPanel from "@/react-app/pages/CRMPanel";
@@ -11,10 +10,10 @@ import Templates from "@/react-app/pages/Templates";
 import Configuration from "@/react-app/pages/Configuration";
 import CRMSettings from "@/react-app/pages/CRMSettings";
 import { loadConfig, initializeDemoData } from "@/react-app/utils/storage";
+import { ToastContainer, useToast } from "@/react-app/components/Toast";
 
 export type AppSection =
   | 'dashboard'
-  | 'chat'
   | 'bulk-messaging'
   | 'contact-lists'
   | 'crm-panel'
@@ -33,6 +32,7 @@ export default function App() {
     return saved === 'true';
   });
   const [config, setConfig] = useState(loadConfig());
+  const { toasts, removeToast } = useToast();
 
   // Save collapsed state to localStorage
   useEffect(() => {
@@ -54,8 +54,6 @@ export default function App() {
     switch (currentSection) {
       case 'dashboard':
         return <Dashboard />;
-      case 'chat':
-        return <Chat />;
       case 'bulk-messaging':
         return <BulkMessaging />;
       case 'contact-lists':
@@ -88,15 +86,15 @@ export default function App() {
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
         config={config}
       />
-      
+
       {/* Mobile overlay */}
       {sidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
-      
+
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar for mobile */}
@@ -111,12 +109,15 @@ export default function App() {
             {config.branding.appName}
           </h1>
         </div>
-        
+
         {/* Page content */}
         <main className="flex-1 overflow-auto">
           {renderCurrentSection()}
         </main>
       </div>
+
+      {/* Toast Notifications */}
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
     </div>
   );
 }
