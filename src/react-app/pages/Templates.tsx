@@ -16,6 +16,8 @@ export default function Templates() {
   const [templates, setTemplates] = useState<WhatsAppTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [lastSync, setLastSync] = useState<string | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<WhatsAppTemplate | null>(null);
+  const [showModal, setShowModal] = useState(false);
   const config = loadConfig();
   const { showSuccess, showError } = useToast();
 
@@ -111,24 +113,8 @@ export default function Templates() {
   };
 
   const handleViewDetails = (template: WhatsAppTemplate) => {
-    const bodyComponent = template.components.find((c: any) => c.type === 'BODY');
-    const headerComponent = template.components.find((c: any) => c.type === 'HEADER');
-    const footerComponent = template.components.find((c: any) => c.type === 'FOOTER');
-
-    const infoLines = [
-      `📋 ${template.name}`,
-      `🌐 ${template.language} | 📁 ${template.category} | ✅ ${template.status}`
-    ];
-
-    if (headerComponent) {
-      infoLines.push(`📌 Header: ${headerComponent.format || 'TEXT'}`);
-    }
-
-    if (bodyComponent?.text) {
-      infoLines.push(`💬 ${bodyComponent.text.substring(0, 100)}${bodyComponent.text.length > 100 ? '...' : ''}`);
-    }
-
-    showInfo(infoLines.join(' • '));
+    setSelectedTemplate(template);
+    setShowModal(true);
   };
 
   const getStatusBadge = (status: WhatsAppTemplate['status']) => {
@@ -353,6 +339,118 @@ export default function Templates() {
                 <p>• Sincroniza regularmente para obtener nuevas plantillas y actualizaciones de estado</p>
                 <p>• Las plantillas rechazadas no pueden ser utilizadas hasta que sean modificadas y aprobadas nuevamente</p>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Template Details Modal */}
+      {showModal && selectedTemplate && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-start">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">{selectedTemplate.name}</h2>
+                <div className="flex items-center space-x-2 mt-2">
+                  {getStatusBadge(selectedTemplate.status)}
+                  <span className="text-sm text-gray-600">
+                    {selectedTemplate.language} • {selectedTemplate.category}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  setSelectedTemplate(null);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <i className="fas fa-times text-xl"></i>
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {selectedTemplate.components.map((component: any, index: number) => (
+                <div key={index} className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold text-gray-900 uppercase text-sm">
+                      {component.type}
+                      {component.format && ` - ${component.format}`}
+                    </h3>
+                  </div>
+
+                  {component.text && (
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <p className="text-gray-800 whitespace-pre-wrap">{component.text}</p>
+                    </div>
+                  )}
+
+                  {component.example?.header_handle && (
+                    <div className="mt-2">
+                      <p className="text-xs text-gray-500 mb-1">Ejemplo de imagen:</p>
+                      <div className="bg-gray-100 p-2 rounded text-xs text-gray-700 break-all">
+                        {component.example.header_handle[0]}
+                      </div>
+                    </div>
+                  )}
+
+                  {component.example?.body_text && (
+                    <div className="mt-2">
+                      <p className="text-xs text-gray-500 mb-1">Ejemplo de variables:</p>
+                      <div className="bg-gray-100 p-2 rounded text-xs text-gray-700">
+                        {component.example.body_text[0].map((text: string, i: number) => (
+                          <div key={i}>{i + 1}: {text}</div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {component.buttons && (
+                    <div className="mt-3 space-y-2">
+                      {component.buttons.map((button: any, btnIndex: number) => (
+                        <div
+                          key={btnIndex}
+                          className="flex items-center space-x-2 bg-blue-50 p-2 rounded"
+                        >
+                          <i className={`fas fa-${button.type === 'URL' ? 'link' : button.type === 'PHONE_NUMBER' ? 'phone' : 'reply'} text-blue-600`}></i>
+                          <span className="text-sm text-gray-800">{button.text}</span>
+                          {button.url && (
+                            <span className="text-xs text-gray-500">→ {button.url}</span>
+                          )}
+                          {button.phone_number && (
+                            <span className="text-xs text-gray-500">→ {button.phone_number}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="p-6 border-t border-gray-100 flex space-x-4">
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  setSelectedTemplate(null);
+                }}
+                className="flex-1 bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-200 transition-all"
+              >
+                Cerrar
+              </button>
+              {selectedTemplate.status === 'APPROVED' && (
+                <button
+                  onClick={() => {
+                    handleUseTemplate(selectedTemplate);
+                    setShowModal(false);
+                    setSelectedTemplate(null);
+                  }}
+                  className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white py-3 px-6 rounded-lg font-medium hover:from-green-600 hover:to-green-700 transition-all"
+                >
+                  <i className="fas fa-paper-plane mr-2"></i>
+                  Usar Plantilla
+                </button>
+              )}
             </div>
           </div>
         </div>
