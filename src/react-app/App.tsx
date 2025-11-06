@@ -9,7 +9,7 @@ import CampaignHistory from "@/react-app/pages/CampaignHistory";
 import MessageScheduler from "@/react-app/pages/MessageScheduler";
 import Templates from "@/react-app/pages/Templates";
 import Configuration from "@/react-app/pages/Configuration";
-import { loadConfig } from "@/react-app/utils/storage";
+import { loadConfig, initializeDemoData } from "@/react-app/utils/storage";
 
 export type AppSection = 
   | 'dashboard' 
@@ -28,6 +28,9 @@ export default function App() {
   const [config, setConfig] = useState(loadConfig());
 
   useEffect(() => {
+    // Initialize demo data on first load
+    initializeDemoData();
+
     // Apply custom colors to CSS variables
     const root = document.documentElement;
     root.style.setProperty('--primary-color', config.branding.primaryColor);

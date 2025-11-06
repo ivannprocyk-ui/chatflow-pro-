@@ -16,10 +16,12 @@ export default function CRMPanel() {
   const [contacts, setContacts] = useState<CRMContact[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
+  const [editingContact, setEditingContact] = useState<CRMContact | null>(null);
   const [newContact, setNewContact] = useState({
     name: '',
     phone: '',
-    email: ''
+    email: '',
+    status: 'active' as 'active' | 'inactive' | 'blocked'
   });
   const chartRef = useRef<HTMLCanvasElement>(null);
   const donutChartRef = useRef<HTMLCanvasElement>(null);
@@ -111,29 +113,59 @@ export default function CRMPanel() {
     }
   };
 
-  const handleAddContact = () => {
+  const handleAddOrEditContact = () => {
     if (!newContact.name.trim() || !newContact.phone.trim()) {
       alert('Nombre y teléfono son requeridos');
       return;
     }
 
-    const contact: CRMContact = {
-      id: Date.now().toString(),
-      name: newContact.name,
-      phone: newContact.phone,
-      email: newContact.email,
-      messagesSent: 0,
-      lastInteraction: new Date().toISOString(),
-      status: 'active',
-      createdAt: new Date().toISOString()
-    };
+    let updatedContacts;
 
-    const updatedContacts = [...contacts, contact];
+    if (editingContact) {
+      // Edit existing contact
+      updatedContacts = contacts.map(c =>
+        c.id === editingContact.id
+          ? {
+              ...c,
+              name: newContact.name,
+              phone: newContact.phone,
+              email: newContact.email,
+              status: newContact.status
+            }
+          : c
+      );
+    } else {
+      // Add new contact
+      const contact: CRMContact = {
+        id: Date.now().toString(),
+        name: newContact.name,
+        phone: newContact.phone,
+        email: newContact.email,
+        messagesSent: 0,
+        lastInteraction: new Date().toISOString(),
+        status: newContact.status,
+        createdAt: new Date().toISOString()
+      };
+      updatedContacts = [...contacts, contact];
+    }
+
     setContacts(updatedContacts);
     saveCRMData(updatedContacts);
 
     setShowModal(false);
-    setNewContact({ name: '', phone: '', email: '' });
+    setEditingContact(null);
+    setNewContact({ name: '', phone: '', email: '', status: 'active' });
+  };
+
+  const handleEditContact = (contact: CRMContact) => {
+    setEditingContact(contact);
+    setNewContact({
+      name: contact.name,
+      phone: contact.phone,
+      email: contact.email || '',
+      status: contact.status
+    });
+    setShowModal(true);
   };
 
   const handleDeleteContact = (contactId: string) => {
@@ -330,8 +362,11 @@ export default function CRMPanel() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
-                      <button className="text-blue-600 hover:text-blue-900">
-                        <i className="fas fa-eye"></i>
+                      <button
+                        onClick={() => handleEditContact(contact)}
+                        className="text-blue-600 hover:text-blue-900"
+                      >
+                        <i className="fas fa-edit"></i>
                       </button>
                       <button
                         onClick={() => handleDeleteContact(contact.id)}
@@ -340,8 +375,7 @@ export default function CRMPanel() {
                         <i className="fas fa-trash"></i>
                       </button>
                     </div>
-                  </td>
-                </tr>
+                  </td>                </tr>
               ))}
             </tbody>
           </table>
@@ -362,12 +396,14 @@ export default function CRMPanel() {
         )}
       </div>
 
-      {/* Add Contact Modal */}
+      {/* Add/Edit Contact Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
             <div className="p-6 border-b border-gray-100">
-              <h2 className="text-2xl font-bold text-gray-900">Nuevo Contacto</h2>
+              <h2 className="text-2xl font-bold text-gray-900">
+                {editingContact ? 'Editar Contacto' : 'Nuevo Contacto'}
+              </h2>
             </div>
 
             <div className="p-6 space-y-4">
@@ -406,20 +442,39 @@ export default function CRMPanel() {
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Estado
+                </label>
+                <select
+                  value={newContact.status}
+                  onChange={(e) => setNewContact({ ...newContact, status: e.target.value as 'active' | 'inactive' | 'blocked' })}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="active">Activo</option>
+                  <option value="inactive">Inactivo</option>
+                  <option value="blocked">Bloqueado</option>
+                </select>
+              </div>
             </div>
 
             <div className="p-6 border-t border-gray-100 flex space-x-4">
               <button
-                onClick={() => setShowModal(false)}
+                onClick={() => {
+                  setShowModal(false);
+                  setEditingContact(null);
+                  setNewContact({ name: '', phone: '', email: '', status: 'active' });
+                }}
                 className="flex-1 bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-200 transition-all"
               >
                 Cancelar
               </button>
               <button
-                onClick={handleAddContact}
+                onClick={handleAddOrEditContact}
                 className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 transition-all"
               >
-                Añadir Contacto
+                {editingContact ? 'Actualizar Contacto' : 'Añadir Contacto'}
               </button>
             </div>
           </div>

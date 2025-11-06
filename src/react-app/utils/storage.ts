@@ -175,6 +175,119 @@ export function appendToSendLog(entry: any): void {
   }
 }
 
+// Demo Data Initialization
+const demoTemplates = [
+  {
+    id: 1,
+    name: 'bienvenida_template',
+    language: 'es',
+    status: 'APPROVED',
+    category: 'MARKETING',
+    components: JSON.stringify([
+      { type: 'HEADER', format: 'TEXT', text: 'Bienvenido a ChatFlow' },
+      { type: 'BODY', text: 'Hola! Gracias por unirte a nuestra comunidad. Estamos aquí para ayudarte con cualquier consulta.' },
+      { type: 'FOOTER', text: 'ChatFlow Pro' }
+    ])
+  },
+  {
+    id: 2,
+    name: 'promocion_especial',
+    language: 'es',
+    status: 'APPROVED',
+    category: 'MARKETING',
+    components: JSON.stringify([
+      { type: 'HEADER', format: 'IMAGE' },
+      { type: 'BODY', text: '¡Oferta especial! Obtén un 20% de descuento en tu próxima compra. Válido hasta fin de mes.' },
+      { type: 'FOOTER', text: 'ChatFlow Pro' }
+    ])
+  },
+  {
+    id: 3,
+    name: 'recordatorio_cita',
+    language: 'es',
+    status: 'APPROVED',
+    category: 'UTILITY',
+    components: JSON.stringify([
+      { type: 'BODY', text: 'Recordatorio: Tienes una cita programada. Te esperamos!' },
+      { type: 'FOOTER', text: 'ChatFlow Pro' }
+    ])
+  }
+];
+
+const demoContactLists = [
+  {
+    id: '1',
+    name: 'Clientes Premium',
+    description: 'Lista de clientes premium con mayor engagement',
+    contacts: [
+      { phone_number: '+5491123456789', first_name: 'Juan', last_name: 'Pérez', email: 'juan@example.com' },
+      { phone_number: '+5491198765432', first_name: 'María', last_name: 'González', email: 'maria@example.com' },
+      { phone_number: '+5491155554444', first_name: 'Carlos', last_name: 'Rodríguez', email: 'carlos@example.com' }
+    ],
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: '2',
+    name: 'Lista de Contactos General',
+    description: 'Todos los contactos activos',
+    contacts: [
+      { phone_number: '+5491111111111', first_name: 'Ana', last_name: 'López' },
+      { phone_number: '+5491122222222', first_name: 'Pedro', last_name: 'Martínez' }
+    ],
+    createdAt: new Date().toISOString()
+  }
+];
+
+const demoCRMData = [
+  {
+    id: '1',
+    name: 'Juan Pérez',
+    phone: '+5491123456789',
+    email: 'juan@example.com',
+    messagesSent: 15,
+    lastInteraction: new Date(Date.now() - 86400000 * 2).toISOString(),
+    status: 'active',
+    createdAt: new Date(Date.now() - 86400000 * 30).toISOString()
+  },
+  {
+    id: '2',
+    name: 'María González',
+    phone: '+5491198765432',
+    email: 'maria@example.com',
+    messagesSent: 22,
+    lastInteraction: new Date(Date.now() - 86400000).toISOString(),
+    status: 'active',
+    createdAt: new Date(Date.now() - 86400000 * 45).toISOString()
+  },
+  {
+    id: '3',
+    name: 'Carlos Rodríguez',
+    phone: '+5491155554444',
+    email: 'carlos@example.com',
+    messagesSent: 8,
+    lastInteraction: new Date(Date.now() - 86400000 * 7).toISOString(),
+    status: 'inactive',
+    createdAt: new Date(Date.now() - 86400000 * 60).toISOString()
+  }
+];
+
+export function initializeDemoData(): void {
+  try {
+    // Only initialize if data doesn't exist
+    if (!localStorage.getItem('chatflow_templates')) {
+      saveTemplates(demoTemplates);
+    }
+    if (!localStorage.getItem('chatflow_contact_lists')) {
+      saveContactLists(demoContactLists);
+    }
+    if (!localStorage.getItem('chatflow_crm_data')) {
+      saveCRMData(demoCRMData);
+    }
+  } catch (error) {
+    console.error('Error initializing demo data:', error);
+  }
+}
+
 // Utilities
 export function validatePhone(phone: string): boolean {
   const cleaned = phone.replace(/\D/g, '');
