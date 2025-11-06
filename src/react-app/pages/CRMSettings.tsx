@@ -17,8 +17,10 @@ export default function CRMSettings() {
     type: 'text',
     required: false,
     visible: true,
-    order: config.fields.length + 1
+    order: config.fields.length + 1,
+    options: []
   });
+  const [newOption, setNewOption] = useState('');
   const [newStatus, setNewStatus] = useState<Partial<CRMStatusConfig>>({
     name: '',
     label: '',
@@ -34,6 +36,11 @@ export default function CRMSettings() {
   const handleSaveField = () => {
     if (!newField.name || !newField.label) {
       showError('Nombre y etiqueta son requeridos');
+      return;
+    }
+
+    if (newField.type === 'select' && (!newField.options || newField.options.length === 0)) {
+      showError('Debes agregar al menos una opción para campos de selección');
       return;
     }
 
@@ -69,8 +76,10 @@ export default function CRMSettings() {
       type: 'text',
       required: false,
       visible: true,
-      order: updatedFields.length + 1
+      order: updatedFields.length + 1,
+      options: []
     });
+    setNewOption('');
     showSuccess(editingField ? 'Campo actualizado exitosamente' : 'Campo creado exitosamente');
   };
 
@@ -543,6 +552,68 @@ export default function CRMSettings() {
                   </div>
                 )}
               </div>
+
+              {/* Options for Select Fields */}
+              {newField.type === 'select' && (
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Opciones del Campo <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex space-x-2 mb-3">
+                    <input
+                      type="text"
+                      value={newOption}
+                      onChange={(e) => setNewOption(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          if (newOption.trim()) {
+                            setNewField({ ...newField, options: [...(newField.options || []), newOption.trim()] });
+                            setNewOption('');
+                          }
+                        }
+                      }}
+                      placeholder="Ej: INGLES, CASTELLANO, PORTUGUES"
+                      className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (newOption.trim()) {
+                          setNewField({ ...newField, options: [...(newField.options || []), newOption.trim()] });
+                          setNewOption('');
+                        }
+                      }}
+                      className="bg-blue-500 text-white px-4 py-3 rounded-lg hover:bg-blue-600 transition-all"
+                    >
+                      <i className="fas fa-plus"></i>
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {(newField.options || []).map((option, index) => (
+                      <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded-lg">
+                        <span className="text-sm text-gray-700">{option}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updatedOptions = [...(newField.options || [])];
+                            updatedOptions.splice(index, 1);
+                            setNewField({ ...newField, options: updatedOptions });
+                          }}
+                          className="text-red-600 hover:text-red-800 p-1"
+                        >
+                          <i className="fas fa-times"></i>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  {(!newField.options || newField.options.length === 0) && (
+                    <p className="text-sm text-gray-500 mt-2">
+                      Agrega al menos una opción para este campo de selección
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div className="flex items-center space-x-6">
                 <label className="flex items-center space-x-2">
