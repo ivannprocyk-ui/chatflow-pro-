@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { loadConfig, loadTemplates as loadStoredTemplates, saveTemplates } from '@/react-app/utils/storage';
+import { loadConfig } from '@/react-app/utils/storage';
 import { useToast } from '@/react-app/components/Toast';
 
 interface WhatsAppTemplate {
@@ -15,81 +15,91 @@ interface WhatsAppTemplate {
 export default function Templates() {
   const [templates, setTemplates] = useState<WhatsAppTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [newTemplateName, setNewTemplateName] = useState('');
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [lastSync, setLastSync] = useState<string | null>(null);
   const config = loadConfig();
   const { showSuccess, showError } = useToast();
 
   useEffect(() => {
-    loadTemplates();
+    // Check if API is configured
+    if (config.api.accessToken && config.api.wabaId) {
+      loadTemplatesFromAPI();
+    }
+    // Load last sync time
+    const savedSync = localStorage.getItem('chatflow_last_template_sync');
+    if (savedSync) {
+      setLastSync(savedSync);
+    }
   }, []);
 
-  const loadTemplates = () => {
+  const loadTemplatesFromAPI = async () => {
     setIsLoading(true);
-    try {
-      const storedTemplates = loadStoredTemplates();
-      const formattedTemplates = storedTemplates.map((template: any) => ({
-        id: template.id?.toString() || template.name,
-        name: template.name,
-        language: template.language,
-        category: template.category,
-        status: template.status,
-        components: typeof template.components === 'string'
-          ? JSON.parse(template.components)
-          : template.components || [],
-        hasImage: false
-      }));
 
-      // Check for images in components
-      formattedTemplates.forEach(template => {
-        template.hasImage = template.components?.some((c: any) =>
-          c.type === 'HEADER' && c.format === 'IMAGE'
-        ) || false;
+    try {
+      const response = await fetch(`https://graph.facebook.com/${config.api.apiVersion}/${config.api.wabaId}/message_templates`, {
+        headers: {
+          'Authorization': `Bearer ${config.api.accessToken}`
+        }
       });
 
-      setTemplates(formattedTemplates);
-      showSuccess('Plantillas cargadas correctamente');
-    } catch (error) {
-      console.error('Error loading templates:', error);
-      showError('Error al cargar plantillas');
+      if (response.ok) {
+        const data = await response.json();
+        const formattedTemplates = data.data.map((template: any) => ({
+          id: template.id || template.name,
+          name: template.name,
+          language: template.language,
+          category: template.category,
+          status: template.status,
+          components: template.components || [],
+          hasImage: template.components?.some((c: any) =>
+            c.type === 'HEADER' && c.format === 'IMAGE'
+          ) || false
+        }));
+
+        setTemplates(formattedTemplates);
+
+        // Save sync time
+        const syncTime = new Date().toISOString();
+        setLastSync(syncTime);
+        localStorage.setItem('chatflow_last_template_sync', syncTime);
+        localStorage.setItem('chatflow_cached_templates', JSON.stringify(formattedTemplates));
+
+        showSuccess(`${formattedTemplates.length} plantillas cargadas desde Meta`);
+      } else {
+        const errorData = await response.json();
+        showError(errorData.error?.message || 'Error al cargar plantillas de Meta');
+
+        // Try to load cached templates
+        loadCachedTemplates();
+      }
+    } catch (error: any) {
+      console.error('Error loading templates from API:', error);
+      showError(`Error de conexión: ${error.message}`);
+
+      // Try to load cached templates
+      loadCachedTemplates();
     } finally {
       setIsLoading(false);
     }
   };
 
-  const addNewTemplate = () => {
-    if (!newTemplateName.trim()) {
-      showError('Ingresa un nombre para la plantilla');
-      return;
+  const loadCachedTemplates = () => {
+    try {
+      const cached = localStorage.getItem('chatflow_cached_templates');
+      if (cached) {
+        setTemplates(JSON.parse(cached));
+        showSuccess('Plantillas cargadas desde caché local');
+      }
+    } catch (error) {
+      console.error('Error loading cached templates:', error);
     }
-
-    const newTemplate = {
-      id: Date.now(),
-      name: newTemplateName.toLowerCase().replace(/\s+/g, '_'),
-      language: 'es',
-      status: 'APPROVED',
-      category: 'MARKETING',
-      components: JSON.stringify([
-        { type: 'BODY', text: 'Contenido de la plantilla' }
-      ])
-    };
-
-    const allTemplates = loadStoredTemplates();
-    allTemplates.push(newTemplate);
-    saveTemplates(allTemplates);
-
-    setNewTemplateName('');
-    setShowAddModal(false);
-    loadTemplates();
-    showSuccess('Plantilla creada exitosamente');
   };
 
-  const deleteTemplate = (templateId: string) => {
-    const allTemplates = loadStoredTemplates();
-    const filtered = allTemplates.filter(t => t.id?.toString() !== templateId && t.name !== templateId);
-    saveTemplates(filtered);
-    loadTemplates();
-    showSuccess('Plantilla eliminada');
+  const syncWithMeta = async () => {
+    if (!config.api.accessToken || !config.api.wabaId) {
+      showError('Configura primero tu API de Meta en Configuración');
+      return;
+    }
+    await loadTemplatesFromAPI();
   };
 
   const getStatusBadge = (status: WhatsAppTemplate['status']) => {
@@ -134,23 +144,21 @@ export default function Templates() {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Plantillas de WhatsApp</h1>
-          <p className="text-gray-600">Gestiona tus plantillas personalizadas</p>
+          <p className="text-gray-600">Gestiona y sincroniza tus plantillas aprobadas de Meta</p>
         </div>
         <div className="flex items-center space-x-4">
+          {lastSync && (
+            <div className="text-sm text-gray-500">
+              Última sincronización: {new Date(lastSync).toLocaleString('es-ES')}
+            </div>
+          )}
           <button
-            onClick={() => setShowAddModal(true)}
-            className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-xl font-medium hover:from-green-600 hover:to-green-700 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
-          >
-            <i className="fas fa-plus"></i>
-            <span>Agregar Plantilla</span>
-          </button>
-          <button
-            onClick={loadTemplates}
+            onClick={syncWithMeta}
             disabled={isLoading}
             className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
           >
             <i className={`fas fa-sync ${isLoading ? 'fa-spin' : ''}`}></i>
-            <span>{isLoading ? 'Cargando...' : 'Recargar'}</span>
+            <span>{isLoading ? 'Sincronizando...' : 'Sincronizar con Meta'}</span>
           </button>
         </div>
       </div>
@@ -187,45 +195,6 @@ export default function Templates() {
           <p className="text-2xl font-bold text-gray-900">{rejectedTemplates.length}</p>
         </div>
       </div>
-
-      {/* Add Template Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Agregar Nueva Plantilla</h2>
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nombre de la Plantilla
-              </label>
-              <input
-                type="text"
-                value={newTemplateName}
-                onChange={(e) => setNewTemplateName(e.target.value)}
-                placeholder="mi_plantilla"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <p className="text-xs text-gray-500 mt-2">El nombre se convertirá automáticamente a formato válido</p>
-            </div>
-            <div className="flex space-x-3">
-              <button
-                onClick={() => {
-                  setShowAddModal(false);
-                  setNewTemplateName('');
-                }}
-                className="flex-1 bg-gray-200 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-300 transition-all"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={addNewTemplate}
-                className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white py-3 px-4 rounded-lg font-medium hover:from-green-600 hover:to-green-700 transition-all"
-              >
-                Crear Plantilla
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Templates Grid */}
       {templates.length > 0 ? (
@@ -283,18 +252,12 @@ export default function Templates() {
                 {template.status === 'APPROVED' && (
                   <button className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:from-green-600 hover:to-green-700 transition-all">
                     <i className="fas fa-paper-plane mr-2"></i>
-                    Usar
+                    Usar Plantilla
                   </button>
                 )}
                 <button className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:from-blue-600 hover:to-blue-700 transition-all">
                   <i className="fas fa-eye mr-2"></i>
-                  Detalles
-                </button>
-                <button
-                  onClick={() => deleteTemplate(template.id)}
-                  className="bg-gradient-to-r from-red-500 to-red-600 text-white py-2 px-3 rounded-lg text-sm font-medium hover:from-red-600 hover:to-red-700 transition-all"
-                >
-                  <i className="fas fa-trash"></i>
+                  Ver Detalles
                 </button>
               </div>
             </div>
@@ -307,15 +270,28 @@ export default function Templates() {
           </div>
           <h3 className="text-xl font-medium text-gray-900 mb-2">No hay plantillas disponibles</h3>
           <p className="text-gray-600 mb-6">
-            Comienza creando tu primera plantilla personalizada
+            {config.api.accessToken && config.api.wabaId
+              ? 'Sincroniza con Meta para cargar tus plantillas aprobadas'
+              : 'Configura primero tu API de Meta en la sección de Configuración'
+            }
           </p>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="bg-gradient-to-r from-green-500 to-green-600 text-white px-8 py-3 rounded-xl font-medium hover:from-green-600 hover:to-green-700 transition-all shadow-lg hover:shadow-xl"
-          >
-            <i className="fas fa-plus mr-2"></i>
-            Crear Primera Plantilla
-          </button>
+          {config.api.accessToken && config.api.wabaId ? (
+            <button
+              onClick={syncWithMeta}
+              className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-8 py-3 rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl"
+            >
+              <i className="fas fa-sync mr-2"></i>
+              Sincronizar con Meta
+            </button>
+          ) : (
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('navigate-to-configuration'))}
+              className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-8 py-3 rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl"
+            >
+              <i className="fas fa-cog mr-2"></i>
+              Ir a Configuración
+            </button>
+          )}
         </div>
       ) : (
         <div className="text-center py-16">
@@ -323,7 +299,7 @@ export default function Templates() {
             <i className="fas fa-spinner fa-spin text-4xl text-blue-500"></i>
           </div>
           <h3 className="text-xl font-medium text-gray-900 mb-2">Cargando plantillas...</h3>
-          <p className="text-gray-600">Obteniendo plantillas guardadas</p>
+          <p className="text-gray-600">Sincronizando con Meta API</p>
         </div>
       )}
 
@@ -339,8 +315,8 @@ export default function Templates() {
               <div className="text-blue-800 text-sm space-y-1">
                 <p>• Solo las plantillas <strong>APROBADAS</strong> pueden ser utilizadas para envío masivo</p>
                 <p>• Las plantillas con imágenes requieren proporcionar una URL de imagen al enviar</p>
-                <p>• Todas las plantillas se guardan localmente en tu navegador</p>
-                <p>• Puedes crear, editar y eliminar plantillas según tu necesidad</p>
+                <p>• Sincroniza regularmente para obtener nuevas plantillas y actualizaciones de estado</p>
+                <p>• Las plantillas rechazadas no pueden ser utilizadas hasta que sean modificadas y aprobadas nuevamente</p>
               </div>
             </div>
           </div>
