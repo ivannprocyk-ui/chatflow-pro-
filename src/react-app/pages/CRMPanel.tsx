@@ -103,6 +103,55 @@ export default function CRMPanel() {
     }
 
     const selectedContactsData = contacts.filter(c => selectedContacts.has(c.id));
+
+    // Find phone field (tel type or phone/telefono in name)
+    const phoneField = config.fields.find(f =>
+      f.type === 'tel' ||
+      f.name.toLowerCase().includes('phone') ||
+      f.name.toLowerCase().includes('telefono') ||
+      f.name.toLowerCase().includes('tel')
+    );
+
+    // Find name fields
+    const nameField = config.fields.find(f =>
+      f.name.toLowerCase().includes('nombre') ||
+      f.name.toLowerCase().includes('name') ||
+      f.name.toLowerCase() === 'name'
+    );
+
+    const emailField = config.fields.find(f =>
+      f.type === 'email' ||
+      f.name.toLowerCase().includes('email') ||
+      f.name.toLowerCase().includes('correo')
+    );
+
+    // Validate and transform contacts
+    const contactsWithoutPhone: string[] = [];
+    const transformedContacts = selectedContactsData.map(contact => {
+      const phoneNumber = phoneField ? contact[phoneField.name] : '';
+
+      if (!phoneNumber || phoneNumber.trim() === '') {
+        const identifier = nameField ? contact[nameField.name] : contact.id;
+        contactsWithoutPhone.push(identifier || 'Sin nombre');
+      }
+
+      return {
+        phone_number: phoneNumber || '',
+        first_name: nameField ? contact[nameField.name] : '',
+        last_name: '',
+        email: emailField ? contact[emailField.name] : ''
+      };
+    }).filter(c => c.phone_number.trim() !== ''); // Only include contacts with phone
+
+    if (contactsWithoutPhone.length > 0) {
+      showError(`⚠️ ${contactsWithoutPhone.length} contacto(s) sin teléfono no se agregaron: ${contactsWithoutPhone.slice(0, 3).join(', ')}${contactsWithoutPhone.length > 3 ? '...' : ''}`);
+    }
+
+    if (transformedContacts.length === 0) {
+      showError('Ningún contacto seleccionado tiene número de teléfono');
+      return;
+    }
+
     let updatedLists = [...contactLists];
     let targetList: any;
 
@@ -111,7 +160,7 @@ export default function CRMPanel() {
       targetList = {
         id: Date.now().toString(),
         name: newListName.trim(),
-        contacts: selectedContactsData,
+        contacts: transformedContacts,
         createdAt: new Date().toISOString()
       };
       updatedLists.push(targetList);
@@ -120,8 +169,8 @@ export default function CRMPanel() {
       updatedLists = updatedLists.map(list => {
         if (list.id === selectedListId) {
           targetList = list;
-          const existingIds = new Set((list.contacts || []).map((c: any) => c.id));
-          const newContacts = selectedContactsData.filter(c => !existingIds.has(c.id));
+          const existingPhones = new Set((list.contacts || []).map((c: any) => c.phone_number));
+          const newContacts = transformedContacts.filter(c => !existingPhones.has(c.phone_number));
           return {
             ...list,
             contacts: [...(list.contacts || []), ...newContacts]
@@ -135,7 +184,7 @@ export default function CRMPanel() {
     saveContactLists(updatedLists);
     setContactLists(updatedLists);
 
-    showSuccess(`${selectedContacts.size} contacto(s) agregado(s) a "${targetList.name}"`);
+    showSuccess(`✓ ${transformedContacts.length} contacto(s) agregado(s) a "${targetList.name}"`);
 
     // Reset state
     setSelectedContacts(new Set());
@@ -337,7 +386,7 @@ export default function CRMPanel() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-6 w-full">
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>

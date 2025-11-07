@@ -1,15 +1,13 @@
 import { useState, useEffect } from 'react';
-import { loadCRMConfig, saveCRMConfig, CRMConfig, CRMFieldConfig, CRMStatusConfig, CRMFieldStatusRelation } from '@/react-app/utils/storage';
+import { loadCRMConfig, saveCRMConfig, CRMConfig, CRMFieldConfig, CRMStatusConfig } from '@/react-app/utils/storage';
 import { useToast } from '@/react-app/components/Toast';
 
 export default function CRMSettings() {
   const [config, setConfig] = useState<CRMConfig>(loadCRMConfig());
   const [showFieldModal, setShowFieldModal] = useState(false);
   const [showStatusModal, setShowStatusModal] = useState(false);
-  const [showRelationModal, setShowRelationModal] = useState(false);
   const [editingField, setEditingField] = useState<CRMFieldConfig | null>(null);
   const [editingStatus, setEditingStatus] = useState<CRMStatusConfig | null>(null);
-  const [editingRelation, setEditingRelation] = useState<CRMFieldStatusRelation | null>(null);
   const { showSuccess, showError } = useToast();
   const [newField, setNewField] = useState<Partial<CRMFieldConfig>>({
     name: '',
@@ -25,12 +23,6 @@ export default function CRMSettings() {
     name: '',
     label: '',
     color: 'blue'
-  });
-  const [newRelation, setNewRelation] = useState<Partial<CRMFieldStatusRelation>>({
-    fieldId: '',
-    fieldValue: '',
-    statusId: '',
-    autoApply: true
   });
 
   const handleSaveField = () => {
@@ -117,9 +109,7 @@ export default function CRMSettings() {
   const handleDeleteField = (fieldId: string) => {
     if (confirm('¿Estás seguro de eliminar este campo?')) {
       const updatedFields = config.fields.filter(f => f.id !== fieldId);
-      // Also remove relations that use this field
-      const updatedRelations = (config.fieldStatusRelations || []).filter(r => r.fieldId !== fieldId);
-      const updatedConfig = { ...config, fields: updatedFields, fieldStatusRelations: updatedRelations };
+      const updatedConfig = { ...config, fields: updatedFields };
       setConfig(updatedConfig);
       saveCRMConfig(updatedConfig);
       showSuccess('Campo eliminado');
@@ -129,60 +119,11 @@ export default function CRMSettings() {
   const handleDeleteStatus = (statusId: string) => {
     if (confirm('¿Estás seguro de eliminar este estado?')) {
       const updatedStatuses = config.statuses.filter(s => s.id !== statusId);
-      // Also remove relations that use this status
-      const updatedRelations = (config.fieldStatusRelations || []).filter(r => r.statusId !== statusId);
-      const updatedConfig = { ...config, statuses: updatedStatuses, fieldStatusRelations: updatedRelations };
+      const updatedConfig = { ...config, statuses: updatedStatuses };
       setConfig(updatedConfig);
       saveCRMConfig(updatedConfig);
       showSuccess('Estado eliminado');
     }
-  };
-
-  const handleSaveRelation = () => {
-    if (!newRelation.fieldId || !newRelation.fieldValue || !newRelation.statusId) {
-      showError('Todos los campos son requeridos');
-      return;
-    }
-
-    let updatedRelations;
-    if (editingRelation) {
-      updatedRelations = (config.fieldStatusRelations || []).map(r =>
-        r.id === editingRelation.id ? { ...newRelation, id: editingRelation.id } as CRMFieldStatusRelation : r
-      );
-    } else {
-      const relation: CRMFieldStatusRelation = {
-        id: Date.now().toString(),
-        fieldId: newRelation.fieldId!,
-        fieldValue: newRelation.fieldValue!,
-        statusId: newRelation.statusId!,
-        autoApply: newRelation.autoApply !== false
-      };
-      updatedRelations = [...(config.fieldStatusRelations || []), relation];
-    }
-
-    const updatedConfig = { ...config, fieldStatusRelations: updatedRelations };
-    setConfig(updatedConfig);
-    saveCRMConfig(updatedConfig);
-    setShowRelationModal(false);
-    setEditingRelation(null);
-    setNewRelation({ fieldId: '', fieldValue: '', statusId: '', autoApply: true });
-    showSuccess(editingRelation ? 'Relación actualizada' : 'Relación creada exitosamente');
-  };
-
-  const handleDeleteRelation = (relationId: string) => {
-    if (confirm('¿Estás seguro de eliminar esta relación?')) {
-      const updatedRelations = (config.fieldStatusRelations || []).filter(r => r.id !== relationId);
-      const updatedConfig = { ...config, fieldStatusRelations: updatedRelations };
-      setConfig(updatedConfig);
-      saveCRMConfig(updatedConfig);
-      showSuccess('Relación eliminada');
-    }
-  };
-
-  const handleEditRelation = (relation: CRMFieldStatusRelation) => {
-    setEditingRelation(relation);
-    setNewRelation({ ...relation });
-    setShowRelationModal(true);
   };
 
   const handleMoveFieldUp = (fieldId: string) => {
@@ -392,78 +333,6 @@ export default function CRMSettings() {
             </div>
           ))}
         </div>
-      </div>
-
-      {/* Field-Status Relations Section */}
-      <div className="bg-white rounded-2xl shadow-lg p-6">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">🔗 Relaciones Campo-Estado</h2>
-            <p className="text-gray-600 text-sm mt-1">Cuando un campo tenga cierto valor, asigna automáticamente un estado</p>
-          </div>
-          <button
-            onClick={() => {
-              setEditingRelation(null);
-              setNewRelation({ fieldId: '', fieldValue: '', statusId: '', autoApply: true });
-              setShowRelationModal(true);
-            }}
-            className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-6 py-3 rounded-xl font-medium hover:from-orange-600 hover:to-orange-700 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
-          >
-            <i className="fas fa-plus"></i>
-            <span>Nueva Relación</span>
-          </button>
-        </div>
-
-        {(config.fieldStatusRelations && config.fieldStatusRelations.length > 0) ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {config.fieldStatusRelations.map((relation) => {
-              const field = config.fields.find(f => f.id === relation.fieldId);
-              const status = config.statuses.find(s => s.id === relation.statusId);
-
-              return (
-                <div key={relation.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                  <div className="flex justify-between items-start mb-3">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900">
-                        {field?.label || 'Campo eliminado'} = "{relation.fieldValue}"
-                      </h3>
-                      <p className="text-sm text-gray-500 mt-1">
-                        → Estado: <span className={`px-2 py-1 rounded bg-${status?.color || 'gray'}-100 text-${status?.color || 'gray'}-800`}>
-                          {status?.label || 'Estado eliminado'}
-                        </span>
-                      </p>
-                    </div>
-                    <div className="flex space-x-1">
-                      <button
-                        onClick={() => handleEditRelation(relation)}
-                        className="text-blue-600 hover:text-blue-800 p-1"
-                      >
-                        <i className="fas fa-edit"></i>
-                      </button>
-                      <button
-                        onClick={() => handleDeleteRelation(relation.id)}
-                        className="text-red-600 hover:text-red-800 p-1"
-                      >
-                        <i className="fas fa-trash"></i>
-                      </button>
-                    </div>
-                  </div>
-                  <div className="flex items-center text-xs">
-                    <span className={`px-2 py-1 rounded ${relation.autoApply ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                      {relation.autoApply ? '✓ Auto-aplicar' : 'Manual'}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="text-center py-8 text-gray-500">
-            <i className="fas fa-link text-4xl mb-3 opacity-50"></i>
-            <p>No hay relaciones configuradas</p>
-            <p className="text-sm mt-1">Las relaciones permiten asignar estados automáticamente según valores de campos</p>
-          </div>
-        )}
       </div>
 
       {/* Field Modal */}
@@ -718,102 +587,6 @@ export default function CRMSettings() {
         </div>
       )}
 
-      {/* Relation Modal */}
-      {showRelationModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
-            <div className="p-6 border-b border-gray-100">
-              <h2 className="text-2xl font-bold text-gray-900">
-                {editingRelation ? 'Editar Relación' : 'Nueva Relación Campo-Estado'}
-              </h2>
-              <p className="text-sm text-gray-600 mt-1">Define qué estado asignar según el valor de un campo</p>
-            </div>
-
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Campo <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={newRelation.fieldId}
-                  onChange={(e) => setNewRelation({ ...newRelation, fieldId: e.target.value })}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  disabled={!!editingRelation}
-                >
-                  <option value="">Seleccionar campo...</option>
-                  {config.fields.filter(f => f.type === 'text' || f.type === 'select' || f.type === 'number').map(field => (
-                    <option key={field.id} value={field.id}>{field.label}</option>
-                  ))}
-                </select>
-                <p className="text-xs text-gray-500 mt-1">Solo campos de tipo texto, selección o número</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Valor del Campo <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={newRelation.fieldValue}
-                  onChange={(e) => setNewRelation({ ...newRelation, fieldValue: e.target.value })}
-                  placeholder="ej: Curso A, Inicial, 100, etc."
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
-                <p className="text-xs text-gray-500 mt-1">El valor debe coincidir exactamente</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Estado a Asignar <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={newRelation.statusId}
-                  onChange={(e) => setNewRelation({ ...newRelation, statusId: e.target.value })}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Seleccionar estado...</option>
-                  {config.statuses.map(status => (
-                    <option key={status.id} value={status.id}>{status.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={newRelation.autoApply}
-                    onChange={(e) => setNewRelation({ ...newRelation, autoApply: e.target.checked })}
-                    className="w-4 h-4 text-orange-600"
-                  />
-                  <span className="text-sm text-gray-700">Aplicar automáticamente al guardar/editar</span>
-                </label>
-                <p className="text-xs text-gray-500 mt-1 ml-6">
-                  Si está activado, el estado se asignará automáticamente cuando el campo tenga este valor
-                </p>
-              </div>
-            </div>
-
-            <div className="p-6 border-t border-gray-100 flex space-x-4">
-              <button
-                onClick={() => {
-                  setShowRelationModal(false);
-                  setEditingRelation(null);
-                }}
-                className="flex-1 bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-200"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleSaveRelation}
-                className="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 text-white py-3 px-6 rounded-lg font-medium hover:from-orange-600 hover:to-orange-700"
-              >
-                {editingRelation ? 'Actualizar' : 'Crear'} Relación
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
