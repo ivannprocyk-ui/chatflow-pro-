@@ -9,6 +9,7 @@ import MessageScheduler from "@/react-app/pages/MessageScheduler";
 import Templates from "@/react-app/pages/Templates";
 import Configuration from "@/react-app/pages/Configuration";
 import CRMSettings from "@/react-app/pages/CRMSettings";
+import Calendar from "@/react-app/pages/Calendar";
 import { loadConfig, initializeDemoData } from "@/react-app/utils/storage";
 import { ToastContainer, useToast } from "@/react-app/components/Toast";
 
@@ -21,6 +22,7 @@ export type AppSection =
   | 'campaign-history'
   | 'message-scheduler'
   | 'templates'
+  | 'calendar'
   | 'configuration';
 
 export default function App() {
@@ -31,6 +33,11 @@ export default function App() {
     const saved = localStorage.getItem('sidebar_collapsed');
     return saved === 'true';
   });
+  const [darkMode, setDarkMode] = useState(() => {
+    // Load dark mode preference from localStorage
+    const saved = localStorage.getItem('dark_mode');
+    return saved === 'true';
+  });
   const [config, setConfig] = useState(loadConfig());
   const { toasts, removeToast } = useToast();
 
@@ -38,6 +45,21 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('sidebar_collapsed', sidebarCollapsed.toString());
   }, [sidebarCollapsed]);
+
+  // Apply dark mode
+  useEffect(() => {
+    localStorage.setItem('dark_mode', darkMode.toString());
+    if (darkMode) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
+  }, [darkMode]);
+
+  // Toggle dark mode function
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+  };
 
   useEffect(() => {
     // Initialize demo data on first load
@@ -56,8 +78,19 @@ export default function App() {
       }
     };
 
+    // Listen for theme change events
+    const handleThemeChange = (e: any) => {
+      if (e.detail && e.detail.darkMode !== undefined) {
+        setDarkMode(e.detail.darkMode);
+      }
+    };
+
     window.addEventListener('navigate-to', handleNavigate as EventListener);
-    return () => window.removeEventListener('navigate-to', handleNavigate as EventListener);
+    window.addEventListener('theme-change', handleThemeChange as EventListener);
+    return () => {
+      window.removeEventListener('navigate-to', handleNavigate as EventListener);
+      window.removeEventListener('theme-change', handleThemeChange as EventListener);
+    };
   }, [config]);
 
   const renderCurrentSection = () => {
@@ -78,6 +111,8 @@ export default function App() {
         return <MessageScheduler />;
       case 'templates':
         return <Templates />;
+      case 'calendar':
+        return <Calendar />;
       case 'configuration':
         return <Configuration onConfigUpdate={setConfig} />;
       default:

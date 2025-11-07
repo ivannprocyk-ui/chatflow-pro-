@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { loadConfig, saveConfig, AppConfig } from '@/react-app/utils/storage';
 
 interface ConfigurationProps {
@@ -10,6 +10,10 @@ export default function Configuration({ onConfigUpdate }: ConfigurationProps) {
   const [config, setConfig] = useState(loadConfig());
   const [apiStatus, setApiStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
   const [isSaving, setIsSaving] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('dark_mode');
+    return saved === 'true';
+  });
 
   const handleConfigChange = (section: keyof AppConfig, field: string, value: string) => {
     const newConfig = {
@@ -20,6 +24,18 @@ export default function Configuration({ onConfigUpdate }: ConfigurationProps) {
       }
     };
     setConfig(newConfig);
+
+    // Apply colors immediately to CSS variables
+    if (section === 'branding') {
+      const root = document.documentElement;
+      if (field === 'primaryColor') {
+        root.style.setProperty('--primary-color', value);
+      } else if (field === 'secondaryColor') {
+        root.style.setProperty('--secondary-color', value);
+      } else if (field === 'accentColor') {
+        root.style.setProperty('--accent-color', value);
+      }
+    }
   };
 
   const saveConfiguration = () => {
@@ -33,6 +49,17 @@ export default function Configuration({ onConfigUpdate }: ConfigurationProps) {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const toggleDarkMode = () => {
+    const newDarkMode = !darkMode;
+    setDarkMode(newDarkMode);
+    localStorage.setItem('dark_mode', newDarkMode.toString());
+
+    // Dispatch event to App.tsx
+    window.dispatchEvent(new CustomEvent('theme-change', {
+      detail: { darkMode: newDarkMode }
+    }));
   };
 
   const testApiConnection = async () => {
@@ -270,55 +297,106 @@ export default function Configuration({ onConfigUpdate }: ConfigurationProps) {
               </div>
             </div>
 
-            {/* Theme Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
-                Tema de Color Actual
-              </label>
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6">
-                <div className="flex items-center space-x-4">
-                  <div className="flex space-x-2">
-                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 shadow-lg"></div>
-                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-600 to-purple-700 shadow-lg"></div>
-                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-lg"></div>
-                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-600 shadow-lg"></div>
+            {/* Custom Colors */}
+            <div className="border border-gray-200 rounded-lg p-6">
+              <h4 className="font-semibold text-gray-900 mb-4">🎨 Personalizar Colores</h4>
+              <p className="text-sm text-gray-600 mb-4">Personaliza los colores de la aplicación en tiempo real</p>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Color Principal
+                  </label>
+                  <div className="flex space-x-3">
+                    <input
+                      type="color"
+                      value={config.branding.primaryColor}
+                      onChange={(e) => handleConfigChange('branding', 'primaryColor', e.target.value)}
+                      className="w-16 h-12 border border-gray-300 rounded-lg cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={config.branding.primaryColor}
+                      onChange={(e) => handleConfigChange('branding', 'primaryColor', e.target.value)}
+                      className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                    />
                   </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900">Profesional Moderno</h4>
-                    <p className="text-sm text-gray-600">Azul corporativo, púrpura innovador, acentos cyan y esmeralda</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Color Secundario
+                  </label>
+                  <div className="flex space-x-3">
+                    <input
+                      type="color"
+                      value={config.branding.secondaryColor}
+                      onChange={(e) => handleConfigChange('branding', 'secondaryColor', e.target.value)}
+                      className="w-16 h-12 border border-gray-300 rounded-lg cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={config.branding.secondaryColor}
+                      onChange={(e) => handleConfigChange('branding', 'secondaryColor', e.target.value)}
+                      className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                    />
                   </div>
-                  <div className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg font-medium">
-                    <i className="fas fa-check mr-2"></i>
-                    Activo
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Color de Acento
+                  </label>
+                  <div className="flex space-x-3">
+                    <input
+                      type="color"
+                      value={config.branding.accentColor}
+                      onChange={(e) => handleConfigChange('branding', 'accentColor', e.target.value)}
+                      className="w-16 h-12 border border-gray-300 rounded-lg cursor-pointer"
+                    />
+                    <input
+                      type="text"
+                      value={config.branding.accentColor}
+                      onChange={(e) => handleConfigChange('branding', 'accentColor', e.target.value)}
+                      className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                    />
                   </div>
                 </div>
               </div>
-              <p className="mt-3 text-sm text-gray-500">
-                <i className="fas fa-info-circle mr-1"></i>
-                Este es el tema profesional optimizado actual. Más opciones de personalización estarán disponibles próximamente.
-              </p>
             </div>
 
             {/* Dark Mode Toggle */}
             <div className="border border-gray-200 rounded-lg p-6">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <h4 className="font-semibold text-gray-900 mb-1">Modo Oscuro</h4>
-                  <p className="text-sm text-gray-600">Próximamente: Reduce el brillo de la pantalla para usar en ambientes con poca luz</p>
+                  <h4 className="font-semibold text-gray-900 mb-1 flex items-center">
+                    🌙 Modo Oscuro
+                    <span className="ml-2 px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full font-medium">
+                      ✓ Activo
+                    </span>
+                  </h4>
+                  <p className="text-sm text-gray-600">Reduce el brillo de la pantalla para usar en ambientes con poca luz</p>
                 </div>
-                <div className="relative inline-block w-14 h-8 opacity-50 cursor-not-allowed">
+                <div className="relative inline-block w-14 h-8 cursor-pointer">
                   <input
                     type="checkbox"
-                    disabled
+                    checked={darkMode}
+                    onChange={toggleDarkMode}
                     className="sr-only peer"
+                    id="dark-mode-toggle"
                   />
-                  <div className="w-14 h-8 bg-gray-300 rounded-full peer peer-checked:bg-blue-600 transition-colors"></div>
-                  <div className="absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform peer-checked:translate-x-6"></div>
+                  <label
+                    htmlFor="dark-mode-toggle"
+                    className="block w-14 h-8 bg-gray-300 rounded-full peer-checked:bg-blue-600 transition-colors cursor-pointer"
+                  ></label>
+                  <div className="absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform peer-checked:translate-x-6 pointer-events-none flex items-center justify-center text-xs">
+                    {darkMode ? '🌙' : '☀️'}
+                  </div>
                 </div>
               </div>
-              <div className="mt-4 flex items-center space-x-2 text-sm text-amber-700 bg-amber-50 px-3 py-2 rounded-lg">
-                <i className="fas fa-clock"></i>
-                <span>En desarrollo - Disponible en próxima actualización</span>
+              <div className="mt-4 flex items-center space-x-2 text-sm text-blue-700 bg-blue-50 px-3 py-2 rounded-lg">
+                <i className="fas fa-lightbulb"></i>
+                <span>El modo oscuro se aplica instantáneamente en toda la aplicación</span>
               </div>
             </div>
 

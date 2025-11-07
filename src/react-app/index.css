@@ -4,4 +4,129 @@
 
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+
+  /* Theme Colors - Light Mode */
+  --primary-color: #2563eb;
+  --primary-hover: #1d4ed8;
+  --secondary-color: #7c3aed;
+  --secondary-hover: #6d28d9;
+  --accent-color: #06b6d4;
+  --accent-hover: #0891b2;
+  --success-color: #10b981;
+  --warning-color: #f59e0b;
+  --danger-color: #ef4444;
+
+  /* Background Colors */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9fafb;
+  --bg-tertiary: #f3f4f6;
+
+  /* Text Colors */
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+
+  /* Border Colors */
+  --border-color: #e5e7eb;
+  --border-hover: #d1d5db;
+
+  /* Shadow */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+/* Dark Mode */
+[data-theme="dark"] {
+  /* Background Colors */
+  --bg-primary: #1f2937;
+  --bg-secondary: #111827;
+  --bg-tertiary: #374151;
+
+  /* Text Colors */
+  --text-primary: #f9fafb;
+  --text-secondary: #d1d5db;
+  --text-tertiary: #9ca3af;
+
+  /* Border Colors */
+  --border-color: #374151;
+  --border-hover: #4b5563;
+
+  /* Keep theme colors same, just adjust hover states */
+  --primary-hover: #3b82f6;
+  --secondary-hover: #8b5cf6;
+  --accent-hover: #22d3ee;
+}
+
+/* Apply theme colors to body */
+body {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Calendar styles override */
+.rbc-calendar {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+}
+
+.rbc-header {
+  padding: 10px 3px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-tertiary);
+}
+
+.rbc-today {
+  background-color: rgba(37, 99, 235, 0.1);
+}
+
+.rbc-off-range-bg {
+  background-color: var(--bg-tertiary);
+}
+
+.rbc-month-view, .rbc-time-view, .rbc-agenda-view {
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-primary);
+}
+
+.rbc-month-row, .rbc-day-bg {
+  border-color: var(--border-color);
+}
+
+.rbc-event {
+  padding: 2px 5px;
+  font-size: 0.875rem;
+}
+
+.rbc-toolbar button {
+  color: var(--text-primary);
+  border-color: var(--border-color);
+  background-color: var(--bg-primary);
+}
+
+.rbc-toolbar button:hover {
+  background-color: var(--bg-tertiary);
+}
+
+.rbc-toolbar button.rbc-active {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.rbc-date-cell {
+  padding: 5px;
+}
+
+/* Dark mode specific calendar adjustments */
+[data-theme="dark"] .rbc-calendar {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .rbc-event {
+  background-color: var(--primary-color) !important;
 }

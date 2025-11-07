@@ -15,10 +15,11 @@ const menuItems = [
   { id: 'dashboard', icon: 'fas fa-chart-pie', label: 'Dashboard' },
   { id: 'bulk-messaging', icon: 'fas fa-paper-plane', label: 'Envío Masivo' },
   { id: 'contact-lists', icon: 'fas fa-address-book', label: 'Listas de Contactos' },
-  { id: 'crm-panel', icon: 'fas fa-chart-line', label: 'Panel CRM' },
+  { id: 'crm-panel', icon: 'fas fa-chart-line', label: 'Contactos' },
   { id: 'crm-settings', icon: 'fas fa-sliders-h', label: 'Configurar CRM' },
+  { id: 'calendar', icon: 'fas fa-calendar-alt', label: 'Agenda' },
   { id: 'campaign-history', icon: 'fas fa-bullhorn', label: 'Historial de Campañas' },
-  { id: 'message-scheduler', icon: 'fas fa-clock', label: 'Programador de Mensajes' },
+  { id: 'message-scheduler', icon: 'fas fa-clock', label: 'Programar Envíos' },
   { id: 'templates', icon: 'fas fa-file-alt', label: 'Plantillas' },
   { id: 'configuration', icon: 'fas fa-cog', label: 'Configuración' },
 ] as const;
