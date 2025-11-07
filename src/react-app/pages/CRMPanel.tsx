@@ -13,6 +13,7 @@ export default function CRMPanel() {
   const [showChartConfig, setShowChartConfig] = useState(false);
   const [dateRangeStart, setDateRangeStart] = useState(config.chartConfig?.dateRangeStart || '');
   const [dateRangeEnd, setDateRangeEnd] = useState(config.chartConfig?.dateRangeEnd || '');
+  const [selectedContacts, setSelectedContacts] = useState<Set<string>>(new Set());
   const chartRef = useRef<HTMLCanvasElement>(null);
   const statusChartRef = useRef<HTMLCanvasElement>(null);
   const costChartRef = useRef<HTMLCanvasElement>(null);
@@ -288,6 +289,25 @@ export default function CRMPanel() {
     }
   };
 
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allIds = new Set(filteredContacts.map(c => c.id));
+      setSelectedContacts(allIds);
+    } else {
+      setSelectedContacts(new Set());
+    }
+  };
+
+  const handleSelectContact = (contactId: string, checked: boolean) => {
+    const newSelected = new Set(selectedContacts);
+    if (checked) {
+      newSelected.add(contactId);
+    } else {
+      newSelected.delete(contactId);
+    }
+    setSelectedContacts(newSelected);
+  };
+
   const exportData = () => {
     const visibleFields = config.fields.filter(f => f.visible);
     const headers = visibleFields.map(f => f.label);
@@ -424,13 +444,13 @@ export default function CRMPanel() {
       title: 'Revenue Total',
       value: `$${totalRevenue.toLocaleString()}`,
       icon: 'fas fa-dollar-sign',
-      color: 'from-green-500 to-green-600'
+      color: 'from-emerald-500 to-emerald-600'
     },
     {
       title: 'Revenue Promedio',
       value: `$${avgRevenue.toFixed(0)}`,
       icon: 'fas fa-chart-line',
-      color: 'from-purple-500 to-purple-600'
+      color: 'from-purple-600 to-purple-700'
     },
     {
       title: 'Mensajes Totales',
@@ -451,7 +471,7 @@ export default function CRMPanel() {
         <div className="flex space-x-4">
           <button
             onClick={exportData}
-            className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-3 rounded-xl font-medium hover:from-green-600 hover:to-green-700 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
+            className="bg-gradient-to-r from-cyan-500 to-cyan-600 text-white px-6 py-3 rounded-xl font-medium hover:from-cyan-600 hover:to-cyan-700 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
           >
             <i className="fas fa-download"></i>
             <span>Exportar</span>
@@ -462,7 +482,7 @@ export default function CRMPanel() {
               setFormData(initializeFormData());
               setShowModal(true);
             }}
-            className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
+            className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
           >
             <i className="fas fa-plus"></i>
             <span>Añadir Contacto</span>
@@ -604,33 +624,76 @@ export default function CRMPanel() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        {/* Selection Actions Bar */}
+        {selectedContacts.size > 0 && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 mb-4 flex items-center justify-between">
+            <span className="text-sm font-medium text-blue-900">
+              {selectedContacts.size} contacto{selectedContacts.size !== 1 ? 's' : ''} seleccionado{selectedContacts.size !== 1 ? 's' : ''}
+            </span>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => {/* TODO: Agregar a lista */}}
+                className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <i className="fas fa-list-ul mr-1.5"></i>
+                Agregar a Lista
+              </button>
+              <button
+                onClick={() => setSelectedContacts(new Set())}
+                className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        )}
+
+        <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg">
+          <table className="min-w-full divide-y divide-gray-300">
             <thead className="bg-gray-50">
               <tr>
+                <th scope="col" className="relative px-7 sm:w-12 sm:px-6">
+                  <input
+                    type="checkbox"
+                    className="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600"
+                    checked={filteredContacts.length > 0 && selectedContacts.size === filteredContacts.length}
+                    onChange={(e) => handleSelectAll(e.target.checked)}
+                  />
+                </th>
                 {config.fields.filter(f => f.visible).sort((a, b) => a.order - b.order).map(field => (
-                  <th key={field.name} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th key={field.name} scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
                     {field.label}
                   </th>
                 ))}
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
                   Estado
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
                   Última Interacción
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Acciones
+                <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                  <span className="sr-only">Acciones</span>
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 bg-white">
               {filteredContacts.map((contact) => (
-                <tr key={contact.id} className="hover:bg-gray-50 transition-colors">
+                <tr
+                  key={contact.id}
+                  className={selectedContacts.has(contact.id) ? 'bg-gray-50' : undefined}
+                >
+                  <td className="relative px-7 sm:w-12 sm:px-6">
+                    <input
+                      type="checkbox"
+                      className="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600"
+                      checked={selectedContacts.has(contact.id)}
+                      onChange={(e) => handleSelectContact(contact.id, e.target.checked)}
+                    />
+                  </td>
                   {config.fields.filter(f => f.visible).sort((a, b) => a.order - b.order).map(field => (
-                    <td key={field.name} className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    <td key={field.name} className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                       {field.type === 'currency' ? (
-                        <span className="font-semibold text-green-600">
+                        <span className="font-semibold text-emerald-600">
                           ${contact[field.name]?.toLocaleString()} {contact.currency || 'USD'}
                         </span>
                       ) : field.type === 'textarea' ? (
@@ -642,27 +705,25 @@ export default function CRMPanel() {
                       )}
                     </td>
                   ))}
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="whitespace-nowrap px-3 py-4 text-sm">
                     {getStatusBadge(contact.status)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                  <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                     {contact.lastInteraction ? new Date(contact.lastInteraction).toLocaleDateString() : '-'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => handleEditContact(contact)}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        <i className="fas fa-edit"></i>
-                      </button>
-                      <button
-                        onClick={() => handleDeleteContact(contact.id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        <i className="fas fa-trash"></i>
-                      </button>
-                    </div>
+                  <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                    <button
+                      onClick={() => handleEditContact(contact)}
+                      className="text-blue-600 hover:text-blue-900 mr-4"
+                    >
+                      Editar<span className="sr-only">, {contact[config.fields[0]?.name]}</span>
+                    </button>
+                    <button
+                      onClick={() => handleDeleteContact(contact.id)}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      Eliminar<span className="sr-only">, {contact[config.fields[0]?.name]}</span>
+                    </button>
                   </td>
                 </tr>
               ))}
