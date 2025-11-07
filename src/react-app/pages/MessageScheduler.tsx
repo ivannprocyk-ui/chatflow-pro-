@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { loadScheduledMessages, saveScheduledMessages, loadContactLists } from '@/react-app/utils/storage';
+import { loadScheduledMessages, saveScheduledMessages, loadContactLists, loadConfig } from '@/react-app/utils/storage';
+import { useToast } from '@/react-app/components/Toast';
 
 interface ScheduledMessage {
   id: string;
@@ -14,11 +15,18 @@ interface ScheduledMessage {
   createdAt: string;
 }
 
+interface WhatsAppTemplate {
+  id: string;
+  name: string;
+  language: string;
+  status: string;
+}
+
 export default function MessageScheduler() {
   const [scheduledMessages, setScheduledMessages] = useState<ScheduledMessage[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [contactLists, setContactLists] = useState<any[]>([]);
-  const [templates] = useState(['welcome_template', 'promotion_template', 'reminder_template']);
+  const [templates, setTemplates] = useState<WhatsAppTemplate[]>([]);
   const [newSchedule, setNewSchedule] = useState({
     campaignName: '',
     scheduledDate: '',
@@ -26,65 +34,33 @@ export default function MessageScheduler() {
     contactListId: '',
     template: ''
   });
+  const config = loadConfig();
+  const { showSuccess, showError } = useToast();
 
   useEffect(() => {
-    // Load scheduled messages and add sample data if empty
-    let savedMessages = loadScheduledMessages();
-    
-    if (savedMessages.length === 0) {
-      savedMessages = [
-        {
-          id: '1',
-          campaignName: 'Recordatorio Citas Médicas',
-          scheduledDate: '2024-11-05',
-          scheduledTime: '09:00',
-          contactListId: '1',
-          contactListName: 'Pacientes',
-          contactCount: 150,
-          template: 'appointment_reminder',
-          status: 'pending',
-          createdAt: '2024-11-03T10:00:00Z'
-        },
-        {
-          id: '2',
-          campaignName: 'Promoción Fin de Semana',
-          scheduledDate: '2024-11-08',
-          scheduledTime: '10:30',
-          contactListId: '2',
-          contactListName: 'Clientes VIP',
-          contactCount: 85,
-          template: 'weekend_promotion',
-          status: 'pending',
-          createdAt: '2024-11-02T15:30:00Z'
-        },
-        {
-          id: '3',
-          campaignName: 'Newsletter Mensual',
-          scheduledDate: '2024-10-30',
-          scheduledTime: '14:00',
-          contactListId: '3',
-          contactListName: 'Suscriptores',
-          contactCount: 520,
-          template: 'monthly_newsletter',
-          status: 'sent',
-          createdAt: '2024-10-28T12:00:00Z'
-        }
-      ] as ScheduledMessage[];
-      saveScheduledMessages(savedMessages);
-    }
-    
+    // Load scheduled messages (no demo data)
+    const savedMessages = loadScheduledMessages();
     setScheduledMessages(savedMessages);
+
+    // Load contact lists
     setContactLists(loadContactLists());
+
+    // Load Meta templates from cache
+    const cachedTemplates = localStorage.getItem('chatflow_cached_templates');
+    if (cachedTemplates) {
+      const parsedTemplates = JSON.parse(cachedTemplates);
+      setTemplates(parsedTemplates.filter((t: WhatsAppTemplate) => t.status === 'APPROVED'));
+    }
   }, []);
 
   const handleScheduleMessage = () => {
     if (!newSchedule.campaignName || !newSchedule.scheduledDate || !newSchedule.scheduledTime || !newSchedule.contactListId || !newSchedule.template) {
-      alert('Por favor completa todos los campos');
+      showError('Por favor completa todos los campos');
       return;
     }
 
     const selectedList = contactLists.find(list => list.id === newSchedule.contactListId);
-    
+
     const scheduledMessage: ScheduledMessage = {
       id: Date.now().toString(),
       campaignName: newSchedule.campaignName,
@@ -102,6 +78,8 @@ export default function MessageScheduler() {
     setScheduledMessages(updatedMessages);
     saveScheduledMessages(updatedMessages);
 
+    showSuccess(`Campaña "${newSchedule.campaignName}" programada exitosamente`);
+
     setShowModal(false);
     setNewSchedule({
       campaignName: '',
@@ -113,27 +91,31 @@ export default function MessageScheduler() {
   };
 
   const handleCancelMessage = (messageId: string) => {
-    if (confirm('¿Estás seguro de que quieres cancelar este mensaje programado?')) {
+    const message = scheduledMessages.find(msg => msg.id === messageId);
+    if (window.confirm(`¿Estás seguro de que quieres cancelar "${message?.campaignName}"?`)) {
       const updatedMessages = scheduledMessages.map(msg =>
         msg.id === messageId ? { ...msg, status: 'cancelled' as const } : msg
       );
       setScheduledMessages(updatedMessages);
       saveScheduledMessages(updatedMessages);
+      showSuccess('Campaña cancelada exitosamente');
     }
   };
 
   const handleDeleteMessage = (messageId: string) => {
-    if (confirm('¿Estás seguro de que quieres eliminar este mensaje programado?')) {
+    const message = scheduledMessages.find(msg => msg.id === messageId);
+    if (window.confirm(`¿Estás seguro de que quieres eliminar "${message?.campaignName}"?`)) {
       const updatedMessages = scheduledMessages.filter(msg => msg.id !== messageId);
       setScheduledMessages(updatedMessages);
       saveScheduledMessages(updatedMessages);
+      showSuccess('Campaña eliminada exitosamente');
     }
   };
 
   const getStatusBadge = (status: ScheduledMessage['status']) => {
     const statusConfig = {
-      pending: { color: 'bg-yellow-100 text-yellow-800', label: 'Pendiente', icon: 'fas fa-clock' },
-      sent: { color: 'bg-green-100 text-green-800', label: 'Enviado', icon: 'fas fa-check' },
+      pending: { color: 'bg-amber-100 text-amber-800', label: 'Pendiente', icon: 'fas fa-clock' },
+      sent: { color: 'bg-emerald-100 text-emerald-800', label: 'Enviado', icon: 'fas fa-check' },
       cancelled: { color: 'bg-red-100 text-red-800', label: 'Cancelado', icon: 'fas fa-times' }
     };
 
@@ -165,7 +147,7 @@ export default function MessageScheduler() {
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
+          className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
         >
           <i className="fas fa-clock"></i>
           <span>Programar Envío</span>
@@ -186,7 +168,7 @@ export default function MessageScheduler() {
 
         <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center text-white">
               <i className="fas fa-check"></i>
             </div>
           </div>
@@ -307,7 +289,7 @@ export default function MessageScheduler() {
             <p className="text-gray-600 mb-6">Programa tu primer mensaje para enviarlo automáticamente</p>
             <button
               onClick={() => setShowModal(true)}
-              className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-8 py-3 rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl"
+              className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-3 rounded-xl font-medium hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg hover:shadow-xl"
             >
               Programar Primer Mensaje
             </button>
@@ -393,11 +375,17 @@ export default function MessageScheduler() {
                 >
                   <option value="">Selecciona una plantilla</option>
                   {templates.map((template) => (
-                    <option key={template} value={template}>
-                      {template.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    <option key={template.id} value={template.name}>
+                      {template.name}
                     </option>
                   ))}
                 </select>
+                {templates.length === 0 && (
+                  <p className="mt-2 text-sm text-amber-600">
+                    <i className="fas fa-exclamation-triangle mr-1"></i>
+                    No hay plantillas disponibles. Sincroniza plantillas desde la sección Plantillas.
+                  </p>
+                )}
               </div>
             </div>
 
@@ -410,7 +398,7 @@ export default function MessageScheduler() {
               </button>
               <button
                 onClick={handleScheduleMessage}
-                className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 transition-all"
+                className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 px-6 rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transition-all"
               >
                 Programar Mensaje
               </button>

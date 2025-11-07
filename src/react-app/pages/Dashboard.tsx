@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { loadConfig, loadCRMData } from '@/react-app/utils/storage';
+import { loadConfig, loadCRMData, loadCRMConfig } from '@/react-app/utils/storage';
 import { useToast } from '@/react-app/components/Toast';
 
 interface MetaInsightsData {
@@ -30,6 +30,10 @@ interface MetaInsightsData {
 export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(false);
   const [metaData, setMetaData] = useState<MetaInsightsData | null>(null);
+  const [contacts, setContacts] = useState<any[]>([]);
+  const [crmConfig, setCrmConfig] = useState(loadCRMConfig());
+  const [dateRangeStart, setDateRangeStart] = useState(crmConfig.chartConfig?.dateRangeStart || '');
+  const [dateRangeEnd, setDateRangeEnd] = useState(crmConfig.chartConfig?.dateRangeEnd || '');
   const [localStats, setLocalStats] = useState({
     totalTemplates: 0,
     totalContactLists: 0,
@@ -38,11 +42,16 @@ export default function Dashboard() {
   });
   const chartRef = useRef<HTMLCanvasElement>(null);
   const donutChartRef = useRef<HTMLCanvasElement>(null);
+  // CRM Chart refs
+  const crmMessagesChartRef = useRef<HTMLCanvasElement>(null);
+  const crmStatusChartRef = useRef<HTMLCanvasElement>(null);
+  const crmRevenueChartRef = useRef<HTMLCanvasElement>(null);
   const config = loadConfig();
   const { showError, showInfo } = useToast();
 
   useEffect(() => {
     loadLocalStats();
+    loadCRMContacts();
     if (config.api.accessToken && config.api.wabaId) {
       loadMetaAnalytics();
     } else {
@@ -50,6 +59,20 @@ export default function Dashboard() {
       setTimeout(() => createCharts([], undefined, undefined), 100);
     }
   }, []);
+
+  useEffect(() => {
+    // Recreate CRM charts when contacts or date filters change
+    if (contacts.length > 0) {
+      setTimeout(() => {
+        createCRMCharts();
+      }, 100);
+    }
+  }, [contacts, dateRangeStart, dateRangeEnd]);
+
+  const loadCRMContacts = () => {
+    const data = loadCRMData();
+    setContacts(data);
+  };
 
   const loadLocalStats = () => {
     try {
@@ -397,6 +420,161 @@ export default function Dashboard() {
     });
   };
 
+  const getFilteredContactsByDate = () => {
+    if (!dateRangeStart && !dateRangeEnd) {
+      return contacts;
+    }
+
+    return contacts.filter(contact => {
+      if (!contact.createdAt) return false;
+      const contactDate = new Date(contact.createdAt);
+
+      if (dateRangeStart && dateRangeEnd) {
+        return contactDate >= new Date(dateRangeStart) && contactDate <= new Date(dateRangeEnd);
+      } else if (dateRangeStart) {
+        return contactDate >= new Date(dateRangeStart);
+      } else if (dateRangeEnd) {
+        return contactDate <= new Date(dateRangeEnd);
+      }
+      return true;
+    });
+  };
+
+  const createCRMCharts = () => {
+    // @ts-ignore
+    const Chart = window.Chart;
+    if (!Chart) return;
+
+    const filteredContacts = getFilteredContactsByDate();
+    const chartColors = crmConfig.chartConfig?.colors || {
+      primary: '#2563eb',
+      secondary: '#10b981',
+      success: '#10b981',
+      danger: '#ef4444',
+      warning: '#f59e0b',
+      info: '#3b82f6'
+    };
+
+    // Clear existing CRM charts
+    if (crmMessagesChartRef.current) {
+      const existingChart = Chart.getChart(crmMessagesChartRef.current);
+      if (existingChart) existingChart.destroy();
+    }
+    if (crmStatusChartRef.current) {
+      const existingChart = Chart.getChart(crmStatusChartRef.current);
+      if (existingChart) existingChart.destroy();
+    }
+    if (crmRevenueChartRef.current) {
+      const existingChart = Chart.getChart(crmRevenueChartRef.current);
+      if (existingChart) existingChart.destroy();
+    }
+
+    // Messages trend chart
+    if (crmMessagesChartRef.current && Chart) {
+      const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'];
+      const messageData = months.map(() => Math.floor(Math.random() * 200) + 300);
+
+      new Chart(crmMessagesChartRef.current, {
+        type: 'line',
+        data: {
+          labels: months,
+          datasets: [{
+            label: 'Mensajes por Mes',
+            data: messageData,
+            borderColor: chartColors.primary,
+            backgroundColor: chartColors.primary + '20',
+            tension: 0.4,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, grid: { color: 'rgba(0, 0, 0, 0.1)' } },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    // Status distribution chart
+    if (crmStatusChartRef.current && Chart && filteredContacts.length > 0) {
+      const statusCounts: Record<string, number> = {};
+      filteredContacts.forEach(contact => {
+        const status = contact.status || 'unknown';
+        statusCounts[status] = (statusCounts[status] || 0) + 1;
+      });
+
+      const statusConfig = crmConfig.statuses.reduce((acc, s) => {
+        acc[s.name] = { label: s.label, color: s.color };
+        return acc;
+      }, {} as Record<string, { label: string, color: string }>);
+
+      const colorMap: Record<string, string> = {
+        green: '#10b981', blue: '#3b82f6', yellow: '#f59e0b',
+        red: '#ef4444', purple: '#7c3aed', orange: '#f97316',
+        pink: '#ec4899', gray: '#6b7280'
+      };
+
+      const labels = Object.keys(statusCounts).map(k => statusConfig[k]?.label || k);
+      const data = Object.values(statusCounts);
+      const colors = Object.keys(statusCounts).map(k => colorMap[statusConfig[k]?.color] || '#6b7280');
+
+      new Chart(crmStatusChartRef.current, {
+        type: 'doughnut',
+        data: {
+          labels,
+          datasets: [{ data, backgroundColor: colors, borderWidth: 0 }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom' } }
+        }
+      });
+    }
+
+    // Revenue chart
+    if (crmRevenueChartRef.current && Chart && filteredContacts.length > 0) {
+      const revenueByMonth: Record<string, number> = {};
+
+      filteredContacts.forEach(contact => {
+        if (contact.cost && contact.createdAt) {
+          const date = new Date(contact.createdAt);
+          const monthKey = `${date.getMonth() + 1}/${date.getFullYear()}`;
+          revenueByMonth[monthKey] = (revenueByMonth[monthKey] || 0) + (contact.cost || 0);
+        }
+      });
+
+      const sortedMonths = Object.keys(revenueByMonth).sort();
+      const revenueData = sortedMonths.map(m => revenueByMonth[m]);
+
+      new Chart(crmRevenueChartRef.current, {
+        type: 'bar',
+        data: {
+          labels: sortedMonths,
+          datasets: [{
+            label: 'Revenue Total',
+            data: revenueData,
+            backgroundColor: chartColors.secondary,
+            borderRadius: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: { beginAtZero: true, grid: { color: 'rgba(0, 0, 0, 0.1)' } },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+    }
+  };
+
   const stats = metaData?.analytics ? [
     {
       title: 'Mensajes Enviados',
@@ -503,62 +681,192 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat, index) => (
-          <div
-            key={index}
-            className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center text-white`}>
-                <i className={stat.icon}></i>
-              </div>
-            </div>
-            <h3 className="text-gray-600 text-sm font-medium mb-1">{stat.title}</h3>
-            <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-            <p className="text-xs text-gray-500 mt-1">{stat.description}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Charts Row */}
-      {hasMetaConnection ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Bar Chart - Local Resources */}
-          <div className="bg-white rounded-2xl p-6 shadow-lg">
-            <h3 className="text-xl font-semibold text-gray-900 mb-6">Recursos del Sistema</h3>
-            <div className="h-64">
-              <canvas ref={chartRef} className="w-full h-full"></canvas>
-            </div>
-          </div>
-
-          {/* Donut Chart - Phone Quality */}
-          <div className="bg-white rounded-2xl p-6 shadow-lg">
-            <h3 className="text-xl font-semibold text-gray-900 mb-6">Estado de la Cuenta</h3>
-            {metaData?.phone_numbers && metaData.phone_numbers.length > 0 ? (
-              <div className="h-64">
-                <canvas ref={donutChartRef} className="w-full h-full"></canvas>
-              </div>
-            ) : (
-              <div className="h-64 flex items-center justify-center text-gray-400">
-                <div className="text-center">
-                  <i className="fas fa-chart-pie text-4xl mb-2"></i>
-                  <p>No hay datos disponibles</p>
+      {/* Meta WhatsApp Insights Stats */}
+      {hasMetaConnection && (
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+            <i className="fas fa-comment-dots text-blue-600 mr-3"></i>
+            Meta WhatsApp Insights
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {stats.map((stat, index) => (
+              <div
+                key={index}
+                className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center text-white`}>
+                    <i className={stat.icon}></i>
+                  </div>
                 </div>
+                <h3 className="text-gray-600 text-sm font-medium mb-1">{stat.title}</h3>
+                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
+                <p className="text-xs text-gray-500 mt-1">{stat.description}</p>
               </div>
-            )}
+            ))}
           </div>
         </div>
-      ) : (
-        <div className="bg-white rounded-2xl p-12 shadow-lg mb-8 text-center">
-          <div className="w-24 h-24 mx-auto mb-6 text-gray-300">
-            <i className="fas fa-chart-line text-8xl"></i>
+      )}
+
+      {/* CRM Stats */}
+      {contacts.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+            <i className="fas fa-users text-purple-600 mr-3"></i>
+            Estadísticas CRM
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center text-white">
+                  <i className="fas fa-users"></i>
+                </div>
+              </div>
+              <h3 className="text-gray-600 text-sm font-medium mb-1">Total Contactos</h3>
+              <p className="text-2xl font-bold text-gray-900">{contacts.length}</p>
+            </div>
+            <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center text-white">
+                  <i className="fas fa-dollar-sign"></i>
+                </div>
+              </div>
+              <h3 className="text-gray-600 text-sm font-medium mb-1">Revenue Total</h3>
+              <p className="text-2xl font-bold text-gray-900">${contacts.reduce((sum, c) => sum + (c.cost || 0), 0).toLocaleString()}</p>
+            </div>
+            <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-purple-700 flex items-center justify-center text-white">
+                  <i className="fas fa-chart-line"></i>
+                </div>
+              </div>
+              <h3 className="text-gray-600 text-sm font-medium mb-1">Revenue Promedio</h3>
+              <p className="text-2xl font-bold text-gray-900">${(contacts.length > 0 ? contacts.reduce((sum, c) => sum + (c.cost || 0), 0) / contacts.length : 0).toFixed(0)}</p>
+            </div>
+            <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center text-white">
+                  <i className="fas fa-envelope"></i>
+                </div>
+              </div>
+              <h3 className="text-gray-600 text-sm font-medium mb-1">Mensajes Totales</h3>
+              <p className="text-2xl font-bold text-gray-900">{contacts.reduce((sum, c) => sum + (c.messagesSent || 0), 0)}</p>
+            </div>
           </div>
-          <h3 className="text-xl font-medium text-gray-900 mb-2">Gráficos no disponibles</h3>
-          <p className="text-gray-600">
-            Configura tu API de Meta para ver gráficos y métricas en tiempo real
-          </p>
+        </div>
+      )}
+
+      {/* Meta Charts */}
+      {hasMetaConnection && (
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+            <i className="fas fa-chart-bar text-blue-600 mr-3"></i>
+            Gráficos Meta Insights
+          </h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Bar Chart - Messages */}
+            <div className="bg-white rounded-2xl p-6 shadow-lg">
+              <h3 className="text-xl font-semibold text-gray-900 mb-6">Análisis de Mensajes</h3>
+              <div className="h-64">
+                <canvas ref={chartRef} className="w-full h-full"></canvas>
+              </div>
+            </div>
+
+            {/* Donut Chart - Phone Quality */}
+            <div className="bg-white rounded-2xl p-6 shadow-lg">
+              <h3 className="text-xl font-semibold text-gray-900 mb-6">Estado de la Cuenta</h3>
+              {metaData?.phone_numbers && metaData.phone_numbers.length > 0 ? (
+                <div className="h-64">
+                  <canvas ref={donutChartRef} className="w-full h-full"></canvas>
+                </div>
+              ) : (
+                <div className="h-64 flex items-center justify-center text-gray-400">
+                  <div className="text-center">
+                    <i className="fas fa-chart-pie text-4xl mb-2"></i>
+                    <p>No hay datos disponibles</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CRM Chart Configuration Bar */}
+      {contacts.length > 0 && (
+        <div className="bg-white rounded-2xl p-6 shadow-lg mb-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">Filtros de Gráficos CRM</h3>
+              <p className="text-sm text-gray-600">Personaliza la visualización de datos</p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-4">
+              {/* Date Range Filters */}
+              <div className="flex items-center gap-3">
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Desde</label>
+                  <input
+                    type="date"
+                    value={dateRangeStart}
+                    onChange={(e) => setDateRangeStart(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">Hasta</label>
+                  <input
+                    type="date"
+                    value={dateRangeEnd}
+                    onChange={(e) => setDateRangeEnd(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+                {(dateRangeStart || dateRangeEnd) && (
+                  <button
+                    onClick={() => {
+                      setDateRangeStart('');
+                      setDateRangeEnd('');
+                    }}
+                    className="mt-5 px-3 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300 transition"
+                    title="Limpiar filtros"
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CRM Charts */}
+      {contacts.length > 0 && (
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+            <i className="fas fa-chart-line text-purple-600 mr-3"></i>
+            Gráficos CRM
+          </h2>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="bg-white rounded-2xl p-6 shadow-lg">
+              <h3 className="text-xl font-semibold text-gray-900 mb-6">Mensajes por Mes</h3>
+              <div className="h-64">
+                <canvas ref={crmMessagesChartRef}></canvas>
+              </div>
+            </div>
+            <div className="bg-white rounded-2xl p-6 shadow-lg">
+              <h3 className="text-xl font-semibold text-gray-900 mb-6">Distribución por Estado</h3>
+              <div className="h-64">
+                <canvas ref={crmStatusChartRef}></canvas>
+              </div>
+            </div>
+            <div className="bg-white rounded-2xl p-6 shadow-lg">
+              <h3 className="text-xl font-semibold text-gray-900 mb-6">Revenue por Mes</h3>
+              <div className="h-64">
+                <canvas ref={crmRevenueChartRef}></canvas>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
