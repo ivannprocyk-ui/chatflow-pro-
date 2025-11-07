@@ -638,12 +638,12 @@ export default function Dashboard() {
   const hasMetaConnection = config.api.accessToken && config.api.wabaId;
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-6 max-w-7xl mx-auto bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
-          <p className="text-gray-600">Métricas en tiempo real de tu plataforma WhatsApp Business</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Dashboard</h1>
+          <p className="text-gray-600 dark:text-gray-300">Métricas en tiempo real de tu plataforma WhatsApp Business</p>
         </div>
         {hasMetaConnection && (
           <button
@@ -659,19 +659,19 @@ export default function Dashboard() {
 
       {/* Connection Status */}
       {!hasMetaConnection && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6 mb-8">
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-2xl p-6 mb-8 transition-colors duration-300">
           <div className="flex items-start space-x-4">
-            <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center flex-shrink-0">
-              <i className="fas fa-exclamation-triangle text-yellow-600"></i>
+            <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-800 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors duration-300">
+              <i className="fas fa-exclamation-triangle text-yellow-600 dark:text-yellow-300"></i>
             </div>
             <div className="flex-1">
-              <h3 className="text-lg font-medium text-yellow-900 mb-2">API de Meta no configurada</h3>
-              <p className="text-yellow-800 text-sm mb-4">
+              <h3 className="text-lg font-medium text-yellow-900 dark:text-yellow-100 mb-2">API de Meta no configurada</h3>
+              <p className="text-yellow-800 dark:text-yellow-200 text-sm mb-4">
                 Configura tu API de Meta en la sección de Configuración para ver métricas en tiempo real
               </p>
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent('navigate-to', { detail: 'configuration' }))}
-                className="bg-yellow-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-yellow-700 transition-all"
+                className="bg-yellow-600 dark:bg-yellow-700 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-yellow-700 dark:hover:bg-yellow-800 transition-all"
               >
                 <i className="fas fa-cog mr-2"></i>
                 Ir a Configuración
@@ -684,24 +684,24 @@ export default function Dashboard() {
       {/* Meta WhatsApp Insights Stats */}
       {hasMetaConnection && (
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-            <i className="fas fa-comment-dots text-blue-600 mr-3"></i>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+            <i className="fas fa-comment-dots text-blue-600 dark:text-blue-400 mr-3"></i>
             Meta WhatsApp Insights
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {stats.map((stat, index) => (
               <div
                 key={index}
-                className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+                className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center text-white`}>
                     <i className={stat.icon}></i>
                   </div>
                 </div>
-                <h3 className="text-gray-600 text-sm font-medium mb-1">{stat.title}</h3>
-                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                <p className="text-xs text-gray-500 mt-1">{stat.description}</p>
+                <h3 className="text-gray-600 dark:text-gray-300 text-sm font-medium mb-1">{stat.title}</h3>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stat.value}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{stat.description}</p>
               </div>
             ))}
           </div>
@@ -711,46 +711,46 @@ export default function Dashboard() {
       {/* CRM Stats */}
       {contacts.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-            <i className="fas fa-users text-purple-600 mr-3"></i>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+            <i className="fas fa-users text-purple-600 dark:text-purple-400 mr-3"></i>
             Estadísticas CRM
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
               <div className="flex items-center justify-between mb-4">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center text-white">
                   <i className="fas fa-users"></i>
                 </div>
               </div>
-              <h3 className="text-gray-600 text-sm font-medium mb-1">Total Contactos</h3>
-              <p className="text-2xl font-bold text-gray-900">{contacts.length}</p>
+              <h3 className="text-gray-600 dark:text-gray-300 text-sm font-medium mb-1">Total Contactos</h3>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{contacts.length}</p>
             </div>
-            <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
               <div className="flex items-center justify-between mb-4">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center text-white">
                   <i className="fas fa-dollar-sign"></i>
                 </div>
               </div>
-              <h3 className="text-gray-600 text-sm font-medium mb-1">Revenue Total</h3>
-              <p className="text-2xl font-bold text-gray-900">${contacts.reduce((sum, c) => sum + (c.cost || 0), 0).toLocaleString()}</p>
+              <h3 className="text-gray-600 dark:text-gray-300 text-sm font-medium mb-1">Revenue Total</h3>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">${contacts.reduce((sum, c) => sum + (c.cost || 0), 0).toLocaleString()}</p>
             </div>
-            <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
               <div className="flex items-center justify-between mb-4">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-purple-700 flex items-center justify-center text-white">
                   <i className="fas fa-chart-line"></i>
                 </div>
               </div>
-              <h3 className="text-gray-600 text-sm font-medium mb-1">Revenue Promedio</h3>
-              <p className="text-2xl font-bold text-gray-900">${(contacts.length > 0 ? contacts.reduce((sum, c) => sum + (c.cost || 0), 0) / contacts.length : 0).toFixed(0)}</p>
+              <h3 className="text-gray-600 dark:text-gray-300 text-sm font-medium mb-1">Revenue Promedio</h3>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">${(contacts.length > 0 ? contacts.reduce((sum, c) => sum + (c.cost || 0), 0) / contacts.length : 0).toFixed(0)}</p>
             </div>
-            <div className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
               <div className="flex items-center justify-between mb-4">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center text-white">
                   <i className="fas fa-envelope"></i>
                 </div>
               </div>
-              <h3 className="text-gray-600 text-sm font-medium mb-1">Mensajes Totales</h3>
-              <p className="text-2xl font-bold text-gray-900">{contacts.reduce((sum, c) => sum + (c.messagesSent || 0), 0)}</p>
+              <h3 className="text-gray-600 dark:text-gray-300 text-sm font-medium mb-1">Mensajes Totales</h3>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{contacts.reduce((sum, c) => sum + (c.messagesSent || 0), 0)}</p>
             </div>
           </div>
         </div>
@@ -759,28 +759,28 @@ export default function Dashboard() {
       {/* Meta Charts */}
       {hasMetaConnection && (
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-            <i className="fas fa-chart-bar text-blue-600 mr-3"></i>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+            <i className="fas fa-chart-bar text-blue-600 dark:text-blue-400 mr-3"></i>
             Gráficos Meta Insights
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Bar Chart - Messages */}
-            <div className="bg-white rounded-2xl p-6 shadow-lg">
-              <h3 className="text-xl font-semibold text-gray-900 mb-6">Análisis de Mensajes</h3>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg transition-colors duration-300">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Análisis de Mensajes</h3>
               <div className="h-64">
                 <canvas ref={chartRef} className="w-full h-full"></canvas>
               </div>
             </div>
 
             {/* Donut Chart - Phone Quality */}
-            <div className="bg-white rounded-2xl p-6 shadow-lg">
-              <h3 className="text-xl font-semibold text-gray-900 mb-6">Estado de la Cuenta</h3>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg transition-colors duration-300">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Estado de la Cuenta</h3>
               {metaData?.phone_numbers && metaData.phone_numbers.length > 0 ? (
                 <div className="h-64">
                   <canvas ref={donutChartRef} className="w-full h-full"></canvas>
                 </div>
               ) : (
-                <div className="h-64 flex items-center justify-center text-gray-400">
+                <div className="h-64 flex items-center justify-center text-gray-400 dark:text-gray-500">
                   <div className="text-center">
                     <i className="fas fa-chart-pie text-4xl mb-2"></i>
                     <p>No hay datos disponibles</p>
@@ -794,32 +794,32 @@ export default function Dashboard() {
 
       {/* CRM Chart Configuration Bar */}
       {contacts.length > 0 && (
-        <div className="bg-white rounded-2xl p-6 shadow-lg mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg mb-6 transition-colors duration-300">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">Filtros de Gráficos CRM</h3>
-              <p className="text-sm text-gray-600">Personaliza la visualización de datos</p>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">Filtros de Gráficos CRM</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-300">Personaliza la visualización de datos</p>
             </div>
 
             <div className="flex flex-wrap items-center gap-4">
               {/* Date Range Filters */}
               <div className="flex items-center gap-3">
                 <div>
-                  <label className="block text-xs text-gray-600 mb-1">Desde</label>
+                  <label className="block text-xs text-gray-600 dark:text-gray-300 mb-1">Desde</label>
                   <input
                     type="date"
                     value={dateRangeStart}
                     onChange={(e) => setDateRangeStart(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-600"
+                    className="px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded-lg text-sm focus:ring-2 focus:ring-blue-600 transition-colors duration-300"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-600 mb-1">Hasta</label>
+                  <label className="block text-xs text-gray-600 dark:text-gray-300 mb-1">Hasta</label>
                   <input
                     type="date"
                     value={dateRangeEnd}
                     onChange={(e) => setDateRangeEnd(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-600"
+                    className="px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded-lg text-sm focus:ring-2 focus:ring-blue-600 transition-colors duration-300"
                   />
                 </div>
                 {(dateRangeStart || dateRangeEnd) && (
@@ -828,7 +828,7 @@ export default function Dashboard() {
                       setDateRangeStart('');
                       setDateRangeEnd('');
                     }}
-                    className="mt-5 px-3 py-2 bg-gray-200 text-gray-700 rounded-lg text-sm hover:bg-gray-300 transition"
+                    className="mt-5 px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-300"
                     title="Limpiar filtros"
                   >
                     <i className="fas fa-times"></i>
@@ -843,25 +843,25 @@ export default function Dashboard() {
       {/* CRM Charts */}
       {contacts.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-            <i className="fas fa-chart-line text-purple-600 mr-3"></i>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+            <i className="fas fa-chart-line text-purple-600 dark:text-purple-400 mr-3"></i>
             Gráficos CRM
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="bg-white rounded-2xl p-6 shadow-lg">
-              <h3 className="text-xl font-semibold text-gray-900 mb-6">Mensajes por Mes</h3>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg transition-colors duration-300">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Mensajes por Mes</h3>
               <div className="h-64">
                 <canvas ref={crmMessagesChartRef}></canvas>
               </div>
             </div>
-            <div className="bg-white rounded-2xl p-6 shadow-lg">
-              <h3 className="text-xl font-semibold text-gray-900 mb-6">Distribución por Estado</h3>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg transition-colors duration-300">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Distribución por Estado</h3>
               <div className="h-64">
                 <canvas ref={crmStatusChartRef}></canvas>
               </div>
             </div>
-            <div className="bg-white rounded-2xl p-6 shadow-lg">
-              <h3 className="text-xl font-semibold text-gray-900 mb-6">Revenue por Mes</h3>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg transition-colors duration-300">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Revenue por Mes</h3>
               <div className="h-64">
                 <canvas ref={crmRevenueChartRef}></canvas>
               </div>
@@ -872,42 +872,42 @@ export default function Dashboard() {
 
       {/* WhatsApp Business Account Info */}
       {metaData?.phone_numbers && metaData.phone_numbers.length > 0 && (
-        <div className="bg-white rounded-2xl shadow-lg">
-          <div className="p-6 border-b border-gray-100">
-            <h3 className="text-xl font-semibold text-gray-900">Números de Teléfono Conectados</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg transition-colors duration-300">
+          <div className="p-6 border-b border-gray-100 dark:border-gray-700">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Números de Teléfono Conectados</h3>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead className="bg-gray-50 dark:bg-gray-900">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Número
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Calidad
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Límite de Mensajería
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {metaData.phone_numbers.map((phone) => (
-                  <tr key={phone.phone_number} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <tr key={phone.phone_number} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-300">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
                       {phone.display_phone_number}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
-                        phone.quality_rating === 'GREEN' ? 'bg-green-100 text-green-800' :
-                        phone.quality_rating === 'YELLOW' ? 'bg-yellow-100 text-yellow-800' :
-                        phone.quality_rating === 'RED' ? 'bg-red-100 text-red-800' :
-                        'bg-gray-100 text-gray-800'
+                        phone.quality_rating === 'GREEN' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
+                        phone.quality_rating === 'YELLOW' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' :
+                        phone.quality_rating === 'RED' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
+                        'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
                       }`}>
                         {phone.quality_rating || 'Unknown'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
                       {phone.messaging_limit === 'TIER_1K' ? '1,000 conversaciones/día' :
                        phone.messaging_limit === 'TIER_10K' ? '10,000 conversaciones/día' :
                        phone.messaging_limit === 'TIER_100K' ? '100,000 conversaciones/día' :
@@ -924,20 +924,20 @@ export default function Dashboard() {
 
       {/* Last Sync Info */}
       {localStats.lastSync && (
-        <div className="mt-6 text-center text-sm text-gray-500">
+        <div className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
           Última sincronización con Meta: {new Date(localStats.lastSync).toLocaleString('es-ES')}
         </div>
       )}
 
       {/* Info Section */}
-      <div className="mt-8 bg-blue-50 border border-blue-200 rounded-2xl p-6">
+      <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-2xl p-6 transition-colors duration-300">
         <div className="flex items-start space-x-4">
-          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-            <i className="fas fa-info-circle text-blue-600"></i>
+          <div className="w-10 h-10 bg-blue-100 dark:bg-blue-800 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors duration-300">
+            <i className="fas fa-info-circle text-blue-600 dark:text-blue-300"></i>
           </div>
           <div>
-            <h3 className="text-lg font-medium text-blue-900 mb-2">Acerca de las Métricas</h3>
-            <div className="text-blue-800 text-sm space-y-1">
+            <h3 className="text-lg font-medium text-blue-900 dark:text-blue-100 mb-2">Acerca de las Métricas</h3>
+            <div className="text-blue-800 dark:text-blue-200 text-sm space-y-1">
               <p>• Las métricas se obtienen directamente de la API de Meta WhatsApp Business</p>
               <p>• Los datos locales (plantillas, listas, contactos) se actualizan automáticamente</p>
               <p>• La calidad del número afecta la capacidad de envío y reputación</p>

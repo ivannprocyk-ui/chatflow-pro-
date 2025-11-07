@@ -293,17 +293,17 @@ export default function CRMPanel() {
 
   const getStatusBadge = (statusName: string) => {
     const status = config.statuses.find(s => s.name === statusName);
-    if (!status) return <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">{statusName}</span>;
+    if (!status) return <span className="px-2 py-1 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">{statusName}</span>;
 
     const colorMap: Record<string, string> = {
-      green: 'bg-green-100 text-green-800',
-      blue: 'bg-blue-100 text-blue-800',
-      yellow: 'bg-yellow-100 text-yellow-800',
-      red: 'bg-red-100 text-red-800',
-      purple: 'bg-purple-100 text-purple-800',
-      orange: 'bg-orange-100 text-orange-800',
-      pink: 'bg-pink-100 text-pink-800',
-      gray: 'bg-gray-100 text-gray-800'
+      green: 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200',
+      blue: 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200',
+      yellow: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200',
+      red: 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200',
+      purple: 'bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200',
+      orange: 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200',
+      pink: 'bg-pink-100 dark:bg-pink-900 text-pink-800 dark:text-pink-200',
+      gray: 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
     };
 
     return (
@@ -323,7 +323,7 @@ export default function CRMPanel() {
             value={value}
             onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })}
             rows={3}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 transition-colors duration-300"
           />
         );
 
@@ -332,7 +332,7 @@ export default function CRMPanel() {
           <select
             value={value}
             onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 transition-colors duration-300"
           >
             <option value="">Seleccionar...</option>
             {field.options?.map(opt => (
@@ -349,12 +349,12 @@ export default function CRMPanel() {
               value={value}
               onChange={(e) => setFormData({ ...formData, [field.name]: parseFloat(e.target.value) || 0 })}
               placeholder="0.00"
-              className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 transition-colors duration-300"
             />
             <select
               value={formData.currency || field.currencyType || 'USD'}
               onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-              className="w-24 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              className="w-24 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 transition-colors duration-300"
             >
               {config.currencies.map(curr => (
                 <option key={curr} value={curr}>{curr}</option>
@@ -369,7 +369,7 @@ export default function CRMPanel() {
             type="date"
             value={value}
             onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 transition-colors duration-300"
           />
         );
 
@@ -379,22 +379,22 @@ export default function CRMPanel() {
             type={field.type}
             value={value}
             onChange={(e) => setFormData({ ...formData, [field.name]: e.target.value })}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 transition-colors duration-300"
           />
         );
     }
   };
 
   return (
-    <div className="p-6 w-full">
+    <div className="p-6 w-full transition-colors duration-300">
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2 flex items-center">
             <i className="fas fa-address-book text-blue-600 mr-3"></i>
             Contactos
           </h1>
-          <p className="text-gray-600">Gestiona tus contactos de forma eficiente</p>
+          <p className="text-gray-600 dark:text-gray-300">Gestiona tus contactos de forma eficiente</p>
         </div>
         <div className="flex space-x-4">
           <button
@@ -419,19 +419,19 @@ export default function CRMPanel() {
       </div>
 
       {/* Filters and Table */}
-      <div className="bg-white rounded-2xl shadow-lg">
-        <div className="p-6 border-b border-gray-100">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg transition-colors duration-300">
+        <div className="p-6 border-b border-gray-100 dark:border-gray-700">
           <div className="flex flex-col space-y-4">
             {/* Top Row: Title + Actions */}
             <div className="flex justify-between items-center">
-              <h3 className="text-xl font-semibold text-gray-900">Contactos</h3>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Contactos</h3>
               <div className="flex space-x-2">
                 <button
                   onClick={() => setShowFilters(!showFilters)}
                   className={`px-4 py-2 rounded-lg font-medium transition-all flex items-center space-x-2 ${
                     showFilters
                       ? 'bg-blue-600 text-white shadow-lg'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
                 >
                   <i className="fas fa-filter"></i>
@@ -443,7 +443,7 @@ export default function CRMPanel() {
                 {hasActiveFilters && (
                   <button
                     onClick={clearAllFilters}
-                    className="px-4 py-2 bg-red-50 text-red-600 rounded-lg font-medium hover:bg-red-100 transition-all flex items-center space-x-2"
+                    className="px-4 py-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg font-medium hover:bg-red-100 dark:hover:bg-red-900/50 transition-all flex items-center space-x-2"
                   >
                     <i className="fas fa-times"></i>
                     <span>Limpiar</span>
@@ -460,14 +460,14 @@ export default function CRMPanel() {
                   placeholder="Buscar en todos los campos..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-colors duration-300"
                 />
                 <i className="fas fa-search absolute left-3 top-3 text-gray-400"></i>
               </div>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 md:w-64"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-600 md:w-64 transition-colors duration-300"
               >
                 <option value="all">Todos los estados</option>
                 {config.statuses.map(status => (
@@ -478,15 +478,15 @@ export default function CRMPanel() {
 
             {/* Dynamic Filters Panel */}
             {showFilters && (
-              <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                <h4 className="text-sm font-semibold text-blue-900 mb-3 flex items-center">
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800 transition-colors duration-300">
+                <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-200 mb-3 flex items-center">
                   <i className="fas fa-sliders-h mr-2"></i>
                   Filtros por Campo
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {config.fields.filter(f => f.visible && ['text', 'email', 'tel', 'select', 'number', 'currency', 'date'].includes(f.type)).map(field => (
-                    <div key={field.name} className="bg-white rounded-lg p-3 shadow-sm">
-                      <label className="block text-xs font-medium text-gray-700 mb-2">{field.label}</label>
+                    <div key={field.name} className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm transition-colors duration-300">
+                      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">{field.label}</label>
 
                       {(field.type === 'text' || field.type === 'email' || field.type === 'tel') && (
                         <input
@@ -494,7 +494,7 @@ export default function CRMPanel() {
                           placeholder={`Buscar por ${field.label.toLowerCase()}...`}
                           value={dynamicFilters[field.name] || ''}
                           onChange={(e) => setDynamicFilters({ ...dynamicFilters, [field.name]: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-colors duration-300"
                         />
                       )}
 
@@ -502,7 +502,7 @@ export default function CRMPanel() {
                         <select
                           value={dynamicFilters[field.name] || ''}
                           onChange={(e) => setDynamicFilters({ ...dynamicFilters, [field.name]: e.target.value })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-600"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm focus:ring-2 focus:ring-blue-600 transition-colors duration-300"
                         >
                           <option value="">Todos</option>
                           {field.options?.map(opt => (
@@ -521,7 +521,7 @@ export default function CRMPanel() {
                               ...dynamicFilters,
                               [field.name]: { ...dynamicFilters[field.name], min: e.target.value ? parseFloat(e.target.value) : undefined }
                             })}
-                            className="flex-1 px-2 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-600"
+                            className="flex-1 px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm focus:ring-2 focus:ring-blue-600 transition-colors duration-300"
                           />
                           <input
                             type="number"
@@ -531,7 +531,7 @@ export default function CRMPanel() {
                               ...dynamicFilters,
                               [field.name]: { ...dynamicFilters[field.name], max: e.target.value ? parseFloat(e.target.value) : undefined }
                             })}
-                            className="flex-1 px-2 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-600"
+                            className="flex-1 px-2 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm focus:ring-2 focus:ring-blue-600 transition-colors duration-300"
                           />
                         </div>
                       )}
@@ -545,7 +545,7 @@ export default function CRMPanel() {
                               ...dynamicFilters,
                               [field.name]: { ...dynamicFilters[field.name], from: e.target.value }
                             })}
-                            className="flex-1 px-2 py-1.5 border border-gray-300 rounded-md text-xs focus:ring-2 focus:ring-blue-600"
+                            className="flex-1 px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-xs focus:ring-2 focus:ring-blue-600 transition-colors duration-300"
                           />
                           <input
                             type="date"
@@ -554,7 +554,7 @@ export default function CRMPanel() {
                               ...dynamicFilters,
                               [field.name]: { ...dynamicFilters[field.name], to: e.target.value }
                             })}
-                            className="flex-1 px-2 py-1.5 border border-gray-300 rounded-md text-xs focus:ring-2 focus:ring-blue-600"
+                            className="flex-1 px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-xs focus:ring-2 focus:ring-blue-600 transition-colors duration-300"
                           />
                         </div>
                       )}
@@ -568,8 +568,8 @@ export default function CRMPanel() {
 
         {/* Selection Actions Bar */}
         {selectedContacts.size > 0 && (
-          <div className="bg-blue-50 border-b border-blue-200 px-6 py-4 flex items-center justify-between">
-            <span className="text-sm font-medium text-blue-900">
+          <div className="bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800 px-6 py-4 flex items-center justify-between transition-colors duration-300">
+            <span className="text-sm font-medium text-blue-900 dark:text-blue-200">
               {selectedContacts.size} contacto{selectedContacts.size !== 1 ? 's' : ''} seleccionado{selectedContacts.size !== 1 ? 's' : ''}
             </span>
             <div className="flex space-x-2">
@@ -582,7 +582,7 @@ export default function CRMPanel() {
               </button>
               <button
                 onClick={() => setSelectedContacts(new Set())}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-all"
+                className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 text-sm font-medium rounded-lg text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-all"
               >
                 Cancelar
               </button>
@@ -591,26 +591,26 @@ export default function CRMPanel() {
         )}
 
         <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg">
-          <table className="min-w-full divide-y divide-gray-300">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-300 dark:divide-gray-600">
+            <thead className="bg-gray-50 dark:bg-gray-800 transition-colors duration-300">
               <tr>
                 <th scope="col" className="relative px-7 sm:w-12 sm:px-6">
                   <input
                     type="checkbox"
-                    className="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600"
+                    className="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-600"
                     checked={filteredContacts.length > 0 && selectedContacts.size === filteredContacts.length}
                     onChange={(e) => handleSelectAll(e.target.checked)}
                   />
                 </th>
                 {config.fields.filter(f => f.visible).sort((a, b) => a.order - b.order).map(field => (
-                  <th key={field.name} scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                  <th key={field.name} scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">
                     {field.label}
                   </th>
                 ))}
-                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">
                   Estado
                 </th>
-                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">
+                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">
                   Última Interacción
                 </th>
                 <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
@@ -618,24 +618,24 @@ export default function CRMPanel() {
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800 transition-colors duration-300">
               {filteredContacts.map((contact) => (
                 <tr
                   key={contact.id}
-                  className={selectedContacts.has(contact.id) ? 'bg-gray-50' : undefined}
+                  className={`transition-colors duration-300 ${selectedContacts.has(contact.id) ? 'bg-gray-50 dark:bg-gray-700' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}
                 >
                   <td className="relative px-7 sm:w-12 sm:px-6">
                     <input
                       type="checkbox"
-                      className="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-600"
+                      className="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-600"
                       checked={selectedContacts.has(contact.id)}
                       onChange={(e) => handleSelectContact(contact.id, e.target.checked)}
                     />
                   </td>
                   {config.fields.filter(f => f.visible).sort((a, b) => a.order - b.order).map(field => (
-                    <td key={field.name} className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                    <td key={field.name} className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
                       {field.type === 'currency' ? (
-                        <span className="font-semibold text-emerald-600">
+                        <span className="font-semibold text-emerald-600 dark:text-emerald-400">
                           ${contact[field.name]?.toLocaleString()} {contact.currency || 'USD'}
                         </span>
                       ) : field.type === 'textarea' ? (
@@ -650,19 +650,19 @@ export default function CRMPanel() {
                   <td className="whitespace-nowrap px-3 py-4 text-sm">
                     {getStatusBadge(contact.status)}
                   </td>
-                  <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                  <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
                     {contact.lastInteraction ? new Date(contact.lastInteraction).toLocaleDateString() : '-'}
                   </td>
                   <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                     <button
                       onClick={() => handleEditContact(contact)}
-                      className="text-blue-600 hover:text-blue-900 mr-4"
+                      className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 mr-4 transition-colors"
                     >
                       Editar<span className="sr-only">, {contact[config.fields[0]?.name]}</span>
                     </button>
                     <button
                       onClick={() => handleDeleteContact(contact.id)}
-                      className="text-red-600 hover:text-red-900"
+                      className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 transition-colors"
                     >
                       Eliminar<span className="sr-only">, {contact[config.fields[0]?.name]}</span>
                     </button>
@@ -675,13 +675,13 @@ export default function CRMPanel() {
 
         {filteredContacts.length === 0 && (
           <div className="text-center py-16">
-            <div className="w-24 h-24 mx-auto mb-6 text-gray-300">
+            <div className="w-24 h-24 mx-auto mb-6 text-gray-300 dark:text-gray-600">
               <i className="fas fa-users text-8xl"></i>
             </div>
-            <h3 className="text-xl font-medium text-gray-900 mb-2">
+            <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-2">
               {searchTerm || statusFilter !== 'all' ? 'No se encontraron contactos' : 'No hay contactos'}
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 dark:text-gray-300 mb-6">
               {searchTerm || statusFilter !== 'all' ? 'Intenta ajustar los filtros' : 'Añade tu primer contacto para comenzar'}
             </p>
           </div>
@@ -690,10 +690,10 @@ export default function CRMPanel() {
 
       {/* Add/Edit Contact Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-100">
-              <h2 className="text-2xl font-bold text-gray-900">
+        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-colors duration-300">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto transition-colors duration-300">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-700">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {editingContact ? 'Editar Contacto' : 'Nuevo Contacto'}
               </h2>
             </div>
@@ -702,7 +702,7 @@ export default function CRMPanel() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {config.fields.filter(f => f.visible).map(field => (
                   <div key={field.name} className={field.type === 'textarea' ? 'md:col-span-2' : ''}>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       {field.label}
                       {field.required && <span className="text-red-500 ml-1">*</span>}
                     </label>
@@ -711,13 +711,13 @@ export default function CRMPanel() {
                 ))}
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Estado <span className="text-red-500">*</span>
                   </label>
                   <select
                     value={formData.status || ''}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 transition-colors duration-300"
                   >
                     <option value="">Seleccionar estado...</option>
                     {config.statuses.map(status => (
@@ -728,14 +728,14 @@ export default function CRMPanel() {
               </div>
             </div>
 
-            <div className="p-6 border-t border-gray-100 flex space-x-4">
+            <div className="p-6 border-t border-gray-100 dark:border-gray-700 flex space-x-4">
               <button
                 onClick={() => {
                   setShowModal(false);
                   setEditingContact(null);
                   setFormData({});
                 }}
-                className="flex-1 bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-200 transition-all"
+                className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 px-6 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
               >
                 Cancelar
               </button>
@@ -752,14 +752,14 @@ export default function CRMPanel() {
 
       {/* Add to List Modal */}
       {showAddToListModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
-            <div className="p-6 border-b border-gray-100">
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-colors duration-300">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full transition-colors duration-300">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-700">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
                 <i className="fas fa-list-ul text-blue-600 mr-3"></i>
                 Agregar a Lista
               </h2>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
                 {selectedContacts.size} contacto{selectedContacts.size !== 1 ? 's' : ''} seleccionado{selectedContacts.size !== 1 ? 's' : ''}
               </p>
             </div>
@@ -767,7 +767,7 @@ export default function CRMPanel() {
             <div className="p-6 space-y-6">
               {/* Select Existing List */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Seleccionar Lista Existente
                 </label>
                 <select
@@ -776,7 +776,7 @@ export default function CRMPanel() {
                     setSelectedListId(e.target.value);
                     if (e.target.value) setNewListName('');
                   }}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-colors duration-300"
                   disabled={newListName.trim() !== ''}
                 >
                   <option value="">Selecciona una lista...</option>
@@ -791,16 +791,16 @@ export default function CRMPanel() {
               {/* Divider */}
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-300"></div>
+                  <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">O</span>
+                  <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">O</span>
                 </div>
               </div>
 
               {/* Create New List */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Crear Nueva Lista
                 </label>
                 <input
@@ -812,19 +812,19 @@ export default function CRMPanel() {
                     if (e.target.value.trim()) setSelectedListId('');
                   }}
                   disabled={selectedListId !== ''}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-600 focus:border-transparent disabled:bg-gray-50 dark:disabled:bg-gray-900 disabled:text-gray-500 dark:disabled:text-gray-500 transition-colors duration-300"
                 />
               </div>
             </div>
 
-            <div className="p-6 border-t border-gray-100 flex space-x-4">
+            <div className="p-6 border-t border-gray-100 dark:border-gray-700 flex space-x-4">
               <button
                 onClick={() => {
                   setShowAddToListModal(false);
                   setSelectedListId('');
                   setNewListName('');
                 }}
-                className="flex-1 bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-200 transition-all"
+                className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 px-6 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
               >
                 Cancelar
               </button>

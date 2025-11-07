@@ -194,20 +194,20 @@ export default function Calendar() {
   const upcomingEvents = getUpcomingEvents();
 
   return (
-    <div className="p-6 w-full">
+    <div className="p-6 w-full bg-gray-50 dark:bg-gray-900">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2 flex items-center">
             <i className="fas fa-calendar-alt text-blue-600 mr-3"></i>
             Agenda y Calendario
           </h1>
-          <p className="text-gray-600">Organiza eventos, reuniones y recordatorios vinculados a tus contactos</p>
+          <p className="text-gray-600 dark:text-gray-400">Organiza eventos, reuniones y recordatorios vinculados a tus contactos</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Calendar */}
-        <div className="lg:col-span-3 bg-white rounded-2xl shadow-lg p-6">
+        <div className="lg:col-span-3 bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
           <div style={{ height: '700px' }}>
             <BigCalendar
               localizer={localizer}
@@ -259,15 +259,15 @@ export default function Calendar() {
               });
               setShowModal(true);
             }}
-            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg hover:shadow-xl flex items-center justify-center space-x-2"
+            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg hover:shadow-2xl transform hover:scale-105 active:scale-95 flex items-center justify-center space-x-2"
           >
             <i className="fas fa-plus"></i>
             <span>Nuevo Evento</span>
           </button>
 
           {/* Upcoming Events */}
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
               <i className="fas fa-bell text-amber-500 mr-2"></i>
               Próximos 7 Días
             </h3>
@@ -278,24 +278,24 @@ export default function Calendar() {
                   <div
                     key={event.id}
                     onClick={() => handleSelectEvent(event)}
-                    className="border-l-4 pl-3 py-2 cursor-pointer hover:bg-gray-50 rounded-r-lg transition-colors"
+                    className="border-l-4 pl-3 py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 rounded-r-lg transition-all hover:shadow-md transform hover:-translate-y-1"
                     style={{ borderColor: event.color }}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <h4 className="font-medium text-gray-900 text-sm">{event.title}</h4>
+                        <h4 className="font-medium text-gray-900 dark:text-gray-100 text-sm">{event.title}</h4>
                         {event.contactName && (
-                          <p className="text-xs text-gray-600 mt-0.5">
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
                             <i className="fas fa-user mr-1"></i>
                             {event.contactName}
                           </p>
                         )}
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
                         {format(event.start, 'dd/MM')}
                       </div>
                     </div>
-                    <div className="text-xs text-gray-500 mt-1">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                       <i className="fas fa-clock mr-1"></i>
                       {format(event.start, 'HH:mm')}
                     </div>
@@ -303,7 +303,7 @@ export default function Calendar() {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-400">
+              <div className="text-center py-8 text-gray-400 dark:text-gray-500">
                 <i className="fas fa-calendar-check text-4xl mb-2"></i>
                 <p className="text-sm">No hay eventos próximos</p>
               </div>
@@ -311,9 +311,9 @@ export default function Calendar() {
           </div>
 
           {/* Event Types Legend */}
-          <div className="bg-white rounded-2xl shadow-lg p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Tipos de Evento</h3>
-            <div className="space-y-2 text-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Tipos de Evento</h3>
+            <div className="space-y-2 text-sm text-gray-900 dark:text-gray-100">
               <div className="flex items-center space-x-2">
                 <div className="w-4 h-4 rounded" style={{ backgroundColor: '#3b82f6' }}></div>
                 <span>Llamada</span>
@@ -341,11 +341,11 @@ export default function Calendar() {
 
       {/* Event Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-100">
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl ring-1 ring-black/5 dark:ring-white/10 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20">
               <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-gray-900 flex items-center">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
                   <i className="fas fa-calendar-plus text-blue-600 mr-3"></i>
                   {selectedEvent ? 'Editar Evento' : 'Nuevo Evento'}
                 </h2>
@@ -354,7 +354,7 @@ export default function Calendar() {
                     setShowModal(false);
                     setSelectedEvent(null);
                   }}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
                 >
                   <i className="fas fa-times text-2xl"></i>
                 </button>
@@ -364,7 +364,7 @@ export default function Calendar() {
             <div className="p-6 space-y-4">
               {/* Title */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Título del Evento <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -372,19 +372,19 @@ export default function Calendar() {
                   value={newEvent.title}
                   onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
                   placeholder="ej: Llamada con cliente"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
 
               {/* Type */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Tipo de Evento <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={newEvent.type}
                   onChange={(e) => setNewEvent({ ...newEvent, type: e.target.value as any })}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 >
                   <option value="call">📞 Llamada</option>
                   <option value="meeting">🤝 Reunión</option>
@@ -396,13 +396,13 @@ export default function Calendar() {
 
               {/* Contact */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Vincular a Contacto (Opcional)
                 </label>
                 <select
                   value={newEvent.contactId}
                   onChange={(e) => setNewEvent({ ...newEvent, contactId: e.target.value })}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 >
                   <option value="">Sin vincular</option>
                   {crmContacts.map(contact => {
@@ -423,43 +423,43 @@ export default function Calendar() {
               {/* Date and Time */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Fecha <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="date"
                     value={newEvent.date}
                     onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Hora Inicio <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="time"
                     value={newEvent.time}
                     onChange={(e) => setNewEvent({ ...newEvent, time: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Hora Fin
                   </label>
                   <input
                     type="time"
                     value={newEvent.endTime}
                     onChange={(e) => setNewEvent({ ...newEvent, endTime: e.target.value })}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+                    className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   />
                 </div>
               </div>
 
               {/* Notes */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Notas
                 </label>
                 <textarea
@@ -467,16 +467,16 @@ export default function Calendar() {
                   onChange={(e) => setNewEvent({ ...newEvent, notes: e.target.value })}
                   rows={3}
                   placeholder="Detalles adicionales del evento..."
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
             </div>
 
-            <div className="p-6 border-t border-gray-100 flex justify-between">
+            <div className="p-6 border-t border-gray-100 dark:border-gray-700 flex justify-between">
               {selectedEvent && (
                 <button
                   onClick={handleDeleteEvent}
-                  className="px-6 py-2.5 bg-red-50 text-red-600 rounded-lg font-medium hover:bg-red-100 transition-all flex items-center space-x-2"
+                  className="px-6 py-2.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg font-medium hover:bg-red-100 dark:hover:bg-red-900/40 transition-all hover:shadow-lg transform hover:scale-105 flex items-center space-x-2"
                 >
                   <i className="fas fa-trash"></i>
                   <span>Eliminar</span>
@@ -488,13 +488,13 @@ export default function Calendar() {
                     setShowModal(false);
                     setSelectedEvent(null);
                   }}
-                  className="px-6 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-all"
+                  className="px-6 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleSaveEvent}
-                  className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg flex items-center space-x-2"
+                  className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg transform hover:scale-105 active:scale-95 flex items-center space-x-2"
                 >
                   <i className="fas fa-check"></i>
                   <span>{selectedEvent ? 'Actualizar' : 'Crear'} Evento</span>

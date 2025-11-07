@@ -121,7 +121,7 @@ export default function App() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       <Sidebar
         isOpen={sidebarOpen}
         isCollapsed={sidebarCollapsed}
@@ -143,14 +143,14 @@ export default function App() {
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar for mobile */}
-        <div className="lg:hidden bg-white shadow-sm p-4 flex items-center">
+        <div className="lg:hidden bg-white dark:bg-gray-800 shadow-sm p-4 flex items-center transition-colors duration-300">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           >
-            <i className="fas fa-bars text-gray-600"></i>
+            <i className="fas fa-bars text-gray-600 dark:text-gray-300"></i>
           </button>
-          <h1 className="ml-3 text-lg font-semibold text-gray-800">
+          <h1 className="ml-3 text-lg font-semibold text-gray-800 dark:text-gray-100">
             {config.branding.appName}
           </h1>
         </div>

@@ -74,7 +74,7 @@ export default function ContactLists() {
     };
 
     if (editingList) {
-      const updatedLists = contactLists.map(l => 
+      const updatedLists = contactLists.map(l =>
         l.id === editingList.id ? { ...list, id: editingList.id } : l
       );
       saveToStorage(updatedLists);
@@ -117,8 +117,8 @@ export default function ContactLists() {
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Listas de Contactos</h1>
-          <p className="text-gray-600">Organiza tus contactos en listas para campañas dirigidas</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Listas de Contactos</h1>
+          <p className="text-gray-600 dark:text-gray-300">Organiza tus contactos en listas para campañas dirigidas</p>
         </div>
         <button
           onClick={openModal}
@@ -135,13 +135,13 @@ export default function ContactLists() {
           {contactLists.map((list) => (
             <div
               key={list.id}
-              className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 p-6"
+              className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 p-6"
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{list.name}</h3>
-                  <p className="text-gray-600 text-sm mb-3">{list.description}</p>
-                  <div className="flex items-center space-x-4 text-sm text-gray-500">
+                  <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">{list.name}</h3>
+                  <p className="text-gray-600 dark:text-gray-300 text-sm mb-3">{list.description}</p>
+                  <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
                     <span className="flex items-center space-x-1">
                       <i className="fas fa-users"></i>
                       <span>{list.contacts.length} contactos</span>
@@ -183,11 +183,11 @@ export default function ContactLists() {
         </div>
       ) : (
         <div className="text-center py-16">
-          <div className="w-24 h-24 mx-auto mb-6 text-gray-300">
+          <div className="w-24 h-24 mx-auto mb-6 text-gray-300 dark:text-gray-600">
             <i className="fas fa-address-book text-8xl"></i>
           </div>
-          <h3 className="text-xl font-medium text-gray-900 mb-2">No hay listas de contactos</h3>
-          <p className="text-gray-600 mb-6">Crea tu primera lista para organizar tus contactos</p>
+          <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-2">No hay listas de contactos</h3>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">Crea tu primera lista para organizar tus contactos</p>
           <button
             onClick={openModal}
             className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-8 py-3 rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl"
@@ -199,17 +199,17 @@ export default function ContactLists() {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-100">
-              <h2 className="text-2xl font-bold text-gray-900">
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto transition-colors duration-300">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                 {editingList ? 'Editar Lista' : 'Nueva Lista de Contactos'}
               </h2>
             </div>
 
             <div className="p-6 space-y-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Nombre de la lista <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -217,12 +217,12 @@ export default function ContactLists() {
                   value={newList.name}
                   onChange={(e) => setNewList({ ...newList, name: e.target.value })}
                   placeholder="Ejemplo: Clientes Premium"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-colors duration-300"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Descripción (opcional)
                 </label>
                 <input
@@ -230,12 +230,12 @@ export default function ContactLists() {
                   value={newList.description}
                   onChange={(e) => setNewList({ ...newList, description: e.target.value })}
                   placeholder="Breve descripción de la lista"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-colors duration-300"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Contactos (uno por línea)
                 </label>
                 <textarea
@@ -243,19 +243,19 @@ export default function ContactLists() {
                   onChange={(e) => setNewList({ ...newList, contactsText: e.target.value })}
                   placeholder="Formato: teléfono, nombre, apellido, email (separados por comas)&#10;Ejemplo:&#10;+5491234567890, Juan, Pérez, juan@email.com&#10;+5491234567891, María, García&#10;+5491234567892"
                   rows={8}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-colors duration-300"
                 />
-                <p className="text-sm text-gray-500 mt-2">
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                   Puedes usar solo el número de teléfono o agregar más datos separados por comas.
                   Solo el teléfono es obligatorio.
                 </p>
               </div>
             </div>
 
-            <div className="p-6 border-t border-gray-100 flex space-x-4">
+            <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex space-x-4">
               <button
                 onClick={() => setShowModal(false)}
-                className="flex-1 bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-200 transition-all"
+                className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 px-6 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
               >
                 Cancelar
               </button>
