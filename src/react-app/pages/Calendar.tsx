@@ -43,6 +43,8 @@ export default function Calendar() {
   });
   const [view, setView] = useState(Views.MONTH);
   const [date, setDate] = useState(new Date());
+  const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilters, setTypeFilters] = useState<CalendarEventData['type'][]>([]);
 
   const { showSuccess, showError } = useToast();
   const crmConfig = loadCRMConfig();
@@ -178,6 +180,35 @@ export default function Calendar() {
     }
   };
 
+  const handleExportToWhatsApp = () => {
+    if (!selectedEvent) return;
+
+    const typeLabels = {
+      call: '📞 Llamada',
+      meeting: '🤝 Reunión',
+      followup: '📋 Seguimiento',
+      reminder: '⏰ Recordatorio',
+      other: '📌 Otro'
+    };
+
+    const message = `
+*${selectedEvent.title}*
+
+📅 *Fecha:* ${format(selectedEvent.start, "dd 'de' MMMM 'de' yyyy", { locale: es })}
+🕐 *Hora:* ${format(selectedEvent.start, 'HH:mm', { locale: es })} - ${format(selectedEvent.end, 'HH:mm', { locale: es })}
+🏷️ *Tipo:* ${typeLabels[selectedEvent.type]}
+${selectedEvent.contactName ? `👤 *Contacto:* ${selectedEvent.contactName}\n` : ''}${selectedEvent.notes ? `\n📝 *Notas:*\n${selectedEvent.notes}` : ''}
+
+_Evento creado desde ChatFlow Pro_
+    `.trim();
+
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodedMessage}`;
+
+    window.open(whatsappUrl, '_blank');
+    showSuccess('Abriendo WhatsApp para compartir evento');
+  };
+
   const eventStyleGetter = (event: CalendarEventData) => {
     return {
       style: {
@@ -191,7 +222,59 @@ export default function Calendar() {
     };
   };
 
-  const upcomingEvents = getUpcomingEvents();
+  const getFilteredEvents = () => {
+    let filtered = events;
+
+    // Apply type filters
+    if (typeFilters.length > 0) {
+      filtered = filtered.filter(event => typeFilters.includes(event.type));
+    }
+
+    // Apply search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(event =>
+        event.title.toLowerCase().includes(query) ||
+        event.contactName?.toLowerCase().includes(query) ||
+        event.notes?.toLowerCase().includes(query) ||
+        event.type.toLowerCase().includes(query)
+      );
+    }
+
+    return filtered;
+  };
+
+  const upcomingEvents = useMemo(() => {
+    let upcoming = getUpcomingEvents();
+
+    // Apply type filters
+    if (typeFilters.length > 0) {
+      upcoming = upcoming.filter(event => typeFilters.includes(event.type));
+    }
+
+    // Apply search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      upcoming = upcoming.filter(event =>
+        event.title.toLowerCase().includes(query) ||
+        event.contactName?.toLowerCase().includes(query) ||
+        event.notes?.toLowerCase().includes(query) ||
+        event.type.toLowerCase().includes(query)
+      );
+    }
+
+    return upcoming;
+  }, [events, searchQuery, typeFilters]);
+
+  const filteredEvents = getFilteredEvents();
+
+  const toggleTypeFilter = (type: CalendarEventData['type']) => {
+    setTypeFilters(prev =>
+      prev.includes(type)
+        ? prev.filter(t => t !== type)
+        : [...prev, type]
+    );
+  };
 
   return (
     <div className="p-6 w-full bg-gray-50 dark:bg-gray-900">
@@ -211,7 +294,7 @@ export default function Calendar() {
           <div style={{ height: '700px' }}>
             <BigCalendar
               localizer={localizer}
-              events={events}
+              events={filteredEvents}
               startAccessor="start"
               endAccessor="end"
               style={{ height: '100%' }}
@@ -235,7 +318,7 @@ export default function Calendar() {
                 date: "Fecha",
                 time: "Hora",
                 event: "Evento",
-                noEventsInRange: "No hay eventos en este rango",
+                noEventsInRange: searchQuery ? "No se encontraron eventos" : "No hay eventos en este rango",
                 showMore: (total) => `+ Ver más (${total})`
               }}
             />
@@ -244,6 +327,75 @@ export default function Calendar() {
 
         {/* Sidebar */}
         <div className="space-y-6">
+          {/* Search Bar */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4">
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar eventos..."
+                className="w-full pl-10 pr-10 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-colors duration-300"
+              />
+              <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"></i>
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                >
+                  <i className="fas fa-times"></i>
+                </button>
+              )}
+            </div>
+            {searchQuery && (
+              <p className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                {filteredEvents.length} evento{filteredEvents.length !== 1 ? 's' : ''} encontrado{filteredEvents.length !== 1 ? 's' : ''}
+              </p>
+            )}
+          </div>
+
+          {/* Event Type Filters */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Filtrar por Tipo</h3>
+              {typeFilters.length > 0 && (
+                <button
+                  onClick={() => setTypeFilters([])}
+                  className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors"
+                >
+                  Limpiar
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { type: 'call' as const, label: '📞 Llamada', color: '#3b82f6' },
+                { type: 'meeting' as const, label: '🤝 Reunión', color: '#8b5cf6' },
+                { type: 'followup' as const, label: '📋 Seguimiento', color: '#06b6d4' },
+                { type: 'reminder' as const, label: '⏰ Recordatorio', color: '#10b981' },
+                { type: 'other' as const, label: '📌 Otro', color: '#6b7280' }
+              ].map(({ type, label, color }) => (
+                <button
+                  key={type}
+                  onClick={() => toggleTypeFilter(type)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all transform hover:scale-105 ${
+                    typeFilters.includes(type)
+                      ? 'text-white shadow-md'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                  }`}
+                  style={typeFilters.includes(type) ? { backgroundColor: color } : undefined}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {typeFilters.length > 0 && (
+              <p className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                {typeFilters.length} filtro{typeFilters.length !== 1 ? 's' : ''} activo{typeFilters.length !== 1 ? 's' : ''}
+              </p>
+            )}
+          </div>
+
           {/* Quick Add Button */}
           <button
             onClick={() => {
@@ -310,29 +462,62 @@ export default function Calendar() {
             )}
           </div>
 
-          {/* Event Types Legend */}
+          {/* Event Statistics */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Tipos de Evento</h3>
-            <div className="space-y-2 text-sm text-gray-900 dark:text-gray-100">
-              <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 rounded" style={{ backgroundColor: '#3b82f6' }}></div>
-                <span>Llamada</span>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+              <i className="fas fa-chart-pie text-blue-600 mr-2"></i>
+              Estadísticas
+            </h3>
+
+            {/* Total Events */}
+            <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-600 dark:text-gray-400">Total de Eventos</span>
+                <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">{events.length}</span>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 rounded" style={{ backgroundColor: '#8b5cf6' }}></div>
-                <span>Reunión</span>
+            </div>
+
+            {/* Events by Type */}
+            <div className="space-y-2.5 mb-4">
+              {[
+                { type: 'call' as const, label: '📞 Llamadas', color: '#3b82f6' },
+                { type: 'meeting' as const, label: '🤝 Reuniones', color: '#8b5cf6' },
+                { type: 'followup' as const, label: '📋 Seguimientos', color: '#06b6d4' },
+                { type: 'reminder' as const, label: '⏰ Recordatorios', color: '#10b981' },
+                { type: 'other' as const, label: '📌 Otros', color: '#6b7280' }
+              ].map(({ type, label, color }) => {
+                const count = events.filter(e => e.type === type).length;
+                const percentage = events.length > 0 ? (count / events.length * 100).toFixed(0) : 0;
+                return (
+                  <div key={type}>
+                    <div className="flex items-center justify-between text-sm mb-1">
+                      <span className="text-gray-700 dark:text-gray-300">{label}</span>
+                      <span className="font-semibold text-gray-900 dark:text-gray-100">{count}</span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div
+                        className="h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${percentage}%`, backgroundColor: color }}
+                      ></div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Quick Stats */}
+            <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+              <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                <div className="text-xs text-green-600 dark:text-green-400 mb-1">Próximos 7 días</div>
+                <div className="text-lg font-bold text-green-700 dark:text-green-300">
+                  {getUpcomingEvents().length}
+                </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 rounded" style={{ backgroundColor: '#06b6d4' }}></div>
-                <span>Seguimiento</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 rounded" style={{ backgroundColor: '#10b981' }}></div>
-                <span>Recordatorio</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 rounded" style={{ backgroundColor: '#6b7280' }}></div>
-                <span>Otro</span>
+              <div className="text-center p-2 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Pasados</div>
+                <div className="text-lg font-bold text-gray-700 dark:text-gray-300">
+                  {events.filter(e => isBefore(e.end, new Date())).length}
+                </div>
               </div>
             </div>
           </div>
@@ -472,17 +657,28 @@ export default function Calendar() {
               </div>
             </div>
 
-            <div className="p-6 border-t border-gray-100 dark:border-gray-700 flex justify-between">
-              {selectedEvent && (
-                <button
-                  onClick={handleDeleteEvent}
-                  className="px-6 py-2.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg font-medium hover:bg-red-100 dark:hover:bg-red-900/40 transition-all hover:shadow-lg transform hover:scale-105 flex items-center space-x-2"
-                >
-                  <i className="fas fa-trash"></i>
-                  <span>Eliminar</span>
-                </button>
-              )}
-              <div className={`flex space-x-3 ${!selectedEvent ? 'ml-auto' : ''}`}>
+            <div className="p-6 border-t border-gray-100 dark:border-gray-700 flex flex-wrap justify-between gap-3">
+              <div className="flex space-x-3">
+                {selectedEvent && (
+                  <>
+                    <button
+                      onClick={handleDeleteEvent}
+                      className="px-6 py-2.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg font-medium hover:bg-red-100 dark:hover:bg-red-900/40 transition-all hover:shadow-lg transform hover:scale-105 flex items-center space-x-2"
+                    >
+                      <i className="fas fa-trash"></i>
+                      <span>Eliminar</span>
+                    </button>
+                    <button
+                      onClick={handleExportToWhatsApp}
+                      className="px-6 py-2.5 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg font-medium hover:bg-green-100 dark:hover:bg-green-900/40 transition-all hover:shadow-lg transform hover:scale-105 flex items-center space-x-2"
+                    >
+                      <i className="fab fa-whatsapp"></i>
+                      <span>Compartir WhatsApp</span>
+                    </button>
+                  </>
+                )}
+              </div>
+              <div className="flex space-x-3">
                 <button
                   onClick={() => {
                     setShowModal(false);

@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { loadConfig, loadCRMData, loadCRMConfig } from '@/react-app/utils/storage';
 import { useToast } from '@/react-app/components/Toast';
+import { format, isToday, isBefore, startOfDay } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 interface MetaInsightsData {
   phone_numbers: Array<{
@@ -40,6 +42,7 @@ export default function Dashboard() {
     totalCRMContacts: 0,
     lastSync: null as string | null
   });
+  const [todayEvents, setTodayEvents] = useState<any[]>([]);
   const chartRef = useRef<HTMLCanvasElement>(null);
   const donutChartRef = useRef<HTMLCanvasElement>(null);
   // CRM Chart refs
@@ -52,6 +55,7 @@ export default function Dashboard() {
   useEffect(() => {
     loadLocalStats();
     loadCRMContacts();
+    loadTodayEvents();
     if (config.api.accessToken && config.api.wabaId) {
       loadMetaAnalytics();
     } else {
@@ -98,6 +102,27 @@ export default function Dashboard() {
       });
     } catch (error) {
       console.error('Error loading local stats:', error);
+    }
+  };
+
+  const loadTodayEvents = () => {
+    try {
+      const eventsData = localStorage.getItem('chatflow_calendar_events');
+      const events = eventsData ? JSON.parse(eventsData) : [];
+
+      // Filter events for today and upcoming
+      const today = new Date();
+      const filtered = events
+        .filter((event: any) => {
+          const eventStart = new Date(event.start);
+          return isToday(eventStart) && !isBefore(eventStart, today);
+        })
+        .sort((a: any, b: any) => new Date(a.start).getTime() - new Date(b.start).getTime())
+        .slice(0, 5); // Show max 5 events
+
+      setTodayEvents(filtered);
+    } catch (error) {
+      console.error('Error loading today events:', error);
     }
   };
 
@@ -680,6 +705,78 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Today's Events Widget */}
+      <div className="mb-8">
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-6 shadow-xl">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold text-white flex items-center">
+              <i className="fas fa-calendar-day mr-3"></i>
+              Eventos de Hoy
+            </h2>
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('navigate-to', { detail: 'calendar' }))}
+              className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all backdrop-blur-sm flex items-center space-x-2"
+            >
+              <i className="fas fa-calendar"></i>
+              <span>Ver Calendario</span>
+            </button>
+          </div>
+
+          {todayEvents.length > 0 ? (
+            <div className="space-y-3">
+              {todayEvents.map((event, index) => (
+                <div
+                  key={index}
+                  className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-md hover:shadow-lg transition-all hover:-translate-y-1 cursor-pointer"
+                  onClick={() => window.dispatchEvent(new CustomEvent('navigate-to', { detail: 'calendar' }))}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start space-x-3 flex-1">
+                      <div
+                        className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+                        style={{ backgroundColor: event.color }}
+                      >
+                        {format(new Date(event.start), 'HH:mm')}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">{event.title}</h3>
+                        {event.description && (
+                          <p className="text-sm text-gray-600 dark:text-gray-300 truncate">{event.description}</p>
+                        )}
+                        <div className="flex items-center gap-3 mt-2">
+                          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                            <i className="fas fa-tag mr-1"></i>
+                            {event.type}
+                          </span>
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            <i className="fas fa-clock mr-1"></i>
+                            {format(new Date(event.start), 'HH:mm', { locale: es })} - {format(new Date(event.end), 'HH:mm', { locale: es })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <i className="fas fa-chevron-right text-gray-400 dark:text-gray-500 ml-3"></i>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-8 text-center">
+              <i className="fas fa-calendar-check text-white/60 text-4xl mb-3"></i>
+              <p className="text-white text-lg font-medium mb-1">No hay eventos programados para hoy</p>
+              <p className="text-white/80 text-sm mb-4">¡Perfecto día para relajarse o planificar nuevas campañas!</p>
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent('navigate-to', { detail: 'calendar' }))}
+                className="bg-white text-blue-600 px-5 py-2 rounded-lg text-sm font-medium hover:bg-blue-50 transition-all inline-flex items-center space-x-2"
+              >
+                <i className="fas fa-plus-circle"></i>
+                <span>Crear Evento</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Meta WhatsApp Insights Stats */}
       {hasMetaConnection && (
