@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Calendar as BigCalendar, dateFnsLocalizer, Views, Event as CalendarEvent } from 'react-big-calendar';
-import { format, parse, startOfWeek, getDay, addDays, isBefore, startOfDay } from 'date-fns';
+import { format, parse, startOfWeek, getDay, addDays, isBefore, startOfDay, addWeeks, addMonths, differenceInMinutes, isWithinInterval, endOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { loadCRMData, loadCRMConfig } from '@/react-app/utils/storage';
 import { useToast } from '@/react-app/components/Toast';
@@ -15,6 +15,12 @@ const localizer = dateFnsLocalizer({
   locales,
 });
 
+interface RecurrenceConfig {
+  frequency: 'none' | 'daily' | 'weekly' | 'monthly';
+  endDate?: Date;
+  occurrences?: number;
+}
+
 interface CalendarEventData extends CalendarEvent {
   id: string;
   title: string;
@@ -25,6 +31,8 @@ interface CalendarEventData extends CalendarEvent {
   type: 'call' | 'meeting' | 'followup' | 'reminder' | 'other';
   notes?: string;
   color?: string;
+  recurrence?: RecurrenceConfig;
+  parentEventId?: string; // For recurring event instances
 }
 
 export default function Calendar() {
@@ -39,12 +47,16 @@ export default function Calendar() {
     endTime: '',
     contactId: '',
     type: 'reminder' as CalendarEventData['type'],
-    notes: ''
+    notes: '',
+    recurrenceFrequency: 'none' as RecurrenceConfig['frequency'],
+    recurrenceEndDate: '',
+    recurrenceOccurrences: ''
   });
   const [view, setView] = useState(Views.MONTH);
   const [date, setDate] = useState(new Date());
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilters, setTypeFilters] = useState<CalendarEventData['type'][]>([]);
+  const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
 
   const { showSuccess, showError } = useToast();
   const crmConfig = loadCRMConfig();
@@ -93,7 +105,10 @@ export default function Calendar() {
       endTime: format(addDays(new Date(), 0).setHours(new Date().getHours() + 1), 'HH:mm'),
       contactId: '',
       type: 'reminder',
-      notes: ''
+      notes: '',
+      recurrenceFrequency: 'none',
+      recurrenceEndDate: '',
+      recurrenceOccurrences: ''
     });
     setShowModal(true);
   };
@@ -107,9 +122,59 @@ export default function Calendar() {
       endTime: format(event.end, 'HH:mm'),
       contactId: event.contactId || '',
       type: event.type,
-      notes: event.notes || ''
+      notes: event.notes || '',
+      recurrenceFrequency: event.recurrence?.frequency || 'none',
+      recurrenceEndDate: event.recurrence?.endDate ? format(event.recurrence.endDate, 'yyyy-MM-dd') : '',
+      recurrenceOccurrences: event.recurrence?.occurrences?.toString() || ''
     });
     setShowModal(true);
+  };
+
+  const generateRecurringEvents = (baseEvent: CalendarEventData): CalendarEventData[] => {
+    if (!baseEvent.recurrence || baseEvent.recurrence.frequency === 'none') {
+      return [baseEvent];
+    }
+
+    const recurringEvents: CalendarEventData[] = [baseEvent];
+    const { frequency, endDate, occurrences } = baseEvent.recurrence;
+    const eventDuration = differenceInMinutes(baseEvent.end, baseEvent.start);
+
+    let currentDate = baseEvent.start;
+    let count = 1;
+    const maxOccurrences = occurrences || 52; // Default 52 if not specified
+    const maxDate = endDate || addMonths(baseEvent.start, 12); // Default 1 year
+
+    while (count < maxOccurrences && isBefore(currentDate, maxDate)) {
+      // Calculate next occurrence
+      switch (frequency) {
+        case 'daily':
+          currentDate = addDays(currentDate, 1);
+          break;
+        case 'weekly':
+          currentDate = addWeeks(currentDate, 1);
+          break;
+        case 'monthly':
+          currentDate = addMonths(currentDate, 1);
+          break;
+      }
+
+      if (isBefore(currentDate, maxDate)) {
+        const instanceStart = currentDate;
+        const instanceEnd = new Date(instanceStart.getTime() + eventDuration * 60 * 1000);
+
+        recurringEvents.push({
+          ...baseEvent,
+          id: `${baseEvent.id}-${count}`,
+          start: instanceStart,
+          end: instanceEnd,
+          parentEventId: baseEvent.id
+        });
+
+        count++;
+      }
+    }
+
+    return recurringEvents;
   };
 
   const handleSaveEvent = () => {
@@ -142,6 +207,13 @@ export default function Calendar() {
       other: '#6b7280'
     };
 
+    // Build recurrence config
+    const recurrence: RecurrenceConfig = {
+      frequency: newEvent.recurrenceFrequency,
+      endDate: newEvent.recurrenceEndDate ? new Date(newEvent.recurrenceEndDate) : undefined,
+      occurrences: newEvent.recurrenceOccurrences ? parseInt(newEvent.recurrenceOccurrences) : undefined
+    };
+
     const eventData: CalendarEventData = {
       id: selectedEvent?.id || Date.now().toString(),
       title: newEvent.title,
@@ -151,16 +223,24 @@ export default function Calendar() {
       contactName: contact && nameField ? contact[nameField.name] : undefined,
       type: newEvent.type,
       notes: newEvent.notes,
-      color: eventColors[newEvent.type]
+      color: eventColors[newEvent.type],
+      recurrence: recurrence.frequency !== 'none' ? recurrence : undefined
     };
 
     let updatedEvents;
     if (selectedEvent) {
-      updatedEvents = events.map(e => e.id === selectedEvent.id ? eventData : e);
+      // Remove old instances if updating a recurring event
+      updatedEvents = events.filter(e => e.parentEventId !== selectedEvent.id && e.id !== selectedEvent.id);
+      const newInstances = generateRecurringEvents(eventData);
+      updatedEvents = [...updatedEvents, ...newInstances];
       showSuccess('Evento actualizado exitosamente');
     } else {
-      updatedEvents = [...events, eventData];
-      showSuccess('Evento creado exitosamente');
+      // Generate recurring instances for new event
+      const newInstances = generateRecurringEvents(eventData);
+      updatedEvents = [...events, ...newInstances];
+      showSuccess(newInstances.length > 1
+        ? `Evento creado con ${newInstances.length} ocurrencias`
+        : 'Evento creado exitosamente');
     }
 
     saveEvents(updatedEvents);
@@ -207,6 +287,51 @@ _Evento creado desde ChatFlow Pro_
 
     window.open(whatsappUrl, '_blank');
     showSuccess('Abriendo WhatsApp para compartir evento');
+  };
+
+  const handleExportToICS = () => {
+    if (!selectedEvent) return;
+
+    const formatDateToICS = (date: Date): string => {
+      return format(date, "yyyyMMdd'T'HHmmss");
+    };
+
+    const escapeICS = (str: string): string => {
+      return str.replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;');
+    };
+
+    const icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//ChatFlow Pro//Calendar//ES',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      'X-WR-CALNAME:ChatFlow Pro',
+      'X-WR-TIMEZONE:America/Mexico_City',
+      'BEGIN:VEVENT',
+      `UID:${selectedEvent.id}@chatflowpro.com`,
+      `DTSTAMP:${formatDateToICS(new Date())}`,
+      `DTSTART:${formatDateToICS(selectedEvent.start)}`,
+      `DTEND:${formatDateToICS(selectedEvent.end)}`,
+      `SUMMARY:${escapeICS(selectedEvent.title)}`,
+      selectedEvent.notes ? `DESCRIPTION:${escapeICS(selectedEvent.notes)}` : '',
+      selectedEvent.contactName ? `ORGANIZER;CN=${escapeICS(selectedEvent.contactName)}:mailto:noreply@chatflowpro.com` : '',
+      `CATEGORIES:${selectedEvent.type.toUpperCase()}`,
+      'STATUS:CONFIRMED',
+      'SEQUENCE:0',
+      'END:VEVENT',
+      'END:VCALENDAR'
+    ].filter(line => line).join('\r\n');
+
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${selectedEvent.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.ics`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    showSuccess('Archivo .ics descargado - Importa en Google Calendar o Outlook');
   };
 
   const eventStyleGetter = (event: CalendarEventData) => {
@@ -286,44 +411,171 @@ _Evento creado desde ChatFlow Pro_
           </h1>
           <p className="text-gray-600 dark:text-gray-400">Organiza eventos, reuniones y recordatorios vinculados a tus contactos</p>
         </div>
+
+        {/* View Mode Toggle */}
+        <div className="flex items-center space-x-2 bg-white dark:bg-gray-800 rounded-lg p-1 shadow-md">
+          <button
+            onClick={() => setViewMode('calendar')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              viewMode === 'calendar'
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+            }`}
+          >
+            <i className="fas fa-calendar mr-2"></i>
+            Calendario
+          </button>
+          <button
+            onClick={() => setViewMode('list')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+              viewMode === 'list'
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+            }`}
+          >
+            <i className="fas fa-list mr-2"></i>
+            Lista
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Calendar */}
-        <div className="lg:col-span-3 bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
-          <div style={{ height: '700px' }}>
-            <BigCalendar
-              localizer={localizer}
-              events={filteredEvents}
-              startAccessor="start"
-              endAccessor="end"
-              style={{ height: '100%' }}
-              onSelectSlot={handleSelectSlot}
-              onSelectEvent={handleSelectEvent}
-              selectable
-              view={view}
-              onView={setView}
-              date={date}
-              onNavigate={setDate}
-              eventPropGetter={eventStyleGetter}
-              culture="es"
-              messages={{
-                next: "Siguiente",
-                previous: "Anterior",
-                today: "Hoy",
-                month: "Mes",
-                week: "Semana",
-                day: "Día",
-                agenda: "Agenda",
-                date: "Fecha",
-                time: "Hora",
-                event: "Evento",
-                noEventsInRange: searchQuery ? "No se encontraron eventos" : "No hay eventos en este rango",
-                showMore: (total) => `+ Ver más (${total})`
-              }}
-            />
+        {/* Calendar View */}
+        {viewMode === 'calendar' && (
+          <div className="lg:col-span-3 bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+            <div style={{ height: '700px' }}>
+              <BigCalendar
+                localizer={localizer}
+                events={filteredEvents}
+                startAccessor="start"
+                endAccessor="end"
+                style={{ height: '100%' }}
+                onSelectSlot={handleSelectSlot}
+                onSelectEvent={handleSelectEvent}
+                selectable
+                view={view}
+                onView={setView}
+                date={date}
+                onNavigate={setDate}
+                eventPropGetter={eventStyleGetter}
+                culture="es"
+                messages={{
+                  next: "Siguiente",
+                  previous: "Anterior",
+                  today: "Hoy",
+                  month: "Mes",
+                  week: "Semana",
+                  day: "Día",
+                  agenda: "Agenda",
+                  date: "Fecha",
+                  time: "Hora",
+                  event: "Evento",
+                  noEventsInRange: searchQuery ? "No se encontraron eventos" : "No hay eventos en este rango",
+                  showMore: (total) => `+ Ver más (${total})`
+                }}
+              />
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* List View */}
+        {viewMode === 'list' && (
+          <div className="lg:col-span-3 bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+            <div className="space-y-4 max-h-[700px] overflow-y-auto">
+              {filteredEvents.length > 0 ? (
+                filteredEvents
+                  .sort((a, b) => a.start.getTime() - b.start.getTime())
+                  .map((event) => (
+                    <div
+                      key={event.id}
+                      onClick={() => handleSelectEvent(event)}
+                      className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-lg transition-all cursor-pointer transform hover:-translate-y-1"
+                      style={{ borderLeftWidth: '4px', borderLeftColor: event.color }}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-3 mb-2">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                              {event.title}
+                            </h3>
+                            <span
+                              className="px-2 py-1 rounded-md text-xs font-medium text-white"
+                              style={{ backgroundColor: event.color }}
+                            >
+                              {event.type.toUpperCase()}
+                            </span>
+                            {event.recurrence && event.recurrence.frequency !== 'none' && (
+                              <span className="px-2 py-1 rounded-md text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
+                                <i className="fas fa-repeat mr-1"></i>
+                                {event.recurrence.frequency === 'daily' && 'Diario'}
+                                {event.recurrence.frequency === 'weekly' && 'Semanal'}
+                                {event.recurrence.frequency === 'monthly' && 'Mensual'}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400 mb-2">
+                            <span className="flex items-center">
+                              <i className="fas fa-calendar text-blue-600 mr-2"></i>
+                              {format(event.start, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: es })}
+                            </span>
+                            <span className="flex items-center">
+                              <i className="fas fa-clock text-green-600 mr-2"></i>
+                              {format(event.start, 'HH:mm', { locale: es })} - {format(event.end, 'HH:mm', { locale: es })}
+                            </span>
+                          </div>
+
+                          {event.contactName && (
+                            <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mb-2">
+                              <i className="fas fa-user text-purple-600 mr-2"></i>
+                              {event.contactName}
+                            </div>
+                          )}
+
+                          {event.notes && (
+                            <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 line-clamp-2">
+                              {event.notes}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="ml-4 flex flex-col items-end space-y-2">
+                          <div
+                            className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              isBefore(event.end, new Date())
+                                ? 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                                : isToday(event.start)
+                                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                                : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                            }`}
+                          >
+                            {isBefore(event.end, new Date())
+                              ? 'Pasado'
+                              : isToday(event.start)
+                              ? 'Hoy'
+                              : 'Próximo'}
+                          </div>
+                          <i className="fas fa-chevron-right text-gray-400 dark:text-gray-500"></i>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+              ) : (
+                <div className="text-center py-16">
+                  <i className="fas fa-calendar-times text-gray-400 dark:text-gray-500 text-5xl mb-4"></i>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                    No hay eventos
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    {searchQuery || typeFilters.length > 0
+                      ? 'No se encontraron eventos con los filtros aplicados'
+                      : 'Comienza creando tu primer evento'}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Sidebar */}
         <div className="space-y-6">
@@ -407,7 +659,10 @@ _Evento creado desde ChatFlow Pro_
                 endTime: format(new Date().setHours(new Date().getHours() + 1), 'HH:mm'),
                 contactId: '',
                 type: 'reminder',
-                notes: ''
+                notes: '',
+                recurrenceFrequency: 'none',
+                recurrenceEndDate: '',
+                recurrenceOccurrences: ''
               });
               setShowModal(true);
             }}
@@ -655,6 +910,80 @@ _Evento creado desde ChatFlow Pro_
                   className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
+
+              {/* Recurrence Section */}
+              <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
+                  <i className="fas fa-repeat text-purple-600 mr-2"></i>
+                  Repetir Evento
+                </h4>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Frequency */}
+                  <div className="md:col-span-3">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Frecuencia
+                    </label>
+                    <select
+                      value={newEvent.recurrenceFrequency}
+                      onChange={(e) => setNewEvent({ ...newEvent, recurrenceFrequency: e.target.value as RecurrenceConfig['frequency'] })}
+                      className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    >
+                      <option value="none">🚫 No repetir</option>
+                      <option value="daily">📅 Diariamente</option>
+                      <option value="weekly">📆 Semanalmente</option>
+                      <option value="monthly">🗓️ Mensualmente</option>
+                    </select>
+                  </div>
+
+                  {newEvent.recurrenceFrequency !== 'none' && (
+                    <>
+                      {/* End Date */}
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Finaliza el (Opcional)
+                        </label>
+                        <input
+                          type="date"
+                          value={newEvent.recurrenceEndDate}
+                          onChange={(e) => setNewEvent({ ...newEvent, recurrenceEndDate: e.target.value })}
+                          min={newEvent.date}
+                          className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+
+                      {/* Occurrences */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          N° Repeticiones
+                        </label>
+                        <input
+                          type="number"
+                          value={newEvent.recurrenceOccurrences}
+                          onChange={(e) => setNewEvent({ ...newEvent, recurrenceOccurrences: e.target.value })}
+                          placeholder="Ej: 10"
+                          min="1"
+                          max="365"
+                          className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+
+                      {/* Info message */}
+                      <div className="md:col-span-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
+                        <p className="text-sm text-purple-700 dark:text-purple-300">
+                          <i className="fas fa-info-circle mr-2"></i>
+                          {newEvent.recurrenceFrequency === 'daily' && 'Este evento se repetirá todos los días'}
+                          {newEvent.recurrenceFrequency === 'weekly' && 'Este evento se repetirá cada semana'}
+                          {newEvent.recurrenceFrequency === 'monthly' && 'Este evento se repetirá cada mes'}
+                          {newEvent.recurrenceEndDate && ` hasta el ${format(new Date(newEvent.recurrenceEndDate), "dd 'de' MMMM 'de' yyyy", { locale: es })}`}
+                          {newEvent.recurrenceOccurrences && ` por ${newEvent.recurrenceOccurrences} veces`}
+                          {!newEvent.recurrenceEndDate && !newEvent.recurrenceOccurrences && ' (máximo 52 repeticiones o 1 año)'}
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="p-6 border-t border-gray-100 dark:border-gray-700 flex flex-wrap justify-between gap-3">
@@ -673,7 +1002,14 @@ _Evento creado desde ChatFlow Pro_
                       className="px-6 py-2.5 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg font-medium hover:bg-green-100 dark:hover:bg-green-900/40 transition-all hover:shadow-lg transform hover:scale-105 flex items-center space-x-2"
                     >
                       <i className="fab fa-whatsapp"></i>
-                      <span>Compartir WhatsApp</span>
+                      <span>WhatsApp</span>
+                    </button>
+                    <button
+                      onClick={handleExportToICS}
+                      className="px-6 py-2.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg font-medium hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all hover:shadow-lg transform hover:scale-105 flex items-center space-x-2"
+                    >
+                      <i className="fas fa-calendar-alt"></i>
+                      <span>Exportar .ics</span>
                     </button>
                   </>
                 )}
