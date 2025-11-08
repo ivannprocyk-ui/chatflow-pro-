@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Calendar as BigCalendar, dateFnsLocalizer, Views, Event as CalendarEvent } from 'react-big-calendar';
-import { format, parse, startOfWeek, getDay, addDays, isBefore, startOfDay, addWeeks, addMonths, differenceInMinutes, isWithinInterval, endOfDay } from 'date-fns';
+import { format, parse, startOfWeek, getDay, addDays, isBefore, startOfDay, addWeeks, addMonths, differenceInMinutes, isWithinInterval, endOfDay, isToday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { loadCRMData, loadCRMConfig } from '@/react-app/utils/storage';
 import { useToast } from '@/react-app/components/Toast';
@@ -593,8 +593,11 @@ _Evento creado desde ChatFlow Pro_
             <div className="space-y-4 max-h-[700px] overflow-y-auto">
               {filteredEvents.length > 0 ? (
                 filteredEvents
-                  .sort((a, b) => a.start.getTime() - b.start.getTime())
-                  .map((event) => (
+                  .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
+                  .map((event) => {
+                    const eventStart = new Date(event.start);
+                    const eventEnd = new Date(event.end);
+                    return (
                     <div
                       key={event.id}
                       onClick={() => handleSelectEvent(event)}
@@ -626,11 +629,11 @@ _Evento creado desde ChatFlow Pro_
                           <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400 mb-2">
                             <span className="flex items-center">
                               <i className="fas fa-calendar text-blue-600 mr-2"></i>
-                              {format(event.start, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: es })}
+                              {format(eventStart, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: es })}
                             </span>
                             <span className="flex items-center">
                               <i className="fas fa-clock text-green-600 mr-2"></i>
-                              {format(event.start, 'HH:mm', { locale: es })} - {format(event.end, 'HH:mm', { locale: es })}
+                              {format(eventStart, 'HH:mm', { locale: es })} - {format(eventEnd, 'HH:mm', { locale: es })}
                             </span>
                           </div>
 
@@ -651,16 +654,16 @@ _Evento creado desde ChatFlow Pro_
                         <div className="ml-4 flex flex-col items-end space-y-2">
                           <div
                             className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              isBefore(event.end, new Date())
+                              isBefore(eventEnd, new Date())
                                 ? 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
-                                : isToday(event.start)
+                                : isToday(eventStart)
                                 ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
                                 : 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
                             }`}
                           >
-                            {isBefore(event.end, new Date())
+                            {isBefore(eventEnd, new Date())
                               ? 'Pasado'
-                              : isToday(event.start)
+                              : isToday(eventStart)
                               ? 'Hoy'
                               : 'Próximo'}
                           </div>
@@ -668,7 +671,8 @@ _Evento creado desde ChatFlow Pro_
                         </div>
                       </div>
                     </div>
-                  ))
+                  );
+                  })
               ) : (
                 <div className="text-center py-16">
                   <i className="fas fa-calendar-times text-gray-400 dark:text-gray-500 text-5xl mb-4"></i>
