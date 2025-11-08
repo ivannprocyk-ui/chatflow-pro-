@@ -21,6 +21,17 @@ interface RecurrenceConfig {
   occurrences?: number;
 }
 
+interface EventTemplate {
+  id: string;
+  name: string;
+  title: string;
+  type: 'call' | 'meeting' | 'followup' | 'reminder' | 'other';
+  duration: number; // in minutes
+  notes?: string;
+  recurrenceFrequency: RecurrenceConfig['frequency'];
+  createdAt: string;
+}
+
 interface CalendarEventData extends CalendarEvent {
   id: string;
   title: string;
@@ -40,7 +51,11 @@ interface CalendarEventData extends CalendarEvent {
 export default function Calendar() {
   const [events, setEvents] = useState<CalendarEventData[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const [showTemplatesModal, setShowTemplatesModal] = useState(false);
+  const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEventData | null>(null);
+  const [templates, setTemplates] = useState<EventTemplate[]>([]);
+  const [templateName, setTemplateName] = useState('');
   const [crmContacts, setCrmContacts] = useState<any[]>([]);
   const [newEvent, setNewEvent] = useState({
     title: '',
@@ -59,12 +74,14 @@ export default function Calendar() {
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilters, setTypeFilters] = useState<CalendarEventData['type'][]>([]);
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
+  const [followUpSuggestions, setFollowUpSuggestions] = useState<any[]>([]);
 
   const { showSuccess, showError } = useToast();
   const crmConfig = loadCRMConfig();
 
   useEffect(() => {
     loadEvents();
+    loadTemplates();
     setCrmContacts(loadCRMData());
 
     // Request notification permission
@@ -79,6 +96,11 @@ export default function Calendar() {
 
     // Initial check
     checkUpcomingEvents();
+
+    // Generate follow-up suggestions
+    if (events.length > 0 && crmContacts.length > 0) {
+      generateFollowUpSuggestions();
+    }
 
     return () => clearInterval(notificationInterval);
   }, [events]);
@@ -103,6 +125,211 @@ export default function Calendar() {
   const saveEvents = (eventsToSave: CalendarEventData[]) => {
     localStorage.setItem('chatflow_calendar_events', JSON.stringify(eventsToSave));
     setEvents(eventsToSave);
+  };
+
+  const loadTemplates = () => {
+    const stored = localStorage.getItem('chatflow_event_templates');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        setTemplates(parsed);
+      } catch (error) {
+        console.error('Error loading templates:', error);
+      }
+    }
+  };
+
+  const saveTemplates = (templatesToSave: EventTemplate[]) => {
+    localStorage.setItem('chatflow_event_templates', JSON.stringify(templatesToSave));
+    setTemplates(templatesToSave);
+  };
+
+  const handleSaveAsTemplate = () => {
+    if (!templateName.trim()) {
+      showError('El nombre de la plantilla es requerido');
+      return;
+    }
+
+    if (!newEvent.title.trim()) {
+      showError('El evento debe tener un título');
+      return;
+    }
+
+    const startTime = newEvent.time ? new Date(`2000-01-01T${newEvent.time}`) : new Date();
+    const endTime = newEvent.endTime ? new Date(`2000-01-01T${newEvent.endTime}`) : new Date(startTime.getTime() + 60 * 60 * 1000);
+    const duration = differenceInMinutes(endTime, startTime);
+
+    const template: EventTemplate = {
+      id: Date.now().toString(),
+      name: templateName.trim(),
+      title: newEvent.title,
+      type: newEvent.type,
+      duration: duration,
+      notes: newEvent.notes,
+      recurrenceFrequency: newEvent.recurrenceFrequency,
+      createdAt: new Date().toISOString()
+    };
+
+    const updatedTemplates = [...templates, template];
+    saveTemplates(updatedTemplates);
+    showSuccess(`Plantilla "${template.name}" guardada exitosamente`);
+    setShowSaveTemplateModal(false);
+    setTemplateName('');
+  };
+
+  const handleLoadTemplate = (template: EventTemplate) => {
+    const now = new Date();
+    const startTime = format(now, 'HH:mm');
+    const endTime = format(new Date(now.getTime() + template.duration * 60 * 1000), 'HH:mm');
+
+    setNewEvent({
+      title: template.title,
+      date: format(now, 'yyyy-MM-dd'),
+      time: startTime,
+      endTime: endTime,
+      contactIds: [],
+      type: template.type,
+      notes: template.notes || '',
+      recurrenceFrequency: template.recurrenceFrequency,
+      recurrenceEndDate: '',
+      recurrenceOccurrences: ''
+    });
+
+    setShowTemplatesModal(false);
+    setShowModal(true);
+    showSuccess(`Plantilla "${template.name}" cargada`);
+  };
+
+  const handleDeleteTemplate = (templateId: string) => {
+    const template = templates.find(t => t.id === templateId);
+    if (confirm(`¿Eliminar la plantilla "${template?.name}"?`)) {
+      const updatedTemplates = templates.filter(t => t.id !== templateId);
+      saveTemplates(updatedTemplates);
+      showSuccess('Plantilla eliminada');
+    }
+  };
+
+  const generateFollowUpSuggestions = () => {
+    const now = new Date();
+    const suggestions: any[] = [];
+
+    // Find past events (calls, meetings) without follow-ups
+    const pastEvents = events.filter(e => {
+      const eventEnd = new Date(e.end);
+      const daysSinceEvent = (now.getTime() - eventEnd.getTime()) / (1000 * 60 * 60 * 24);
+      return (
+        (e.type === 'call' || e.type === 'meeting') &&
+        daysSinceEvent >= 3 &&
+        daysSinceEvent <= 30 && // Don't suggest for very old events
+        !e.parentEventId // Skip recurring instances
+      );
+    });
+
+    // Check if there's already a follow-up scheduled
+    pastEvents.forEach(event => {
+      const hasFollowUp = events.some(e =>
+        e.type === 'followup' &&
+        e.contactId === event.contactId &&
+        e.contactIds?.some(id => event.contactIds?.includes(id) || event.contactId === id) &&
+        new Date(e.start) > new Date(event.end)
+      );
+
+      if (!hasFollowUp) {
+        const daysSince = Math.floor((now.getTime() - new Date(event.end).getTime()) / (1000 * 60 * 60 * 24));
+        suggestions.push({
+          type: 'missing_followup',
+          originalEvent: event,
+          daysSince,
+          priority: daysSince > 7 ? 'high' : 'medium',
+          message: `Seguimiento pendiente para "${event.title}" (hace ${daysSince} días)`
+        });
+      }
+    });
+
+    // Find contacts with no recent interactions (14+ days)
+    const contactLastInteraction: Record<string, Date> = {};
+
+    events.forEach(event => {
+      const contactIds = event.contactIds || (event.contactId ? [event.contactId] : []);
+      contactIds.forEach(contactId => {
+        const eventDate = new Date(event.start);
+        if (!contactLastInteraction[contactId] || eventDate > contactLastInteraction[contactId]) {
+          contactLastInteraction[contactId] = eventDate;
+        }
+      });
+    });
+
+    Object.entries(contactLastInteraction).forEach(([contactId, lastDate]) => {
+      const daysSince = Math.floor((now.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysSince >= 14 && daysSince <= 60) {
+        const contact = crmContacts.find(c => c.id === contactId);
+        if (contact) {
+          const nameField = crmConfig.fields.find(f =>
+            f.name.toLowerCase().includes('nombre') ||
+            f.name.toLowerCase().includes('name')
+          );
+          const contactName = nameField ? contact[nameField.name] : contactId;
+
+          suggestions.push({
+            type: 'inactive_contact',
+            contactId,
+            contactName,
+            daysSince,
+            priority: daysSince > 30 ? 'high' : 'low',
+            message: `Sin contacto con ${contactName} (hace ${daysSince} días)`
+          });
+        }
+      }
+    });
+
+    // Sort by priority and limit to top 5
+    suggestions.sort((a, b) => {
+      const priorityOrder = { high: 0, medium: 1, low: 2 };
+      if (priorityOrder[a.priority] !== priorityOrder[b.priority]) {
+        return priorityOrder[a.priority] - priorityOrder[b.priority];
+      }
+      return b.daysSince - a.daysSince;
+    });
+
+    setFollowUpSuggestions(suggestions.slice(0, 5));
+  };
+
+  const handleCreateFollowUpFromSuggestion = (suggestion: any) => {
+    const now = new Date();
+    const startTime = format(now, 'HH:mm');
+    const endTime = format(addDays(now, 0).setHours(now.getHours() + 1), 'HH:mm');
+
+    if (suggestion.type === 'missing_followup') {
+      const event = suggestion.originalEvent;
+      setNewEvent({
+        title: `Seguimiento: ${event.title}`,
+        date: format(now, 'yyyy-MM-dd'),
+        time: startTime,
+        endTime: endTime,
+        contactIds: event.contactIds || (event.contactId ? [event.contactId] : []),
+        type: 'followup',
+        notes: `Seguimiento de ${event.type === 'call' ? 'llamada' : 'reunión'} del ${format(event.start, "dd/MM/yyyy", { locale: es })}`,
+        recurrenceFrequency: 'none',
+        recurrenceEndDate: '',
+        recurrenceOccurrences: ''
+      });
+    } else if (suggestion.type === 'inactive_contact') {
+      setNewEvent({
+        title: `Contactar a ${suggestion.contactName}`,
+        date: format(now, 'yyyy-MM-dd'),
+        time: startTime,
+        endTime: endTime,
+        contactIds: [suggestion.contactId],
+        type: 'call',
+        notes: `Retomar contacto después de ${suggestion.daysSince} días`,
+        recurrenceFrequency: 'none',
+        recurrenceEndDate: '',
+        recurrenceOccurrences: ''
+      });
+    }
+
+    setShowModal(true);
+    showSuccess('Evento de seguimiento preparado');
   };
 
   const checkUpcomingEvents = () => {
@@ -808,6 +1035,15 @@ _Evento creado desde ChatFlow Pro_
             <span>Nuevo Evento</span>
           </button>
 
+          {/* Templates Button */}
+          <button
+            onClick={() => setShowTemplatesModal(true)}
+            className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-3 rounded-xl font-medium hover:from-purple-700 hover:to-purple-800 transition-all shadow-lg hover:shadow-2xl transform hover:scale-105 active:scale-95 flex items-center justify-center space-x-2"
+          >
+            <i className="fas fa-layer-group"></i>
+            <span>Plantillas {templates.length > 0 && `(${templates.length})`}</span>
+          </button>
+
           {/* Upcoming Events */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
@@ -854,6 +1090,64 @@ _Evento creado desde ChatFlow Pro_
               </div>
             )}
           </div>
+
+          {/* Follow-up Suggestions */}
+          {followUpSuggestions.length > 0 && (
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border-2 border-orange-200 dark:border-orange-900">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                <i className="fas fa-lightbulb text-orange-500 mr-2"></i>
+                Sugerencias de Seguimiento
+                <span className="ml-2 text-xs font-normal bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 px-2 py-0.5 rounded-full">
+                  {followUpSuggestions.length}
+                </span>
+              </h3>
+
+              <div className="space-y-3">
+                {followUpSuggestions.map((suggestion, index) => {
+                  const priorityColors = {
+                    high: 'border-red-400 dark:border-red-600 bg-red-50 dark:bg-red-900/20',
+                    medium: 'border-orange-400 dark:border-orange-600 bg-orange-50 dark:bg-orange-900/20',
+                    low: 'border-yellow-400 dark:border-yellow-600 bg-yellow-50 dark:bg-yellow-900/20'
+                  };
+
+                  const priorityIcons = {
+                    high: 'fas fa-exclamation-circle text-red-600 dark:text-red-400',
+                    medium: 'fas fa-exclamation-triangle text-orange-600 dark:text-orange-400',
+                    low: 'fas fa-info-circle text-yellow-600 dark:text-yellow-400'
+                  };
+
+                  return (
+                    <div
+                      key={index}
+                      className={`border-l-4 pl-3 py-3 rounded-r-lg ${priorityColors[suggestion.priority]}`}
+                    >
+                      <div className="flex items-start space-x-2 mb-2">
+                        <i className={`${priorityIcons[suggestion.priority]} mt-0.5`}></i>
+                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 flex-1">
+                          {suggestion.message}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleCreateFollowUpFromSuggestion(suggestion)}
+                        className="w-full mt-2 px-3 py-1.5 bg-orange-600 text-white rounded-lg text-xs font-medium hover:bg-orange-700 transition-all flex items-center justify-center space-x-1"
+                      >
+                        <i className="fas fa-plus"></i>
+                        <span>Crear Seguimiento</span>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <button
+                onClick={generateFollowUpSuggestions}
+                className="w-full mt-4 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all flex items-center justify-center space-x-2"
+              >
+                <i className="fas fa-sync-alt"></i>
+                <span>Actualizar Sugerencias</span>
+              </button>
+            </div>
+          )}
 
           {/* Event Statistics */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
@@ -1200,6 +1494,15 @@ _Evento creado desde ChatFlow Pro_
                 >
                   Cancelar
                 </button>
+                {!selectedEvent && newEvent.title && (
+                  <button
+                    onClick={() => setShowSaveTemplateModal(true)}
+                    className="px-6 py-2.5 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 rounded-lg font-medium hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-all flex items-center space-x-2"
+                  >
+                    <i className="fas fa-layer-group"></i>
+                    <span>Guardar Plantilla</span>
+                  </button>
+                )}
                 <button
                   onClick={handleSaveEvent}
                   className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg transform hover:scale-105 active:scale-95 flex items-center space-x-2"
@@ -1208,6 +1511,239 @@ _Evento creado desde ChatFlow Pro_
                   <span>{selectedEvent ? 'Actualizar' : 'Crear'} Evento</span>
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Templates Modal */}
+      {showTemplatesModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl ring-1 ring-black/5 dark:ring-white/10 max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
+                    <i className="fas fa-layer-group text-purple-600 mr-3"></i>
+                    Plantillas de Eventos
+                  </h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                    Crea eventos rápidamente usando plantillas predefinidas
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowTemplatesModal(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+                >
+                  <i className="fas fa-times text-2xl"></i>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              {templates.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {templates.map((template) => {
+                    const typeLabels = {
+                      call: '📞 Llamada',
+                      meeting: '🤝 Reunión',
+                      followup: '📋 Seguimiento',
+                      reminder: '⏰ Recordatorio',
+                      other: '📌 Otro'
+                    };
+
+                    const eventColors = {
+                      call: '#3b82f6',
+                      meeting: '#8b5cf6',
+                      followup: '#06b6d4',
+                      reminder: '#10b981',
+                      other: '#6b7280'
+                    };
+
+                    return (
+                      <div
+                        key={template.id}
+                        className="border-l-4 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 rounded-r-lg p-4 hover:shadow-lg transition-all"
+                        style={{ borderLeftColor: eventColors[template.type] }}
+                      >
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex-1">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                              {template.name}
+                            </h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {template.title}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-3 text-xs text-gray-600 dark:text-gray-400 mb-3">
+                          <span
+                            className="px-2 py-1 rounded-md font-medium text-white"
+                            style={{ backgroundColor: eventColors[template.type] }}
+                          >
+                            {typeLabels[template.type]}
+                          </span>
+                          <span className="flex items-center">
+                            <i className="fas fa-clock mr-1"></i>
+                            {template.duration} min
+                          </span>
+                          {template.recurrenceFrequency !== 'none' && (
+                            <span className="flex items-center px-2 py-1 rounded-md bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
+                              <i className="fas fa-repeat mr-1"></i>
+                              {template.recurrenceFrequency === 'daily' && 'Diario'}
+                              {template.recurrenceFrequency === 'weekly' && 'Semanal'}
+                              {template.recurrenceFrequency === 'monthly' && 'Mensual'}
+                            </span>
+                          )}
+                        </div>
+
+                        {template.notes && (
+                          <p className="text-xs text-gray-600 dark:text-gray-300 mb-3 line-clamp-2">
+                            {template.notes}
+                          </p>
+                        )}
+
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleLoadTemplate(template)}
+                            className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-all flex items-center justify-center space-x-2"
+                          >
+                            <i className="fas fa-plus"></i>
+                            <span>Usar</span>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteTemplate(template.id)}
+                            className="px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg font-medium hover:bg-red-100 dark:hover:bg-red-900/40 transition-all"
+                          >
+                            <i className="fas fa-trash"></i>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-16">
+                  <i className="fas fa-layer-group text-gray-400 dark:text-gray-500 text-6xl mb-4"></i>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                    No hay plantillas guardadas
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 mb-6">
+                    Crea un evento y guárdalo como plantilla para reutilizarlo después
+                  </p>
+                  <button
+                    onClick={() => {
+                      setShowTemplatesModal(false);
+                      setNewEvent({
+                        title: '',
+                        date: format(new Date(), 'yyyy-MM-dd'),
+                        time: format(new Date(), 'HH:mm'),
+                        endTime: format(new Date().setHours(new Date().getHours() + 1), 'HH:mm'),
+                        contactIds: [],
+                        type: 'reminder',
+                        notes: '',
+                        recurrenceFrequency: 'none',
+                        recurrenceEndDate: '',
+                        recurrenceOccurrences: ''
+                      });
+                      setShowModal(true);
+                    }}
+                    className="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl font-medium hover:from-purple-700 hover:to-purple-800 transition-all shadow-lg inline-flex items-center space-x-2"
+                  >
+                    <i className="fas fa-plus"></i>
+                    <span>Crear Primer Evento</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-gray-100 dark:border-gray-700">
+              <button
+                onClick={() => setShowTemplatesModal(false)}
+                className="w-full px-6 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Save Template Modal */}
+      {showSaveTemplateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl ring-1 ring-black/5 dark:ring-white/10 max-w-md w-full">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-700">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
+                <i className="fas fa-layer-group text-purple-600 mr-3"></i>
+                Guardar como Plantilla
+              </h2>
+            </div>
+
+            <div className="p-6">
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Nombre de la Plantilla <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={templateName}
+                  onChange={(e) => setTemplateName(e.target.value)}
+                  placeholder="ej: Llamada de Seguimiento Semanal"
+                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  autoFocus
+                />
+              </div>
+
+              <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-purple-900 dark:text-purple-200 mb-2">
+                  Detalles de la Plantilla:
+                </h4>
+                <ul className="space-y-1 text-sm text-purple-700 dark:text-purple-300">
+                  <li><strong>Título:</strong> {newEvent.title}</li>
+                  <li><strong>Tipo:</strong> {
+                    newEvent.type === 'call' ? '📞 Llamada' :
+                    newEvent.type === 'meeting' ? '🤝 Reunión' :
+                    newEvent.type === 'followup' ? '📋 Seguimiento' :
+                    newEvent.type === 'reminder' ? '⏰ Recordatorio' : '📌 Otro'
+                  }</li>
+                  <li><strong>Duración:</strong> {
+                    newEvent.time && newEvent.endTime
+                      ? differenceInMinutes(
+                          new Date(`2000-01-01T${newEvent.endTime}`),
+                          new Date(`2000-01-01T${newEvent.time}`)
+                        ) + ' minutos'
+                      : '60 minutos'
+                  }</li>
+                  {newEvent.recurrenceFrequency !== 'none' && (
+                    <li><strong>Recurrencia:</strong> {
+                      newEvent.recurrenceFrequency === 'daily' ? 'Diaria' :
+                      newEvent.recurrenceFrequency === 'weekly' ? 'Semanal' :
+                      newEvent.recurrenceFrequency === 'monthly' ? 'Mensual' : ''
+                    }</li>
+                  )}
+                </ul>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-100 dark:border-gray-700 flex space-x-3">
+              <button
+                onClick={() => {
+                  setShowSaveTemplateModal(false);
+                  setTemplateName('');
+                }}
+                className="flex-1 px-6 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSaveAsTemplate}
+                className="flex-1 px-6 py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg font-medium hover:from-purple-700 hover:to-purple-800 transition-all shadow-lg flex items-center justify-center space-x-2"
+              >
+                <i className="fas fa-check"></i>
+                <span>Guardar</span>
+              </button>
             </div>
           </div>
         </div>
