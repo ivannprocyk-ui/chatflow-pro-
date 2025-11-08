@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 import { loadCRMData, saveCRMData, loadCRMConfig, loadContactLists, saveContactLists, CRMFieldConfig, CRMConfig } from '@/react-app/utils/storage';
 import { useToast } from '@/react-app/components/Toast';
 
@@ -15,6 +17,8 @@ export default function CRMPanel() {
   const [newListName, setNewListName] = useState('');
   const [contactLists, setContactLists] = useState<any[]>([]);
   const [editingContact, setEditingContact] = useState<any | null>(null);
+  const [viewingContact, setViewingContact] = useState<any | null>(null);
+  const [contactEvents, setContactEvents] = useState<any[]>([]);
   const [formData, setFormData] = useState<any>({});
   const [selectedContacts, setSelectedContacts] = useState<Set<string>>(new Set());
   const { showSuccess, showError } = useToast();
@@ -46,7 +50,7 @@ export default function CRMPanel() {
       .map(f => f.label);
 
     if (missingFields.length > 0) {
-      showSuccess(`⚠️ Campos requeridos: ${missingFields.join(', ')}`);
+      showError(`Campos requeridos: ${missingFields.join(', ')}`);
       return;
     }
 
@@ -72,6 +76,8 @@ export default function CRMPanel() {
     setContacts(updatedContacts);
     saveCRMData(updatedContacts);
 
+    showSuccess(editingContact ? 'Contacto actualizado exitosamente' : 'Contacto agregado exitosamente');
+
     setShowModal(false);
     setEditingContact(null);
     setFormData({});
@@ -88,6 +94,33 @@ export default function CRMPanel() {
       const updatedContacts = contacts.filter(c => c.id !== contactId);
       setContacts(updatedContacts);
       saveCRMData(updatedContacts);
+    }
+  };
+
+  const handleViewContact = (contact: any) => {
+    setViewingContact(contact);
+    // Load calendar events for this contact
+    const eventsData = localStorage.getItem('chatflow_calendar_events');
+    if (eventsData) {
+      try {
+        const allEvents = JSON.parse(eventsData);
+        // Filter events where this contact is linked (support both old and new format)
+        const linkedEvents = allEvents.filter((event: any) => {
+          const isLinkedOld = event.contactId === contact.id;
+          const isLinkedNew = event.contactIds?.includes(contact.id);
+          return isLinkedOld || isLinkedNew;
+        }).map((event: any) => ({
+          ...event,
+          start: new Date(event.start),
+          end: new Date(event.end)
+        }));
+        setContactEvents(linkedEvents);
+      } catch (error) {
+        console.error('Error loading events:', error);
+        setContactEvents([]);
+      }
+    } else {
+      setContactEvents([]);
     }
   };
 
@@ -655,6 +688,12 @@ export default function CRMPanel() {
                   </td>
                   <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                     <button
+                      onClick={() => handleViewContact(contact)}
+                      className="text-purple-600 dark:text-purple-400 hover:text-purple-900 dark:hover:text-purple-300 mr-4 transition-colors"
+                    >
+                      Ver<span className="sr-only">, {contact[config.fields[0]?.name]}</span>
+                    </button>
+                    <button
                       onClick={() => handleEditContact(contact)}
                       className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 mr-4 transition-colors"
                     >
@@ -834,6 +873,214 @@ export default function CRMPanel() {
               >
                 <i className="fas fa-check mr-2"></i>
                 Agregar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Contact Detail View Modal */}
+      {viewingContact && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-colors duration-300">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto transition-colors duration-300">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
+                    <i className="fas fa-user-circle text-purple-600 mr-3"></i>
+                    Detalles del Contacto
+                  </h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                    Información completa y eventos vinculados
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setViewingContact(null);
+                    setContactEvents([]);
+                  }}
+                  className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+                >
+                  <i className="fas fa-times text-2xl"></i>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              {/* Contact Information */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                  <i className="fas fa-info-circle text-blue-600 mr-2"></i>
+                  Información de Contacto
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                  {config.fields.filter(f => f.visible).map(field => (
+                    <div key={field.name} className={field.type === 'textarea' ? 'md:col-span-2' : ''}>
+                      <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                        {field.label}
+                      </label>
+                      <div className="text-sm text-gray-900 dark:text-gray-100 font-medium">
+                        {field.type === 'currency' && viewingContact[field.name] ? (
+                          <span className="text-emerald-600 dark:text-emerald-400">
+                            ${viewingContact[field.name]?.toLocaleString()} {viewingContact.currency || 'USD'}
+                          </span>
+                        ) : field.type === 'date' && viewingContact[field.name] ? (
+                          new Date(viewingContact[field.name]).toLocaleDateString('es-ES', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })
+                        ) : (
+                          viewingContact[field.name] || '-'
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                      Estado
+                    </label>
+                    <div className="text-sm">
+                      {getStatusBadge(viewingContact.status)}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                      Última Interacción
+                    </label>
+                    <div className="text-sm text-gray-900 dark:text-gray-100 font-medium">
+                      {viewingContact.lastInteraction
+                        ? new Date(viewingContact.lastInteraction).toLocaleDateString('es-ES', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })
+                        : '-'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Calendar Events */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                  <i className="fas fa-calendar-alt text-blue-600 mr-2"></i>
+                  Eventos de Calendario
+                  <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
+                    ({contactEvents.length})
+                  </span>
+                </h3>
+
+                {contactEvents.length > 0 ? (
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {contactEvents
+                      .sort((a, b) => new Date(b.start).getTime() - new Date(a.start).getTime())
+                      .map((event) => {
+                        const eventColors: Record<string, string> = {
+                          call: '#3b82f6',
+                          meeting: '#8b5cf6',
+                          followup: '#06b6d4',
+                          reminder: '#10b981',
+                          other: '#6b7280'
+                        };
+
+                        const typeLabels: Record<string, string> = {
+                          call: '📞 Llamada',
+                          meeting: '🤝 Reunión',
+                          followup: '📋 Seguimiento',
+                          reminder: '⏰ Recordatorio',
+                          other: '📌 Otro'
+                        };
+
+                        const isPast = new Date(event.end) < new Date();
+
+                        return (
+                          <div
+                            key={event.id}
+                            className="border-l-4 pl-4 py-3 bg-white dark:bg-gray-700 rounded-r-lg hover:shadow-md transition-all"
+                            style={{ borderColor: eventColors[event.type] || '#6b7280' }}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-2 mb-1">
+                                  <h4 className="font-semibold text-gray-900 dark:text-gray-100">
+                                    {event.title}
+                                  </h4>
+                                  <span
+                                    className="px-2 py-0.5 rounded-md text-xs font-medium text-white"
+                                    style={{ backgroundColor: eventColors[event.type] }}
+                                  >
+                                    {typeLabels[event.type]}
+                                  </span>
+                                  {event.recurrence && event.recurrence.frequency !== 'none' && (
+                                    <span className="px-2 py-0.5 rounded-md text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
+                                      <i className="fas fa-repeat mr-1"></i>
+                                      Recurrente
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center space-x-4 text-xs text-gray-600 dark:text-gray-400">
+                                  <span className="flex items-center">
+                                    <i className="fas fa-calendar text-blue-600 mr-1.5"></i>
+                                    {format(event.start, "dd 'de' MMMM 'de' yyyy", { locale: es })}
+                                  </span>
+                                  <span className="flex items-center">
+                                    <i className="fas fa-clock text-green-600 mr-1.5"></i>
+                                    {format(event.start, 'HH:mm', { locale: es })} - {format(event.end, 'HH:mm', { locale: es })}
+                                  </span>
+                                </div>
+                                {event.notes && (
+                                  <p className="text-xs text-gray-600 dark:text-gray-300 mt-2 line-clamp-2">
+                                    {event.notes}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="ml-3">
+                                <span
+                                  className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                    isPast
+                                      ? 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                                      : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
+                                  }`}
+                                >
+                                  {isPast ? 'Pasado' : 'Próximo'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    <i className="fas fa-calendar-times text-gray-400 dark:text-gray-500 text-5xl mb-3"></i>
+                    <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">
+                      No hay eventos vinculados
+                    </h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Este contacto no tiene eventos de calendario asociados
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-100 dark:border-gray-700 flex justify-between">
+              <button
+                onClick={() => handleEditContact(viewingContact)}
+                className="px-6 py-2.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg font-medium hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all flex items-center space-x-2"
+              >
+                <i className="fas fa-edit"></i>
+                <span>Editar Contacto</span>
+              </button>
+              <button
+                onClick={() => {
+                  setViewingContact(null);
+                  setContactEvents([]);
+                }}
+                className="px-6 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+              >
+                Cerrar
               </button>
             </div>
           </div>

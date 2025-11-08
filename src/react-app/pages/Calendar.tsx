@@ -26,8 +26,10 @@ interface CalendarEventData extends CalendarEvent {
   title: string;
   start: Date;
   end: Date;
-  contactId?: string;
-  contactName?: string;
+  contactId?: string; // Keep for backward compatibility
+  contactIds?: string[]; // Multiple contacts
+  contactName?: string; // Keep for backward compatibility
+  contactNames?: string[]; // Multiple contact names
   type: 'call' | 'meeting' | 'followup' | 'reminder' | 'other';
   notes?: string;
   color?: string;
@@ -45,7 +47,7 @@ export default function Calendar() {
     date: '',
     time: '',
     endTime: '',
-    contactId: '',
+    contactIds: [] as string[],
     type: 'reminder' as CalendarEventData['type'],
     notes: '',
     recurrenceFrequency: 'none' as RecurrenceConfig['frequency'],
@@ -161,7 +163,7 @@ export default function Calendar() {
       date: format(start, 'yyyy-MM-dd'),
       time: format(new Date(), 'HH:mm'),
       endTime: format(addDays(new Date(), 0).setHours(new Date().getHours() + 1), 'HH:mm'),
-      contactId: '',
+      contactIds: [],
       type: 'reminder',
       notes: '',
       recurrenceFrequency: 'none',
@@ -173,12 +175,14 @@ export default function Calendar() {
 
   const handleSelectEvent = (event: CalendarEventData) => {
     setSelectedEvent(event);
+    // Support both old single contact and new multiple contacts
+    const selectedContactIds = event.contactIds || (event.contactId ? [event.contactId] : []);
     setNewEvent({
       title: event.title,
       date: format(event.start, 'yyyy-MM-dd'),
       time: format(event.start, 'HH:mm'),
       endTime: format(event.end, 'HH:mm'),
-      contactId: event.contactId || '',
+      contactIds: selectedContactIds,
       type: event.type,
       notes: event.notes || '',
       recurrenceFrequency: event.recurrence?.frequency || 'none',
@@ -251,11 +255,19 @@ export default function Calendar() {
       ? new Date(`${newEvent.date}T${newEvent.endTime}`)
       : new Date(startDateTime.getTime() + 60 * 60 * 1000); // +1 hour default
 
-    const contact = crmContacts.find(c => c.id === newEvent.contactId);
+    // Get name field for contact name extraction
     const nameField = crmConfig.fields.find(f =>
       f.name.toLowerCase().includes('nombre') ||
       f.name.toLowerCase().includes('name')
     );
+
+    // Build contact names array from selected contact IDs
+    const contactNames = newEvent.contactIds
+      .map(contactId => {
+        const contact = crmContacts.find(c => c.id === contactId);
+        return contact && nameField ? contact[nameField.name] : null;
+      })
+      .filter((name): name is string => name !== null);
 
     const eventColors = {
       call: '#3b82f6',
@@ -277,8 +289,11 @@ export default function Calendar() {
       title: newEvent.title,
       start: startDateTime,
       end: endDateTime,
-      contactId: newEvent.contactId || undefined,
-      contactName: contact && nameField ? contact[nameField.name] : undefined,
+      contactIds: newEvent.contactIds.length > 0 ? newEvent.contactIds : undefined,
+      contactNames: contactNames.length > 0 ? contactNames : undefined,
+      // Keep old fields for backward compatibility
+      contactId: newEvent.contactIds.length > 0 ? newEvent.contactIds[0] : undefined,
+      contactName: contactNames.length > 0 ? contactNames[0] : undefined,
       type: newEvent.type,
       notes: newEvent.notes,
       color: eventColors[newEvent.type],
@@ -329,13 +344,17 @@ export default function Calendar() {
       other: '📌 Otro'
     };
 
+    const contactsText = selectedEvent.contactNames?.length
+      ? selectedEvent.contactNames.join(', ')
+      : selectedEvent.contactName;
+
     const message = `
 *${selectedEvent.title}*
 
 📅 *Fecha:* ${format(selectedEvent.start, "dd 'de' MMMM 'de' yyyy", { locale: es })}
 🕐 *Hora:* ${format(selectedEvent.start, 'HH:mm', { locale: es })} - ${format(selectedEvent.end, 'HH:mm', { locale: es })}
 🏷️ *Tipo:* ${typeLabels[selectedEvent.type]}
-${selectedEvent.contactName ? `👤 *Contacto:* ${selectedEvent.contactName}\n` : ''}${selectedEvent.notes ? `\n📝 *Notas:*\n${selectedEvent.notes}` : ''}
+${contactsText ? `👤 *Contacto${selectedEvent.contactNames?.length > 1 ? 's' : ''}:* ${contactsText}\n` : ''}${selectedEvent.notes ? `\n📝 *Notas:*\n${selectedEvent.notes}` : ''}
 
 _Evento creado desde ChatFlow Pro_
     `.trim();
@@ -466,6 +485,7 @@ _Evento creado desde ChatFlow Pro_
       filtered = filtered.filter(event =>
         event.title.toLowerCase().includes(query) ||
         event.contactName?.toLowerCase().includes(query) ||
+        event.contactNames?.some(name => name.toLowerCase().includes(query)) ||
         event.notes?.toLowerCase().includes(query) ||
         event.type.toLowerCase().includes(query)
       );
@@ -488,6 +508,7 @@ _Evento creado desde ChatFlow Pro_
       upcoming = upcoming.filter(event =>
         event.title.toLowerCase().includes(query) ||
         event.contactName?.toLowerCase().includes(query) ||
+        event.contactNames?.some(name => name.toLowerCase().includes(query)) ||
         event.notes?.toLowerCase().includes(query) ||
         event.type.toLowerCase().includes(query)
       );
@@ -637,10 +658,12 @@ _Evento creado desde ChatFlow Pro_
                             </span>
                           </div>
 
-                          {event.contactName && (
+                          {(event.contactNames?.length || event.contactName) && (
                             <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mb-2">
                               <i className="fas fa-user text-purple-600 mr-2"></i>
-                              {event.contactName}
+                              {event.contactNames?.length
+                                ? event.contactNames.join(', ')
+                                : event.contactName}
                             </div>
                           )}
 
@@ -770,7 +793,7 @@ _Evento creado desde ChatFlow Pro_
                 date: format(new Date(), 'yyyy-MM-dd'),
                 time: format(new Date(), 'HH:mm'),
                 endTime: format(new Date().setHours(new Date().getHours() + 1), 'HH:mm'),
-                contactId: '',
+                contactIds: [],
                 type: 'reminder',
                 notes: '',
                 recurrenceFrequency: 'none',
@@ -804,10 +827,12 @@ _Evento creado desde ChatFlow Pro_
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <h4 className="font-medium text-gray-900 dark:text-gray-100 text-sm">{event.title}</h4>
-                        {event.contactName && (
+                        {(event.contactNames?.length || event.contactName) && (
                           <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
                             <i className="fas fa-user mr-1"></i>
-                            {event.contactName}
+                            {event.contactNames?.length
+                              ? event.contactNames.join(', ')
+                              : event.contactName}
                           </p>
                         )}
                       </div>
@@ -947,30 +972,68 @@ _Evento creado desde ChatFlow Pro_
                 </select>
               </div>
 
-              {/* Contact */}
+              {/* Multiple Contacts */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Vincular a Contacto (Opcional)
+                  Vincular a Contactos (Opcional)
                 </label>
-                <select
-                  value={newEvent.contactId}
-                  onChange={(e) => setNewEvent({ ...newEvent, contactId: e.target.value })}
-                  className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                >
-                  <option value="">Sin vincular</option>
-                  {crmContacts.map(contact => {
-                    const nameField = crmConfig.fields.find(f =>
-                      f.name.toLowerCase().includes('nombre') ||
-                      f.name.toLowerCase().includes('name')
-                    );
-                    const name = nameField ? contact[nameField.name] : contact.id;
-                    return (
-                      <option key={contact.id} value={contact.id}>
-                        {name}
-                      </option>
-                    );
-                  })}
-                </select>
+                <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-700 max-h-48 overflow-y-auto">
+                  {crmContacts.length > 0 ? (
+                    <div className="space-y-2">
+                      {crmContacts.map(contact => {
+                        const nameField = crmConfig.fields.find(f =>
+                          f.name.toLowerCase().includes('nombre') ||
+                          f.name.toLowerCase().includes('name')
+                        );
+                        const name = nameField ? contact[nameField.name] : contact.id;
+                        const isSelected = newEvent.contactIds.includes(contact.id);
+
+                        return (
+                          <label
+                            key={contact.id}
+                            className={`flex items-center p-2 rounded-lg cursor-pointer transition-colors ${
+                              isSelected
+                                ? 'bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800'
+                                : 'hover:bg-gray-50 dark:hover:bg-gray-600'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setNewEvent({
+                                    ...newEvent,
+                                    contactIds: [...newEvent.contactIds, contact.id]
+                                  });
+                                } else {
+                                  setNewEvent({
+                                    ...newEvent,
+                                    contactIds: newEvent.contactIds.filter(id => id !== contact.id)
+                                  });
+                                }
+                              }}
+                              className="w-4 h-4 text-blue-600 bg-gray-100 dark:bg-gray-600 border-gray-300 dark:border-gray-500 rounded focus:ring-blue-500 focus:ring-2"
+                            />
+                            <span className="ml-3 text-sm text-gray-900 dark:text-gray-100 font-medium">
+                              {name}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">
+                      No hay contactos disponibles
+                    </p>
+                  )}
+                </div>
+                {newEvent.contactIds.length > 0 && (
+                  <div className="mt-2 flex items-center text-sm text-blue-600 dark:text-blue-400">
+                    <i className="fas fa-check-circle mr-2"></i>
+                    {newEvent.contactIds.length} contacto{newEvent.contactIds.length !== 1 ? 's' : ''} seleccionado{newEvent.contactIds.length !== 1 ? 's' : ''}
+                  </div>
+                )}
               </div>
 
               {/* Date and Time */}
