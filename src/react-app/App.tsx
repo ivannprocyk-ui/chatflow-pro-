@@ -50,9 +50,9 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('dark_mode', darkMode.toString());
     if (darkMode) {
-      document.documentElement.setAttribute('data-theme', 'dark');
+      document.documentElement.classList.add('dark');
     } else {
-      document.documentElement.removeAttribute('data-theme');
+      document.documentElement.classList.remove('dark');
     }
   }, [darkMode]);
 

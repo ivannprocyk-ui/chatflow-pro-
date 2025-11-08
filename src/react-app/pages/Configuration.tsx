@@ -285,33 +285,6 @@ export default function Configuration({ onConfigUpdate }: ConfigurationProps) {
               </div>
             </div>
 
-            {/* Theme Display */}
-            <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 bg-white dark:bg-gray-800">
-              <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-4">🎨 Tema de Color Actual</h4>
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
-                <div className="flex items-center space-x-4">
-                  <div className="flex space-x-2">
-                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 shadow-lg"></div>
-                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-600 to-purple-700 shadow-lg"></div>
-                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-lg"></div>
-                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-600 shadow-lg"></div>
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900 dark:text-gray-100">Profesional Moderno</h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Azul corporativo, púrpura innovador, acentos cyan y esmeralda</p>
-                  </div>
-                  <div className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg font-medium">
-                    <i className="fas fa-check mr-2"></i>
-                    Activo
-                  </div>
-                </div>
-              </div>
-              <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
-                <i className="fas fa-palette mr-1"></i>
-                Tema optimizado para profesionales con paleta de colores cuidadosamente seleccionada
-              </p>
-            </div>
-
             {/* Dark Mode Toggle */}
             <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 bg-white dark:bg-gray-800">
               <div className="flex items-center justify-between">
