@@ -64,7 +64,22 @@ export default function Calendar() {
   useEffect(() => {
     loadEvents();
     setCrmContacts(loadCRMData());
-  }, []);
+
+    // Request notification permission
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+
+    // Check for upcoming events every minute
+    const notificationInterval = setInterval(() => {
+      checkUpcomingEvents();
+    }, 60000); // Check every minute
+
+    // Initial check
+    checkUpcomingEvents();
+
+    return () => clearInterval(notificationInterval);
+  }, [events]);
 
   const loadEvents = () => {
     const stored = localStorage.getItem('chatflow_calendar_events');
@@ -86,6 +101,49 @@ export default function Calendar() {
   const saveEvents = (eventsToSave: CalendarEventData[]) => {
     localStorage.setItem('chatflow_calendar_events', JSON.stringify(eventsToSave));
     setEvents(eventsToSave);
+  };
+
+  const checkUpcomingEvents = () => {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      const now = new Date();
+      const notifiedKey = 'chatflow_notified_events';
+      const notifiedEvents = JSON.parse(localStorage.getItem(notifiedKey) || '[]');
+
+      events.forEach(event => {
+        const eventStart = new Date(event.start);
+        const minutesUntilEvent = (eventStart.getTime() - now.getTime()) / 60000;
+
+        // Notify 15 minutes before and at event start time
+        const shouldNotify = (
+          (minutesUntilEvent >= 14 && minutesUntilEvent <= 16) || // 15 min before
+          (minutesUntilEvent >= -1 && minutesUntilEvent <= 1)      // Event starting now
+        );
+
+        if (shouldNotify && !notifiedEvents.includes(event.id)) {
+          const notificationBody = minutesUntilEvent > 5
+            ? `Comienza en 15 minutos - ${format(eventStart, 'HH:mm', { locale: es })}`
+            : `Comienza ahora - ${format(eventStart, 'HH:mm', { locale: es })}`;
+
+          new Notification(`📅 ${event.title}`, {
+            body: notificationBody,
+            icon: '/favicon.ico',
+            badge: '/favicon.ico',
+            tag: event.id,
+            requireInteraction: false
+          });
+
+          // Mark as notified
+          notifiedEvents.push(event.id);
+          localStorage.setItem(notifiedKey, JSON.stringify(notifiedEvents));
+
+          // Clean old notifications after 24 hours
+          setTimeout(() => {
+            const updated = notifiedEvents.filter((id: string) => id !== event.id);
+            localStorage.setItem(notifiedKey, JSON.stringify(updated));
+          }, 24 * 60 * 60 * 1000);
+        }
+      });
+    }
   };
 
   const getUpcomingEvents = () => {
@@ -289,6 +347,53 @@ _Evento creado desde ChatFlow Pro_
     showSuccess('Abriendo WhatsApp para compartir evento');
   };
 
+  const handleMoveEvent = ({ event, start, end }: { event: CalendarEventData; start: Date; end: Date }) => {
+    const updatedEvent = {
+      ...event,
+      start,
+      end
+    };
+
+    let updatedEvents;
+    if (event.parentEventId) {
+      // Moving a recurring event instance - only update this instance
+      updatedEvents = events.map(e => e.id === event.id ? updatedEvent : e);
+      showSuccess('Instancia del evento movida');
+    } else if (event.recurrence && event.recurrence.frequency !== 'none') {
+      // Moving parent of recurring series - update all instances
+      const timeDiff = start.getTime() - event.start.getTime();
+      updatedEvents = events.map(e => {
+        if (e.id === event.id || e.parentEventId === event.id) {
+          return {
+            ...e,
+            start: new Date(e.start.getTime() + timeDiff),
+            end: new Date(e.end.getTime() + timeDiff)
+          };
+        }
+        return e;
+      });
+      showSuccess('Serie completa de eventos movida');
+    } else {
+      // Moving regular event
+      updatedEvents = events.map(e => e.id === event.id ? updatedEvent : e);
+      showSuccess('Evento movido');
+    }
+
+    saveEvents(updatedEvents);
+  };
+
+  const handleResizeEvent = ({ event, start, end }: { event: CalendarEventData; start: Date; end: Date }) => {
+    const updatedEvent = {
+      ...event,
+      start,
+      end
+    };
+
+    const updatedEvents = events.map(e => e.id === event.id ? updatedEvent : e);
+    saveEvents(updatedEvents);
+    showSuccess('Duración del evento actualizada');
+  };
+
   const handleExportToICS = () => {
     if (!selectedEvent) return;
 
@@ -452,7 +557,11 @@ _Evento creado desde ChatFlow Pro_
                 style={{ height: '100%' }}
                 onSelectSlot={handleSelectSlot}
                 onSelectEvent={handleSelectEvent}
+                onEventDrop={handleMoveEvent}
+                onEventResize={handleResizeEvent}
                 selectable
+                resizable
+                draggableAccessor={() => true}
                 view={view}
                 onView={setView}
                 date={date}
