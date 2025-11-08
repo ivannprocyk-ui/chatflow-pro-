@@ -4,6 +4,8 @@ import { es } from 'date-fns/locale';
 import { loadCRMData, saveCRMData, loadCRMConfig, loadContactLists, saveContactLists, CRMFieldConfig, CRMConfig } from '@/react-app/utils/storage';
 import { useToast } from '@/react-app/components/Toast';
 
+type ViewMode = 'table' | 'list' | 'cards' | 'kanban';
+
 export default function CRMPanel() {
   const [contacts, setContacts] = useState<any[]>([]);
   const [config, setConfig] = useState<CRMConfig>(loadCRMConfig());
@@ -21,7 +23,12 @@ export default function CRMPanel() {
   const [contactEvents, setContactEvents] = useState<any[]>([]);
   const [formData, setFormData] = useState<any>({});
   const [selectedContacts, setSelectedContacts] = useState<Set<string>>(new Set());
-  const { showSuccess, showError } = useToast();
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    const saved = localStorage.getItem('chatflow_crm_view_mode');
+    return (saved as ViewMode) || 'table';
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const { showSuccess, showError} = useToast();
 
   useEffect(() => {
     const data = loadCRMData();
@@ -245,6 +252,11 @@ export default function CRMPanel() {
     setSelectedContacts(newSelected);
   };
 
+  const handleViewModeChange = (mode: ViewMode) => {
+    setViewMode(mode);
+    localStorage.setItem('chatflow_crm_view_mode', mode);
+  };
+
   const exportData = () => {
     const visibleFields = config.fields.filter(f => f.visible);
     const headers = visibleFields.map(f => f.label);
@@ -418,6 +430,37 @@ export default function CRMPanel() {
     }
   };
 
+  // Helper function to get contact initials for avatar
+  const getContactInitials = (contact: any) => {
+    const nameField = config.fields.find(f =>
+      f.name.toLowerCase().includes('nombre') ||
+      f.name.toLowerCase().includes('name')
+    );
+    const name = nameField ? contact[nameField.name] : '';
+    if (!name) return '?';
+    const parts = name.split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
+  };
+
+  // Helper function to get avatar color based on contact name
+  const getAvatarColor = (contact: any) => {
+    const colors = [
+      'bg-blue-500', 'bg-purple-500', 'bg-pink-500', 'bg-red-500',
+      'bg-orange-500', 'bg-yellow-500', 'bg-green-500', 'bg-teal-500',
+      'bg-cyan-500', 'bg-indigo-500'
+    ];
+    const nameField = config.fields.find(f =>
+      f.name.toLowerCase().includes('nombre') ||
+      f.name.toLowerCase().includes('name')
+    );
+    const name = nameField ? contact[nameField.name] : contact.id;
+    const hash = name.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
+    return colors[hash % colors.length];
+  };
+
   return (
     <div className="p-6 w-full transition-colors duration-300">
       {/* Header */}
@@ -455,9 +498,64 @@ export default function CRMPanel() {
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg transition-colors duration-300">
         <div className="p-6 border-b border-gray-100 dark:border-gray-700">
           <div className="flex flex-col space-y-4">
-            {/* Top Row: Title + Actions */}
+            {/* Top Row: Title + View Toggle + Actions */}
             <div className="flex justify-between items-center">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Contactos</h3>
+              <div className="flex items-center space-x-4">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Contactos</h3>
+
+                {/* View Mode Toggle */}
+                <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1 transition-colors duration-300">
+                  <button
+                    onClick={() => handleViewModeChange('table')}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 flex items-center space-x-1.5 ${
+                      viewMode === 'table'
+                        ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                    }`}
+                    title="Vista de Tabla"
+                  >
+                    <i className="fas fa-table"></i>
+                    <span className="hidden sm:inline">Tabla</span>
+                  </button>
+                  <button
+                    onClick={() => handleViewModeChange('list')}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 flex items-center space-x-1.5 ${
+                      viewMode === 'list'
+                        ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                    }`}
+                    title="Vista de Lista"
+                  >
+                    <i className="fas fa-list"></i>
+                    <span className="hidden sm:inline">Lista</span>
+                  </button>
+                  <button
+                    onClick={() => handleViewModeChange('cards')}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 flex items-center space-x-1.5 ${
+                      viewMode === 'cards'
+                        ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                    }`}
+                    title="Vista de Tarjetas"
+                  >
+                    <i className="fas fa-th-large"></i>
+                    <span className="hidden sm:inline">Tarjetas</span>
+                  </button>
+                  <button
+                    onClick={() => handleViewModeChange('kanban')}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200 flex items-center space-x-1.5 ${
+                      viewMode === 'kanban'
+                        ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                    }`}
+                    title="Vista Kanban"
+                  >
+                    <i className="fas fa-columns"></i>
+                    <span className="hidden sm:inline">Kanban</span>
+                  </button>
+                </div>
+              </div>
+
               <div className="flex space-x-2">
                 <button
                   onClick={() => setShowFilters(!showFilters)}
@@ -623,106 +721,531 @@ export default function CRMPanel() {
           </div>
         )}
 
-        <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg">
-          <table className="min-w-full divide-y divide-gray-300 dark:divide-gray-600">
-            <thead className="bg-gray-50 dark:bg-gray-800 transition-colors duration-300">
-              <tr>
-                <th scope="col" className="relative px-7 sm:w-12 sm:px-6">
-                  <input
-                    type="checkbox"
-                    className="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-600"
-                    checked={filteredContacts.length > 0 && selectedContacts.size === filteredContacts.length}
-                    onChange={(e) => handleSelectAll(e.target.checked)}
-                  />
-                </th>
-                {config.fields.filter(f => f.visible).sort((a, b) => a.order - b.order).map(field => (
-                  <th key={field.name} scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">
-                    {field.label}
-                  </th>
-                ))}
-                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  Estado
-                </th>
-                <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  Última Interacción
-                </th>
-                <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
-                  <span className="sr-only">Acciones</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800 transition-colors duration-300">
-              {filteredContacts.map((contact) => (
-                <tr
-                  key={contact.id}
-                  className={`transition-colors duration-300 ${selectedContacts.has(contact.id) ? 'bg-gray-50 dark:bg-gray-700' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}
-                >
-                  <td className="relative px-7 sm:w-12 sm:px-6">
+        {/* Table View */}
+        {viewMode === 'table' && (
+          <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg animate-fadeIn">
+            <table className="min-w-full divide-y divide-gray-300 dark:divide-gray-600">
+              <thead className="bg-gray-50 dark:bg-gray-800 transition-colors duration-300">
+                <tr>
+                  <th scope="col" className="relative px-7 sm:w-12 sm:px-6">
                     <input
                       type="checkbox"
                       className="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-600"
+                      checked={filteredContacts.length > 0 && selectedContacts.size === filteredContacts.length}
+                      onChange={(e) => handleSelectAll(e.target.checked)}
+                    />
+                  </th>
+                  {config.fields.filter(f => f.visible).sort((a, b) => a.order - b.order).map(field => (
+                    <th key={field.name} scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">
+                      {field.label}
+                    </th>
+                  ))}
+                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    Estado
+                  </th>
+                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    Última Interacción
+                  </th>
+                  <th scope="col" className="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                    <span className="sr-only">Acciones</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800 transition-colors duration-300">
+                {filteredContacts.map((contact) => (
+                  <tr
+                    key={contact.id}
+                    className={`transition-all duration-200 ${selectedContacts.has(contact.id) ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                  >
+                    <td className="relative px-7 sm:w-12 sm:px-6">
+                      <input
+                        type="checkbox"
+                        className="absolute left-4 top-1/2 -mt-2 h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-600"
+                        checked={selectedContacts.has(contact.id)}
+                        onChange={(e) => handleSelectContact(contact.id, e.target.checked)}
+                      />
+                    </td>
+                    {config.fields.filter(f => f.visible).sort((a, b) => a.order - b.order).map(field => (
+                      <td key={field.name} className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
+                        {field.type === 'currency' ? (
+                          <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                            ${contact[field.name]?.toLocaleString()} {contact.currency || 'USD'}
+                          </span>
+                        ) : field.type === 'textarea' ? (
+                          <div className="max-w-xs truncate">{contact[field.name] || '-'}</div>
+                        ) : field.type === 'date' && contact[field.name] ? (
+                          new Date(contact[field.name]).toLocaleDateString()
+                        ) : (
+                          contact[field.name] || '-'
+                        )}
+                      </td>
+                    ))}
+                    <td className="whitespace-nowrap px-3 py-4 text-sm">
+                      {getStatusBadge(contact.status)}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
+                      {contact.lastInteraction ? new Date(contact.lastInteraction).toLocaleDateString() : '-'}
+                    </td>
+                    <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                      <button
+                        onClick={() => handleViewContact(contact)}
+                        className="text-purple-600 dark:text-purple-400 hover:text-purple-900 dark:hover:text-purple-300 mr-4 transition-colors"
+                      >
+                        Ver<span className="sr-only">, {contact[config.fields[0]?.name]}</span>
+                      </button>
+                      <button
+                        onClick={() => handleEditContact(contact)}
+                        className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 mr-4 transition-colors"
+                      >
+                        Editar<span className="sr-only">, {contact[config.fields[0]?.name]}</span>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteContact(contact.id)}
+                        className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 transition-colors"
+                      >
+                        Eliminar<span className="sr-only">, {contact[config.fields[0]?.name]}</span>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Cards View */}
+        {viewMode === 'cards' && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4 animate-fadeIn">
+            {filteredContacts.map((contact, index) => (
+              <div
+                key={contact.id}
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden border border-gray-200 dark:border-gray-700"
+                style={{ animationDelay: `${index * 30}ms` }}
+              >
+                {/* Card Header */}
+                <div className="p-4 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-b border-gray-200 dark:border-gray-700">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center space-x-3">
+                      {/* Avatar */}
+                      <div className={`w-12 h-12 rounded-full ${getAvatarColor(contact)} flex items-center justify-center text-white font-bold text-lg shadow-lg`}>
+                        {getContactInitials(contact)}
+                      </div>
+                      {/* Name */}
+                      <div className="flex-1">
+                        <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                          {config.fields.find(f => f.name.toLowerCase().includes('nombre') || f.name.toLowerCase().includes('name'))
+                            ? contact[config.fields.find(f => f.name.toLowerCase().includes('nombre') || f.name.toLowerCase().includes('name'))!.name]
+                            : 'Sin nombre'}
+                        </h4>
+                        <div className="mt-1">
+                          {getStatusBadge(contact.status)}
+                        </div>
+                      </div>
+                    </div>
+                    {/* Checkbox */}
+                    <input
+                      type="checkbox"
                       checked={selectedContacts.has(contact.id)}
                       onChange={(e) => handleSelectContact(contact.id, e.target.checked)}
+                      className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-600"
                     />
-                  </td>
-                  {config.fields.filter(f => f.visible).sort((a, b) => a.order - b.order).map(field => (
-                    <td key={field.name} className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
-                      {field.type === 'currency' ? (
-                        <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                          ${contact[field.name]?.toLocaleString()} {contact.currency || 'USD'}
-                        </span>
-                      ) : field.type === 'textarea' ? (
-                        <div className="max-w-xs truncate">{contact[field.name] || '-'}</div>
-                      ) : field.type === 'date' && contact[field.name] ? (
-                        new Date(contact[field.name]).toLocaleDateString()
-                      ) : (
-                        contact[field.name] || '-'
-                      )}
-                    </td>
-                  ))}
-                  <td className="whitespace-nowrap px-3 py-4 text-sm">
-                    {getStatusBadge(contact.status)}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
-                    {contact.lastInteraction ? new Date(contact.lastInteraction).toLocaleDateString() : '-'}
-                  </td>
-                  <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                    <button
-                      onClick={() => handleViewContact(contact)}
-                      className="text-purple-600 dark:text-purple-400 hover:text-purple-900 dark:hover:text-purple-300 mr-4 transition-colors"
-                    >
-                      Ver<span className="sr-only">, {contact[config.fields[0]?.name]}</span>
-                    </button>
-                    <button
-                      onClick={() => handleEditContact(contact)}
-                      className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 mr-4 transition-colors"
-                    >
-                      Editar<span className="sr-only">, {contact[config.fields[0]?.name]}</span>
-                    </button>
-                    <button
-                      onClick={() => handleDeleteContact(contact.id)}
-                      className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 transition-colors"
-                    >
-                      Eliminar<span className="sr-only">, {contact[config.fields[0]?.name]}</span>
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </div>
+                </div>
 
-        {filteredContacts.length === 0 && (
-          <div className="text-center py-16">
-            <div className="w-24 h-24 mx-auto mb-6 text-gray-300 dark:text-gray-600">
-              <i className="fas fa-users text-8xl"></i>
+                {/* Card Body */}
+                <div className="p-4 space-y-2">
+                  {config.fields
+                    .filter(f => f.visible && !f.name.toLowerCase().includes('nombre') && !f.name.toLowerCase().includes('name'))
+                    .sort((a, b) => a.order - b.order)
+                    .slice(0, 4)
+                    .map(field => (
+                      <div key={field.name} className="flex items-center text-xs">
+                        <i className={`fas ${
+                          field.type === 'tel' ? 'fa-phone' :
+                          field.type === 'email' ? 'fa-envelope' :
+                          field.type === 'currency' ? 'fa-dollar-sign' :
+                          field.type === 'date' ? 'fa-calendar' :
+                          'fa-info-circle'
+                        } text-gray-400 dark:text-gray-500 mr-2 w-4`}></i>
+                        <span className="text-gray-500 dark:text-gray-400 mr-2">{field.label}:</span>
+                        <span className="text-gray-900 dark:text-gray-100 font-medium truncate flex-1">
+                          {field.type === 'currency' && contact[field.name] ? (
+                            `$${contact[field.name]?.toLocaleString()}`
+                          ) : field.type === 'date' && contact[field.name] ? (
+                            new Date(contact[field.name]).toLocaleDateString()
+                          ) : (
+                            contact[field.name] || '-'
+                          )}
+                        </span>
+                      </div>
+                    ))}
+
+                  {/* Last Interaction */}
+                  {contact.lastInteraction && (
+                    <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-100 dark:border-gray-700">
+                      <i className="fas fa-clock mr-2"></i>
+                      <span>Última interacción: {new Date(contact.lastInteraction).toLocaleDateString()}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Card Actions */}
+                <div className="p-3 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-700 flex justify-between">
+                  <button
+                    onClick={() => handleViewContact(contact)}
+                    className="flex-1 px-3 py-2 text-xs font-medium text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors flex items-center justify-center space-x-1"
+                  >
+                    <i className="fas fa-eye"></i>
+                    <span>Ver</span>
+                  </button>
+                  <button
+                    onClick={() => handleEditContact(contact)}
+                    className="flex-1 px-3 py-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors flex items-center justify-center space-x-1 mx-1"
+                  >
+                    <i className="fas fa-edit"></i>
+                    <span>Editar</span>
+                  </button>
+                  <button
+                    onClick={() => handleDeleteContact(contact.id)}
+                    className="flex-1 px-3 py-2 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex items-center justify-center space-x-1"
+                  >
+                    <i className="fas fa-trash"></i>
+                    <span>Eliminar</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* List View */}
+        {viewMode === 'list' && (
+          <div className="divide-y divide-gray-200 dark:divide-gray-700 animate-fadeIn">
+            {filteredContacts.map((contact, index) => (
+              <div
+                key={contact.id}
+                className={`flex items-center p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 ${
+                  selectedContacts.has(contact.id) ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                } ${index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/50 dark:bg-gray-800/50'}`}
+              >
+                {/* Checkbox */}
+                <div className="flex-shrink-0 mr-4">
+                  <input
+                    type="checkbox"
+                    checked={selectedContacts.has(contact.id)}
+                    onChange={(e) => handleSelectContact(contact.id, e.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-600"
+                  />
+                </div>
+
+                {/* Avatar */}
+                <div className={`flex-shrink-0 w-10 h-10 rounded-full ${getAvatarColor(contact)} flex items-center justify-center text-white font-bold text-sm shadow-md`}>
+                  {getContactInitials(contact)}
+                </div>
+
+                {/* Main Content */}
+                <div className="flex-1 ml-4 grid grid-cols-1 md:grid-cols-5 gap-3 items-center">
+                  {/* Name + Status */}
+                  <div className="md:col-span-2">
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                      {config.fields.find(f => f.name.toLowerCase().includes('nombre') || f.name.toLowerCase().includes('name'))
+                        ? contact[config.fields.find(f => f.name.toLowerCase().includes('nombre') || f.name.toLowerCase().includes('name'))!.name]
+                        : 'Sin nombre'}
+                    </h4>
+                    <div className="mt-1">
+                      {getStatusBadge(contact.status)}
+                    </div>
+                  </div>
+
+                  {/* Contact Info */}
+                  {config.fields
+                    .filter(f => f.visible && (f.type === 'tel' || f.type === 'email'))
+                    .slice(0, 2)
+                    .map((field, idx) => (
+                      <div key={field.name} className={idx === 0 ? 'md:col-span-2' : ''}>
+                        <div className="flex items-center text-xs">
+                          <i className={`fas ${field.type === 'tel' ? 'fa-phone' : 'fa-envelope'} text-gray-400 dark:text-gray-500 mr-2`}></i>
+                          <span className="text-gray-900 dark:text-gray-100">{contact[field.name] || '-'}</span>
+                        </div>
+                      </div>
+                    ))}
+
+                  {/* Last Interaction */}
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    <i className="fas fa-clock mr-1"></i>
+                    {contact.lastInteraction ? new Date(contact.lastInteraction).toLocaleDateString() : '-'}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex-shrink-0 flex space-x-2 ml-4">
+                  <button
+                    onClick={() => handleViewContact(contact)}
+                    className="p-2 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors"
+                    title="Ver"
+                  >
+                    <i className="fas fa-eye"></i>
+                  </button>
+                  <button
+                    onClick={() => handleEditContact(contact)}
+                    className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                    title="Editar"
+                  >
+                    <i className="fas fa-edit"></i>
+                  </button>
+                  <button
+                    onClick={() => handleDeleteContact(contact.id)}
+                    className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                    title="Eliminar"
+                  >
+                    <i className="fas fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Kanban View */}
+        {viewMode === 'kanban' && (
+          <div className="overflow-x-auto pb-4 animate-fadeIn">
+            <div className="flex space-x-4 min-w-max p-4">
+              {config.statuses.map((status) => {
+                const statusContacts = filteredContacts.filter(c => c.status === status.name);
+                return (
+                  <div
+                    key={status.name}
+                    className="flex-shrink-0 w-80 bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 transition-colors duration-300"
+                  >
+                    {/* Column Header */}
+                    <div className="flex items-center justify-between mb-4 pb-3 border-b-2 border-gray-200 dark:border-gray-600">
+                      <div className="flex items-center space-x-2">
+                        <span className={`inline-block w-3 h-3 rounded-full ${
+                          status.name === 'lead' ? 'bg-yellow-500' :
+                          status.name === 'contacted' ? 'bg-blue-500' :
+                          status.name === 'qualified' ? 'bg-purple-500' :
+                          status.name === 'proposal' ? 'bg-orange-500' :
+                          status.name === 'negotiation' ? 'bg-pink-500' :
+                          status.name === 'won' ? 'bg-green-500' :
+                          status.name === 'lost' ? 'bg-red-500' :
+                          'bg-gray-500'
+                        }`}></span>
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{status.label}</h3>
+                      </div>
+                      <span className="px-2 py-1 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 text-xs font-medium rounded-full">
+                        {statusContacts.length}
+                      </span>
+                    </div>
+
+                    {/* Cards in Column */}
+                    <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                      {statusContacts.map((contact) => (
+                        <div
+                          key={contact.id}
+                          className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm hover:shadow-md transition-all duration-200 border border-gray-200 dark:border-gray-700 cursor-move"
+                        >
+                          {/* Card Header */}
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center space-x-2">
+                              <div className={`w-8 h-8 rounded-full ${getAvatarColor(contact)} flex items-center justify-center text-white font-bold text-xs`}>
+                                {getContactInitials(contact)}
+                              </div>
+                              <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                                {config.fields.find(f => f.name.toLowerCase().includes('nombre') || f.name.toLowerCase().includes('name'))
+                                  ? contact[config.fields.find(f => f.name.toLowerCase().includes('nombre') || f.name.toLowerCase().includes('name'))!.name]
+                                  : 'Sin nombre'}
+                              </h4>
+                            </div>
+                            <input
+                              type="checkbox"
+                              checked={selectedContacts.has(contact.id)}
+                              onChange={(e) => handleSelectContact(contact.id, e.target.checked)}
+                              className="h-3.5 w-3.5 rounded border-gray-300 dark:border-gray-600 text-blue-600"
+                            />
+                          </div>
+
+                          {/* Card Body */}
+                          <div className="space-y-1.5 text-xs">
+                            {config.fields
+                              .filter(f => f.visible && (f.type === 'tel' || f.type === 'email'))
+                              .slice(0, 2)
+                              .map(field => (
+                                <div key={field.name} className="flex items-center text-gray-600 dark:text-gray-400">
+                                  <i className={`fas ${field.type === 'tel' ? 'fa-phone' : 'fa-envelope'} mr-2 w-3`}></i>
+                                  <span className="truncate">{contact[field.name] || '-'}</span>
+                                </div>
+                              ))}
+                            {contact.lastInteraction && (
+                              <div className="flex items-center text-gray-500 dark:text-gray-400 pt-1.5 border-t border-gray-100 dark:border-gray-700">
+                                <i className="fas fa-clock mr-1.5 text-[10px]"></i>
+                                <span>{new Date(contact.lastInteraction).toLocaleDateString()}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Card Actions */}
+                          <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700 flex justify-end space-x-1">
+                            <button
+                              onClick={() => handleViewContact(contact)}
+                              className="p-1.5 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded transition-colors"
+                              title="Ver"
+                            >
+                              <i className="fas fa-eye text-xs"></i>
+                            </button>
+                            <button
+                              onClick={() => handleEditContact(contact)}
+                              className="p-1.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                              title="Editar"
+                            >
+                              <i className="fas fa-edit text-xs"></i>
+                            </button>
+                            <button
+                              onClick={() => handleDeleteContact(contact.id)}
+                              className="p-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                              title="Eliminar"
+                            >
+                              <i className="fas fa-trash text-xs"></i>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+
+                      {statusContacts.length === 0 && (
+                        <div className="text-center py-8 text-gray-400 dark:text-gray-500">
+                          <i className="fas fa-inbox text-3xl mb-2"></i>
+                          <p className="text-xs">Sin contactos</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-2">
-              {searchTerm || statusFilter !== 'all' ? 'No se encontraron contactos' : 'No hay contactos'}
-            </h3>
-            <p className="text-gray-600 dark:text-gray-300 mb-6">
-              {searchTerm || statusFilter !== 'all' ? 'Intenta ajustar los filtros' : 'Añade tu primer contacto para comenzar'}
-            </p>
+          </div>
+        )}
+
+        {/* Empty States - View Specific */}
+        {filteredContacts.length === 0 && (
+          <div className="text-center py-16 px-4 animate-fadeIn">
+            {/* Table Empty State */}
+            {viewMode === 'table' && (
+              <div>
+                <div className="w-24 h-24 mx-auto mb-6 text-gray-300 dark:text-gray-600">
+                  <i className="fas fa-table text-7xl"></i>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                  {searchTerm || statusFilter !== 'all' ? 'No se encontraron contactos' : 'Tabla vacía'}
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+                  {searchTerm || statusFilter !== 'all'
+                    ? 'Intenta ajustar los filtros de búsqueda para encontrar los contactos que necesitas'
+                    : 'Comienza agregando tu primer contacto para ver tus datos organizados en tabla'}
+                </p>
+                {!searchTerm && statusFilter === 'all' && (
+                  <button
+                    onClick={() => {
+                      setEditingContact(null);
+                      setFormData(initializeFormData());
+                      setShowModal(true);
+                    }}
+                    className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg hover:shadow-xl inline-flex items-center space-x-2"
+                  >
+                    <i className="fas fa-plus"></i>
+                    <span>Agregar Primer Contacto</span>
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Cards Empty State */}
+            {viewMode === 'cards' && (
+              <div>
+                <div className="w-24 h-24 mx-auto mb-6 text-gray-300 dark:text-gray-600">
+                  <i className="fas fa-id-card text-7xl"></i>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                  {searchTerm || statusFilter !== 'all' ? 'No hay tarjetas para mostrar' : 'Sin tarjetas de contacto'}
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+                  {searchTerm || statusFilter !== 'all'
+                    ? 'Prueba con diferentes criterios de búsqueda para encontrar contactos'
+                    : 'Crea contactos y visualízalos en formato de tarjetas atractivas'}
+                </p>
+                {!searchTerm && statusFilter === 'all' && (
+                  <button
+                    onClick={() => {
+                      setEditingContact(null);
+                      setFormData(initializeFormData());
+                      setShowModal(true);
+                    }}
+                    className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-3 rounded-lg font-medium hover:from-purple-700 hover:to-purple-800 transition-all shadow-lg hover:shadow-xl inline-flex items-center space-x-2"
+                  >
+                    <i className="fas fa-plus-circle"></i>
+                    <span>Crear Primera Tarjeta</span>
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* List Empty State */}
+            {viewMode === 'list' && (
+              <div>
+                <div className="w-24 h-24 mx-auto mb-6 text-gray-300 dark:text-gray-600">
+                  <i className="fas fa-list-ul text-7xl"></i>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                  {searchTerm || statusFilter !== 'all' ? 'Lista vacía' : 'Sin contactos en la lista'}
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+                  {searchTerm || statusFilter !== 'all'
+                    ? 'Modifica tus filtros para ver más contactos en la lista'
+                    : 'Agrega contactos para verlos en una lista compacta y fácil de leer'}
+                </p>
+                {!searchTerm && statusFilter === 'all' && (
+                  <button
+                    onClick={() => {
+                      setEditingContact(null);
+                      setFormData(initializeFormData());
+                      setShowModal(true);
+                    }}
+                    className="bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-3 rounded-lg font-medium hover:from-green-700 hover:to-green-800 transition-all shadow-lg hover:shadow-xl inline-flex items-center space-x-2"
+                  >
+                    <i className="fas fa-user-plus"></i>
+                    <span>Agregar a la Lista</span>
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Kanban Empty State */}
+            {viewMode === 'kanban' && (
+              <div>
+                <div className="w-24 h-24 mx-auto mb-6 text-gray-300 dark:text-gray-600">
+                  <i className="fas fa-columns text-7xl"></i>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+                  {searchTerm || statusFilter !== 'all' ? 'No hay contactos que cumplan los criterios' : 'Tablero Kanban vacío'}
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto">
+                  {searchTerm || statusFilter !== 'all'
+                    ? 'Ajusta los filtros para visualizar contactos en el tablero Kanban'
+                    : 'Comienza a gestionar tus contactos visualmente organizados por estado'}
+                </p>
+                {!searchTerm && statusFilter === 'all' && (
+                  <button
+                    onClick={() => {
+                      setEditingContact(null);
+                      setFormData(initializeFormData());
+                      setShowModal(true);
+                    }}
+                    className="bg-gradient-to-r from-orange-600 to-orange-700 text-white px-6 py-3 rounded-lg font-medium hover:from-orange-700 hover:to-orange-800 transition-all shadow-lg hover:shadow-xl inline-flex items-center space-x-2"
+                  >
+                    <i className="fas fa-th"></i>
+                    <span>Iniciar Tablero</span>
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
