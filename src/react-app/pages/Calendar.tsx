@@ -32,6 +32,16 @@ interface EventTemplate {
   createdAt: string;
 }
 
+interface WhatsAppTemplate {
+  id: string;
+  name: string;
+  language: string;
+  category: string;
+  status: string;
+  components: any[];
+  hasImage: boolean;
+}
+
 interface CalendarEventData extends CalendarEvent {
   id: string;
   title: string;
@@ -46,6 +56,7 @@ interface CalendarEventData extends CalendarEvent {
   color?: string;
   recurrence?: RecurrenceConfig;
   parentEventId?: string; // For recurring event instances
+  scheduledMessageId?: string; // Link to scheduled WhatsApp message
 }
 
 export default function Calendar() {
@@ -76,12 +87,26 @@ export default function Calendar() {
   const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
   const [followUpSuggestions, setFollowUpSuggestions] = useState<any[]>([]);
 
+  // WhatsApp Integration States
+  const [metaTemplates, setMetaTemplates] = useState<WhatsAppTemplate[]>([]);
+  const [showWhatsAppSection, setShowWhatsAppSection] = useState(false);
+  const [whatsAppConfig, setWhatsAppConfig] = useState({
+    selectedTemplate: '',
+    useEventDateTime: true,
+    customDate: '',
+    customTime: '',
+    imageUrl: ''
+  });
+  const [scheduledMessages, setScheduledMessages] = useState<any[]>([]);
+
   const { showSuccess, showError } = useToast();
   const crmConfig = loadCRMConfig();
 
   useEffect(() => {
     loadEvents();
     loadTemplates();
+    loadMetaTemplates();
+    loadScheduledMessages();
     setCrmContacts(loadCRMData());
 
     // Request notification permission
@@ -142,6 +167,79 @@ export default function Calendar() {
   const saveTemplates = (templatesToSave: EventTemplate[]) => {
     localStorage.setItem('chatflow_event_templates', JSON.stringify(templatesToSave));
     setTemplates(templatesToSave);
+  };
+
+  const loadMetaTemplates = () => {
+    const cached = localStorage.getItem('chatflow_cached_templates');
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        // Only load approved templates
+        const approved = parsed.filter((t: WhatsAppTemplate) => t.status === 'APPROVED');
+        setMetaTemplates(approved);
+      } catch (error) {
+        console.error('Error loading Meta templates:', error);
+      }
+    }
+  };
+
+  const loadScheduledMessages = () => {
+    const stored = localStorage.getItem('chatflow_scheduled_messages');
+    if (stored) {
+      try {
+        setScheduledMessages(JSON.parse(stored));
+      } catch (error) {
+        console.error('Error loading scheduled messages:', error);
+      }
+    }
+  };
+
+  const saveScheduledMessage = (message: any) => {
+    const stored = localStorage.getItem('chatflow_scheduled_messages');
+    let messages = [];
+
+    if (stored) {
+      try {
+        messages = JSON.parse(stored);
+      } catch (error) {
+        console.error('Error parsing scheduled messages:', error);
+      }
+    }
+
+    const newMessage = {
+      id: Date.now().toString(),
+      eventId: selectedEvent?.id || Date.now().toString(),
+      campaignName: `Evento: ${newEvent.title}`,
+      scheduledDate: whatsAppConfig.useEventDateTime ? newEvent.date : whatsAppConfig.customDate,
+      scheduledTime: whatsAppConfig.useEventDateTime ? newEvent.time : whatsAppConfig.customTime,
+      contactListId: 'event_contacts',
+      contactListName: 'Contactos del Evento',
+      contactCount: newEvent.contactIds.length,
+      contactIds: newEvent.contactIds,
+      template: whatsAppConfig.selectedTemplate,
+      imageUrl: whatsAppConfig.imageUrl,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      source: 'calendar_event'
+    };
+
+    messages.push(newMessage);
+    localStorage.setItem('chatflow_scheduled_messages', JSON.stringify(messages));
+    setScheduledMessages(messages);
+
+    return newMessage.id;
+  };
+
+  const getScheduledMessageForEvent = (eventId: string) => {
+    return scheduledMessages.find(msg => msg.eventId === eventId && msg.status === 'pending');
+  };
+
+  const cancelScheduledMessage = (messageId: string) => {
+    const updated = scheduledMessages.map(msg =>
+      msg.id === messageId ? { ...msg, status: 'cancelled' } : msg
+    );
+    localStorage.setItem('chatflow_scheduled_messages', JSON.stringify(updated));
+    setScheduledMessages(updated);
   };
 
   const handleSaveAsTemplate = () => {
@@ -416,6 +514,33 @@ export default function Calendar() {
       recurrenceEndDate: event.recurrence?.endDate ? format(event.recurrence.endDate, 'yyyy-MM-dd') : '',
       recurrenceOccurrences: event.recurrence?.occurrences?.toString() || ''
     });
+
+    // Load WhatsApp configuration if there's a scheduled message
+    if (event.scheduledMessageId) {
+      const scheduledMsg = getScheduledMessageForEvent(event.id);
+      if (scheduledMsg) {
+        setWhatsAppConfig({
+          selectedTemplate: scheduledMsg.template,
+          useEventDateTime: scheduledMsg.scheduledDate === format(event.start, 'yyyy-MM-dd') &&
+                          scheduledMsg.scheduledTime === format(event.start, 'HH:mm'),
+          customDate: scheduledMsg.scheduledDate,
+          customTime: scheduledMsg.scheduledTime,
+          imageUrl: scheduledMsg.imageUrl || ''
+        });
+        setShowWhatsAppSection(true);
+      }
+    } else {
+      // Reset WhatsApp config
+      setWhatsAppConfig({
+        selectedTemplate: '',
+        useEventDateTime: true,
+        customDate: '',
+        customTime: '',
+        imageUrl: ''
+      });
+      setShowWhatsAppSection(false);
+    }
+
     setShowModal(true);
   };
 
@@ -511,6 +636,18 @@ export default function Calendar() {
       occurrences: newEvent.recurrenceOccurrences ? parseInt(newEvent.recurrenceOccurrences) : undefined
     };
 
+    // Handle WhatsApp message scheduling
+    let scheduledMessageId: string | undefined;
+    if (showWhatsAppSection && whatsAppConfig.selectedTemplate && newEvent.contactIds.length > 0) {
+      try {
+        scheduledMessageId = saveScheduledMessage({});
+        showSuccess('Mensaje WhatsApp programado exitosamente');
+      } catch (error) {
+        console.error('Error scheduling WhatsApp message:', error);
+        showError('Error al programar el mensaje');
+      }
+    }
+
     const eventData: CalendarEventData = {
       id: selectedEvent?.id || Date.now().toString(),
       title: newEvent.title,
@@ -524,7 +661,8 @@ export default function Calendar() {
       type: newEvent.type,
       notes: newEvent.notes,
       color: eventColors[newEvent.type],
-      recurrence: recurrence.frequency !== 'none' ? recurrence : undefined
+      recurrence: recurrence.frequency !== 'none' ? recurrence : undefined,
+      scheduledMessageId: scheduledMessageId
     };
 
     let updatedEvents;
@@ -546,6 +684,14 @@ export default function Calendar() {
     saveEvents(updatedEvents);
     setShowModal(false);
     setSelectedEvent(null);
+    setShowWhatsAppSection(false);
+    setWhatsAppConfig({
+      selectedTemplate: '',
+      useEventDateTime: true,
+      customDate: '',
+      customTime: '',
+      imageUrl: ''
+    });
   };
 
   const handleDeleteEvent = () => {
@@ -685,6 +831,19 @@ _Evento creado desde ChatFlow Pro_
     showSuccess('Archivo .ics descargado - Importa en Google Calendar o Outlook');
   };
 
+  const EventComponent = ({ event }: { event: CalendarEventData }) => {
+    const hasScheduledMessage = event.scheduledMessageId && getScheduledMessageForEvent(event.id)?.status === 'pending';
+
+    return (
+      <div className="flex items-center justify-between w-full">
+        <span className="truncate">{event.title}</span>
+        {hasScheduledMessage && (
+          <i className="fab fa-whatsapp text-white ml-1 flex-shrink-0" title="Mensaje WhatsApp programado"></i>
+        )}
+      </div>
+    );
+  };
+
   const eventStyleGetter = (event: CalendarEventData) => {
     return {
       style: {
@@ -815,6 +974,9 @@ _Evento creado desde ChatFlow Pro_
                 date={date}
                 onNavigate={setDate}
                 eventPropGetter={eventStyleGetter}
+                components={{
+                  event: EventComponent
+                }}
                 culture="es"
                 messages={{
                   next: "Siguiente",
@@ -870,6 +1032,12 @@ _Evento creado desde ChatFlow Pro_
                                 {event.recurrence.frequency === 'daily' && 'Diario'}
                                 {event.recurrence.frequency === 'weekly' && 'Semanal'}
                                 {event.recurrence.frequency === 'monthly' && 'Mensual'}
+                              </span>
+                            )}
+                            {event.scheduledMessageId && getScheduledMessageForEvent(event.id)?.status === 'pending' && (
+                              <span className="px-2 py-1 rounded-md text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">
+                                <i className="fab fa-whatsapp mr-1"></i>
+                                Mensaje programado
                               </span>
                             )}
                           </div>
@@ -1454,6 +1622,185 @@ _Evento creado desde ChatFlow Pro_
                   )}
                 </div>
               </div>
+
+              {/* WhatsApp Integration Section */}
+              {newEvent.contactIds.length > 0 && metaTemplates.length > 0 && (
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center">
+                      <i className="fab fa-whatsapp text-green-600 mr-2"></i>
+                      Programar Mensaje WhatsApp
+                      <span className="ml-2 text-xs font-normal bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full">
+                        {newEvent.contactIds.length} contacto{newEvent.contactIds.length !== 1 ? 's' : ''}
+                      </span>
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => setShowWhatsAppSection(!showWhatsAppSection)}
+                      className={`px-4 py-2 rounded-lg font-medium transition-all text-sm ${
+                        showWhatsAppSection
+                          ? 'bg-green-600 text-white hover:bg-green-700'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                      }`}
+                    >
+                      {showWhatsAppSection ? (
+                        <><i className="fas fa-check mr-2"></i>Activado</>
+                      ) : (
+                        <><i className="fas fa-plus mr-2"></i>Activar</>
+                      )}
+                    </button>
+                  </div>
+
+                  {showWhatsAppSection && (
+                    <div className="space-y-4 bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                      {/* Template Selector */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Plantilla de Mensaje <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          value={whatsAppConfig.selectedTemplate}
+                          onChange={(e) => setWhatsAppConfig({ ...whatsAppConfig, selectedTemplate: e.target.value })}
+                          className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        >
+                          <option value="">Seleccionar plantilla...</option>
+                          {metaTemplates.map(template => (
+                            <option key={template.id} value={template.name}>
+                              {template.name} {template.hasImage ? '🖼️' : ''}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Template Preview */}
+                      {whatsAppConfig.selectedTemplate && (() => {
+                        const template = metaTemplates.find(t => t.name === whatsAppConfig.selectedTemplate);
+                        const bodyComponent = template?.components.find((c: any) => c.type === 'BODY');
+                        return template && bodyComponent ? (
+                          <div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg p-3">
+                            <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                              Vista previa:
+                            </p>
+                            <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">
+                              {bodyComponent.text}
+                            </p>
+                          </div>
+                        ) : null;
+                      })()}
+
+                      {/* Date/Time Selection */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Cuándo enviar
+                        </label>
+                        <div className="space-y-2">
+                          <label className="flex items-center p-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600">
+                            <input
+                              type="radio"
+                              checked={whatsAppConfig.useEventDateTime}
+                              onChange={() => setWhatsAppConfig({ ...whatsAppConfig, useEventDateTime: true })}
+                              className="w-4 h-4 text-green-600"
+                            />
+                            <span className="ml-3 text-sm text-gray-900 dark:text-gray-100">
+                              <i className="fas fa-clock mr-2 text-green-600"></i>
+                              En la fecha/hora del evento ({newEvent.date} {newEvent.time})
+                            </span>
+                          </label>
+
+                          <label className="flex items-center p-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600">
+                            <input
+                              type="radio"
+                              checked={!whatsAppConfig.useEventDateTime}
+                              onChange={() => setWhatsAppConfig({ ...whatsAppConfig, useEventDateTime: false })}
+                              className="w-4 h-4 text-green-600"
+                            />
+                            <span className="ml-3 text-sm text-gray-900 dark:text-gray-100">
+                              <i className="fas fa-calendar-alt mr-2 text-blue-600"></i>
+                              Personalizar fecha/hora
+                            </span>
+                          </label>
+                        </div>
+
+                        {!whatsAppConfig.useEventDateTime && (
+                          <div className="grid grid-cols-2 gap-3 mt-3">
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                                Fecha
+                              </label>
+                              <input
+                                type="date"
+                                value={whatsAppConfig.customDate}
+                                onChange={(e) => setWhatsAppConfig({ ...whatsAppConfig, customDate: e.target.value })}
+                                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                                Hora
+                              </label>
+                              <input
+                                type="time"
+                                value={whatsAppConfig.customTime}
+                                onChange={(e) => setWhatsAppConfig({ ...whatsAppConfig, customTime: e.target.value })}
+                                className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm"
+                              />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Image URL (if template has image) */}
+                      {whatsAppConfig.selectedTemplate && metaTemplates.find(t => t.name === whatsAppConfig.selectedTemplate)?.hasImage && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            URL de Imagen
+                          </label>
+                          <input
+                            type="url"
+                            value={whatsAppConfig.imageUrl}
+                            onChange={(e) => setWhatsAppConfig({ ...whatsAppConfig, imageUrl: e.target.value })}
+                            placeholder="https://ejemplo.com/imagen.jpg"
+                            className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                          />
+                        </div>
+                      )}
+
+                      {/* Scheduled Message Info */}
+                      {selectedEvent?.scheduledMessageId && (() => {
+                        const scheduledMsg = getScheduledMessageForEvent(selectedEvent.id);
+                        return scheduledMsg && scheduledMsg.status === 'pending' ? (
+                          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <p className="text-sm font-medium text-blue-900 dark:text-blue-200">
+                                  <i className="fas fa-clock mr-2"></i>
+                                  Mensaje ya programado
+                                </p>
+                                <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                                  Se enviará el {scheduledMsg.scheduledDate} a las {scheduledMsg.scheduledTime}
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (confirm('¿Cancelar mensaje programado?')) {
+                                    cancelScheduledMessage(scheduledMsg.id);
+                                    showSuccess('Mensaje cancelado');
+                                  }
+                                }}
+                                className="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg text-xs font-medium hover:bg-red-200 dark:hover:bg-red-900/50 transition-all"
+                              >
+                                <i className="fas fa-times mr-1"></i>
+                                Cancelar
+                              </button>
+                            </div>
+                          </div>
+                        ) : null;
+                      })()}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="p-6 border-t border-gray-100 dark:border-gray-700 flex flex-wrap justify-between gap-3">
