@@ -4,6 +4,7 @@ import { format, parse, startOfWeek, getDay, addDays, isBefore, startOfDay, addW
 import { es } from 'date-fns/locale';
 import { loadCRMData, loadCRMConfig } from '@/react-app/utils/storage';
 import { useToast } from '@/react-app/components/Toast';
+import ContactSelector from '@/react-app/components/ContactSelector';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 
 const locales = { es };
@@ -98,6 +99,9 @@ export default function Calendar() {
     imageUrl: ''
   });
   const [scheduledMessages, setScheduledMessages] = useState<any[]>([]);
+
+  // Contact Selector State
+  const [showContactSelector, setShowContactSelector] = useState(false);
 
   const { showSuccess, showError } = useToast();
   const crmConfig = loadCRMConfig();
@@ -1434,68 +1438,71 @@ _Evento creado desde ChatFlow Pro_
                 </select>
               </div>
 
-              {/* Multiple Contacts */}
+              {/* Contact Selector */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Vincular a Contactos (Opcional)
                 </label>
-                <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-white dark:bg-gray-700 max-h-48 overflow-y-auto">
-                  {crmContacts.length > 0 ? (
-                    <div className="space-y-2">
-                      {crmContacts.map(contact => {
-                        const nameField = crmConfig.fields.find(f =>
-                          f.name.toLowerCase().includes('nombre') ||
-                          f.name.toLowerCase().includes('name')
-                        );
-                        const name = nameField ? contact[nameField.name] : contact.id;
-                        const isSelected = newEvent.contactIds.includes(contact.id);
 
-                        return (
-                          <label
-                            key={contact.id}
-                            className={`flex items-center p-2 rounded-lg cursor-pointer transition-colors ${
-                              isSelected
-                                ? 'bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800'
-                                : 'hover:bg-gray-50 dark:hover:bg-gray-600'
-                            }`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setNewEvent({
-                                    ...newEvent,
-                                    contactIds: [...newEvent.contactIds, contact.id]
-                                  });
-                                } else {
-                                  setNewEvent({
-                                    ...newEvent,
-                                    contactIds: newEvent.contactIds.filter(id => id !== contact.id)
-                                  });
-                                }
-                              }}
-                              className="w-4 h-4 text-blue-600 bg-gray-100 dark:bg-gray-600 border-gray-300 dark:border-gray-500 rounded focus:ring-blue-500 focus:ring-2"
-                            />
-                            <span className="ml-3 text-sm text-gray-900 dark:text-gray-100 font-medium">
-                              {name}
-                            </span>
-                          </label>
-                        );
-                      })}
+                <button
+                  type="button"
+                  onClick={() => setShowContactSelector(true)}
+                  className="w-full p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg hover:border-blue-500 dark:hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all group"
+                >
+                  {newEvent.contactIds.length === 0 ? (
+                    <div className="flex flex-col items-center space-y-2">
+                      <i className="fas fa-users text-3xl text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"></i>
+                      <div className="text-center">
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                          Click para seleccionar contactos
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          Búsqueda avanzada con filtros
+                        </p>
+                      </div>
                     </div>
                   ) : (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">
-                      No hay contactos disponibles
-                    </p>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <i className="fas fa-check-circle text-green-600"></i>
+                          <span className="font-medium text-gray-900 dark:text-gray-100">
+                            {newEvent.contactIds.length} contacto{newEvent.contactIds.length !== 1 ? 's' : ''} seleccionado{newEvent.contactIds.length !== 1 ? 's' : ''}
+                          </span>
+                        </div>
+                        <span className="text-xs text-blue-600 dark:text-blue-400 group-hover:underline">
+                          Modificar selección
+                        </span>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        {newEvent.contactIds.slice(0, 8).map(contactId => {
+                          const contact = crmContacts.find(c => c.id === contactId);
+                          if (!contact) return null;
+                          const nameField = crmConfig.fields.find(f =>
+                            f.name.toLowerCase().includes('nombre') ||
+                            f.name.toLowerCase().includes('name')
+                          );
+                          const name = nameField ? contact[nameField.name] : contact.id;
+
+                          return (
+                            <span
+                              key={contactId}
+                              className="inline-flex items-center px-2.5 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 rounded-md text-xs font-medium"
+                            >
+                              {name}
+                            </span>
+                          );
+                        })}
+                        {newEvent.contactIds.length > 8 && (
+                          <span className="inline-flex items-center px-2.5 py-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md text-xs font-medium">
+                            +{newEvent.contactIds.length - 8} más
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   )}
-                </div>
-                {newEvent.contactIds.length > 0 && (
-                  <div className="mt-2 flex items-center text-sm text-blue-600 dark:text-blue-400">
-                    <i className="fas fa-check-circle mr-2"></i>
-                    {newEvent.contactIds.length} contacto{newEvent.contactIds.length !== 1 ? 's' : ''} seleccionado{newEvent.contactIds.length !== 1 ? 's' : ''}
-                  </div>
-                )}
+                </button>
               </div>
 
               {/* Date and Time */}
@@ -2095,6 +2102,19 @@ _Evento creado desde ChatFlow Pro_
           </div>
         </div>
       )}
+
+      {/* Contact Selector Modal */}
+      <ContactSelector
+        isOpen={showContactSelector}
+        onClose={() => setShowContactSelector(false)}
+        onConfirm={(selectedIds) => {
+          setNewEvent({ ...newEvent, contactIds: selectedIds });
+        }}
+        initialSelectedIds={newEvent.contactIds}
+        title="Seleccionar Contactos para Evento"
+        confirmText="Agregar al Evento"
+        multiSelect={true}
+      />
     </div>
   );
 }
