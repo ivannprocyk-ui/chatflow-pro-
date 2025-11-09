@@ -43,6 +43,7 @@ export default function Dashboard() {
     lastSync: null as string | null
   });
   const [todayEvents, setTodayEvents] = useState<any[]>([]);
+  const [templates, setTemplates] = useState<any[]>([]);
   const chartRef = useRef<HTMLCanvasElement>(null);
   const donutChartRef = useRef<HTMLCanvasElement>(null);
   // CRM Chart refs
@@ -56,6 +57,7 @@ export default function Dashboard() {
     loadLocalStats();
     loadCRMContacts();
     loadTodayEvents();
+    loadTemplates();
     if (config.api.accessToken && config.api.wabaId) {
       loadMetaAnalytics();
     } else {
@@ -123,6 +125,23 @@ export default function Dashboard() {
       setTodayEvents(filtered);
     } catch (error) {
       console.error('Error loading today events:', error);
+    }
+  };
+
+  const loadTemplates = () => {
+    try {
+      const cachedTemplates = localStorage.getItem('chatflow_cached_templates');
+      const allTemplates = cachedTemplates ? JSON.parse(cachedTemplates) : [];
+
+      // Filter approved templates and sort by name
+      const approvedTemplates = allTemplates
+        .filter((t: any) => t.status === 'APPROVED')
+        .sort((a: any, b: any) => a.name.localeCompare(b.name))
+        .slice(0, 6); // Show max 6 templates
+
+      setTemplates(approvedTemplates);
+    } catch (error) {
+      console.error('Error loading templates:', error);
     }
   };
 
@@ -772,6 +791,89 @@ export default function Dashboard() {
               >
                 <i className="fas fa-plus-circle"></i>
                 <span>Crear Evento</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Templates Widget */}
+      <div className="mb-8">
+        <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-6 shadow-xl">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold text-white flex items-center">
+              <i className="fas fa-file-alt mr-3"></i>
+              Plantillas Disponibles
+            </h2>
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent('navigate-to', { detail: 'templates' }))}
+              className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all backdrop-blur-sm flex items-center space-x-2"
+            >
+              <i className="fas fa-th-list"></i>
+              <span>Ver Todas</span>
+            </button>
+          </div>
+
+          {templates.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {templates.map((template, index) => (
+                <div
+                  key={template.id || index}
+                  className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-md hover:shadow-lg transition-all hover:-translate-y-1 cursor-pointer"
+                  onClick={() => window.dispatchEvent(new CustomEvent('navigate-to', { detail: 'templates' }))}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex items-center space-x-2 flex-1 min-w-0">
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white flex-shrink-0">
+                        <i className="fas fa-file-alt text-lg"></i>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate">{template.name}</h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{template.language || 'es'}</p>
+                      </div>
+                    </div>
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
+                      {template.category || 'UTILITY'}
+                    </span>
+                  </div>
+
+                  {template.components && template.components.find((c: any) => c.type === 'BODY') && (
+                    <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 mb-3">
+                      {template.components.find((c: any) => c.type === 'BODY').text}
+                    </p>
+                  )}
+
+                  <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
+                    <div className="flex items-center gap-2">
+                      {template.components?.some((c: any) => c.type === 'HEADER' && c.format === 'IMAGE') && (
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          <i className="fas fa-image mr-1"></i>
+                          Imagen
+                        </span>
+                      )}
+                      {template.components?.some((c: any) => c.type === 'BUTTONS') && (
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          <i className="fas fa-hand-pointer mr-1"></i>
+                          Botones
+                        </span>
+                      )}
+                    </div>
+                    <i className="fas fa-chevron-right text-gray-400 dark:text-gray-500"></i>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-8 text-center">
+              <i className="fas fa-file-alt text-white/60 text-4xl mb-3"></i>
+              <p className="text-white text-lg font-medium mb-1">No hay plantillas disponibles</p>
+              <p className="text-white/80 text-sm mb-4">Sincroniza tus plantillas de Meta para verlas aquí</p>
+              <button
+                onClick={() => window.dispatchEvent(new CustomEvent('navigate-to', { detail: 'templates' }))}
+                className="bg-white text-emerald-600 px-5 py-2 rounded-lg text-sm font-medium hover:bg-emerald-50 transition-all inline-flex items-center space-x-2"
+              >
+                <i className="fas fa-sync-alt"></i>
+                <span>Ir a Plantillas</span>
               </button>
             </div>
           )}
