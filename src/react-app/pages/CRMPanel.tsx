@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { loadCRMData, saveCRMData, loadCRMConfig, loadContactLists, saveContactLists, CRMFieldConfig, CRMConfig, loadTags, saveTags, createTag, updateTag, deleteTag, Tag, TAG_COLORS } from '@/react-app/utils/storage';
+import { loadCRMData, saveCRMData, loadCRMConfig, loadContactLists, saveContactLists, CRMFieldConfig, CRMConfig, loadTags, saveTags, createTag, updateTag, deleteTag, Tag, TAG_COLORS, ValidationIssue, validateContactData, findDuplicateContacts, applyDataCleaning, mergeContacts } from '@/react-app/utils/storage';
 import { useToast } from '@/react-app/components/Toast';
 
 type ViewMode = 'table' | 'list' | 'cards' | 'kanban';
@@ -34,6 +34,10 @@ export default function CRMPanel() {
   const [showMassTagModal, setShowMassTagModal] = useState(false);
   const [editingTag, setEditingTag] = useState<Tag | null>(null);
   const [tagFormData, setTagFormData] = useState({ name: '', color: TAG_COLORS[0] });
+  const [showDataCleaningModal, setShowDataCleaningModal] = useState(false);
+  const [validationIssues, setValidationIssues] = useState<ValidationIssue[]>([]);
+  const [cleaningTab, setCleaningTab] = useState<'overview' | 'duplicates' | 'validation' | 'formatting'>('overview');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const { showSuccess, showError} = useToast();
 
   useEffect(() => {
@@ -217,6 +221,57 @@ export default function CRMPanel() {
 
     const actionText = action === 'add' ? 'asignadas' : 'eliminadas';
     showSuccess(`Etiquetas ${actionText} exitosamente a ${selectedContacts.size} contacto(s)`);
+  };
+
+  // Data Cleaning Handlers
+  const handleOpenDataCleaning = () => {
+    setIsAnalyzing(true);
+    setShowDataCleaningModal(true);
+
+    // Analyze contacts for issues
+    setTimeout(() => {
+      const validationResults = validateContactData(contacts, config);
+      const duplicateResults = findDuplicateContacts(contacts);
+      const allIssues = [...validationResults, ...duplicateResults];
+      setValidationIssues(allIssues);
+      setIsAnalyzing(false);
+    }, 500);
+  };
+
+  const handleApplyAutoCleaning = () => {
+    const { cleaned, changes } = applyDataCleaning(contacts, config);
+    setContacts(cleaned);
+    saveCRMData(cleaned);
+    showSuccess(`Se aplicaron ${changes} cambios automáticos`);
+
+    // Re-analyze after cleaning
+    const validationResults = validateContactData(cleaned, config);
+    const duplicateResults = findDuplicateContacts(cleaned);
+    setValidationIssues([...validationResults, ...duplicateResults]);
+  };
+
+  const handleMergeContacts = (keepContactId: string, mergeContactId: string) => {
+    const keepContact = contacts.find(c => c.id === keepContactId);
+    const mergeContact = contacts.find(c => c.id === mergeContactId);
+
+    if (!keepContact || !mergeContact) {
+      showError('No se encontraron los contactos para fusionar');
+      return;
+    }
+
+    const merged = mergeContacts(keepContact, mergeContact, config);
+    const updatedContacts = contacts
+      .filter(c => c.id !== mergeContactId)
+      .map(c => c.id === keepContactId ? merged : c);
+
+    setContacts(updatedContacts);
+    saveCRMData(updatedContacts);
+    showSuccess('Contactos fusionados exitosamente');
+
+    // Re-analyze after merge
+    const validationResults = validateContactData(updatedContacts, config);
+    const duplicateResults = findDuplicateContacts(updatedContacts);
+    setValidationIssues([...validationResults, ...duplicateResults]);
   };
 
   const handleAddToList = () => {
@@ -612,6 +667,13 @@ export default function CRMPanel() {
           >
             <i className="fas fa-download"></i>
             <span>Exportar</span>
+          </button>
+          <button
+            onClick={handleOpenDataCleaning}
+            className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-6 py-3 rounded-xl font-medium hover:from-emerald-600 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
+          >
+            <i className="fas fa-broom"></i>
+            <span>Limpiar Datos</span>
           </button>
           <button
             onClick={handleOpenTagManager}
@@ -2153,6 +2215,391 @@ export default function CRMPanel() {
             <div className="p-6 border-t border-gray-100 dark:border-gray-700 flex justify-end">
               <button
                 onClick={() => setShowMassTagModal(false)}
+                className="px-6 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Data Cleaning Modal */}
+      {showDataCleaningModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden transition-colors duration-300">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-700">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
+                  <i className="fas fa-broom text-emerald-600 mr-3"></i>
+                  Validación y Limpieza de Datos
+                </h2>
+                <button
+                  onClick={() => setShowDataCleaningModal(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                >
+                  <i className="fas fa-times text-2xl"></i>
+                </button>
+              </div>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-6">
+              <button
+                onClick={() => setCleaningTab('overview')}
+                className={`px-6 py-3 font-medium transition-all ${
+                  cleaningTab === 'overview'
+                    ? 'border-b-2 border-emerald-600 text-emerald-600'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                }`}
+              >
+                <i className="fas fa-chart-pie mr-2"></i>
+                Resumen
+              </button>
+              <button
+                onClick={() => setCleaningTab('duplicates')}
+                className={`px-6 py-3 font-medium transition-all ${
+                  cleaningTab === 'duplicates'
+                    ? 'border-b-2 border-emerald-600 text-emerald-600'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                }`}
+              >
+                <i className="fas fa-copy mr-2"></i>
+                Duplicados ({validationIssues.filter(i => i.type === 'duplicate').length / 2})
+              </button>
+              <button
+                onClick={() => setCleaningTab('validation')}
+                className={`px-6 py-3 font-medium transition-all ${
+                  cleaningTab === 'validation'
+                    ? 'border-b-2 border-emerald-600 text-emerald-600'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                }`}
+              >
+                <i className="fas fa-exclamation-circle mr-2"></i>
+                Validación ({validationIssues.filter(i => i.type === 'invalid_phone' || i.type === 'invalid_email' || i.type === 'missing_required').length})
+              </button>
+              <button
+                onClick={() => setCleaningTab('formatting')}
+                className={`px-6 py-3 font-medium transition-all ${
+                  cleaningTab === 'formatting'
+                    ? 'border-b-2 border-emerald-600 text-emerald-600'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                }`}
+              >
+                <i className="fas fa-magic mr-2"></i>
+                Formato ({validationIssues.filter(i => i.type === 'formatting').length})
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 200px)' }}>
+              {isAnalyzing ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-emerald-600 mb-4"></div>
+                  <p className="text-gray-600 dark:text-gray-400">Analizando contactos...</p>
+                </div>
+              ) : (
+                <>
+                  {/* Overview Tab */}
+                  {cleaningTab === 'overview' && (
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">Total Contactos</p>
+                              <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{contacts.length}</p>
+                            </div>
+                            <i className="fas fa-users text-3xl text-blue-600 dark:text-blue-400 opacity-50"></i>
+                          </div>
+                        </div>
+
+                        <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm text-yellow-600 dark:text-yellow-400 font-medium">Problemas Encontrados</p>
+                              <p className="text-2xl font-bold text-yellow-900 dark:text-yellow-100">{validationIssues.length}</p>
+                            </div>
+                            <i className="fas fa-exclamation-triangle text-3xl text-yellow-600 dark:text-yellow-400 opacity-50"></i>
+                          </div>
+                        </div>
+
+                        <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">Contactos Limpios</p>
+                              <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
+                                {contacts.length - new Set(validationIssues.map(i => i.contactId)).size}
+                              </p>
+                            </div>
+                            <i className="fas fa-check-circle text-3xl text-emerald-600 dark:text-emerald-400 opacity-50"></i>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-gray-50 dark:bg-gray-900 p-6 rounded-lg">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Detalles de Problemas</h3>
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg">
+                            <div className="flex items-center space-x-3">
+                              <i className="fas fa-copy text-orange-600"></i>
+                              <span className="text-gray-700 dark:text-gray-300">Contactos Duplicados</span>
+                            </div>
+                            <span className="font-bold text-orange-600">{validationIssues.filter(i => i.type === 'duplicate').length / 2}</span>
+                          </div>
+
+                          <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg">
+                            <div className="flex items-center space-x-3">
+                              <i className="fas fa-phone-slash text-red-600"></i>
+                              <span className="text-gray-700 dark:text-gray-300">Teléfonos Inválidos</span>
+                            </div>
+                            <span className="font-bold text-red-600">{validationIssues.filter(i => i.type === 'invalid_phone').length}</span>
+                          </div>
+
+                          <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg">
+                            <div className="flex items-center space-x-3">
+                              <i className="fas fa-envelope-open-text text-red-600"></i>
+                              <span className="text-gray-700 dark:text-gray-300">Emails Inválidos</span>
+                            </div>
+                            <span className="font-bold text-red-600">{validationIssues.filter(i => i.type === 'invalid_email').length}</span>
+                          </div>
+
+                          <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg">
+                            <div className="flex items-center space-x-3">
+                              <i className="fas fa-exclamation-circle text-red-600"></i>
+                              <span className="text-gray-700 dark:text-gray-300">Campos Requeridos Vacíos</span>
+                            </div>
+                            <span className="font-bold text-red-600">{validationIssues.filter(i => i.type === 'missing_required').length}</span>
+                          </div>
+
+                          <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg">
+                            <div className="flex items-center space-x-3">
+                              <i className="fas fa-magic text-blue-600"></i>
+                              <span className="text-gray-700 dark:text-gray-300">Problemas de Formato</span>
+                            </div>
+                            <span className="font-bold text-blue-600">{validationIssues.filter(i => i.type === 'formatting').length}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {validationIssues.length > 0 && (
+                        <div className="flex justify-center">
+                          <button
+                            onClick={handleApplyAutoCleaning}
+                            className="px-8 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg font-medium hover:from-emerald-600 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
+                          >
+                            <i className="fas fa-magic"></i>
+                            <span>Aplicar Limpieza Automática</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Duplicates Tab */}
+                  {cleaningTab === 'duplicates' && (
+                    <div className="space-y-4">
+                      {(() => {
+                        const duplicateIssues = validationIssues.filter(i => i.type === 'duplicate');
+                        const groupedDuplicates = new Map<string, ValidationIssue[]>();
+
+                        duplicateIssues.forEach(issue => {
+                          const key = issue.duplicateWith || issue.contactId;
+                          if (!groupedDuplicates.has(key)) {
+                            groupedDuplicates.set(key, []);
+                          }
+                          groupedDuplicates.get(key)!.push(issue);
+                        });
+
+                        const duplicateGroups = Array.from(groupedDuplicates.values()).filter(group => group.length >= 2);
+
+                        return duplicateGroups.length > 0 ? (
+                          duplicateGroups.map((group, index) => {
+                            const contactIds = Array.from(new Set(group.flatMap(g => [g.contactId, g.duplicateWith!])));
+                            const duplicateContacts = contacts.filter(c => contactIds.includes(c.id));
+
+                            return (
+                              <div key={index} className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                                <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
+                                  <i className="fas fa-copy text-orange-600 mr-2"></i>
+                                  Grupo de Duplicados #{index + 1}
+                                </h4>
+                                <div className="space-y-2">
+                                  {duplicateContacts.map((contact, idx) => {
+                                    const nameField = config.fields.find(f =>
+                                      f.name.toLowerCase().includes('nombre') ||
+                                      f.name.toLowerCase().includes('name')
+                                    );
+                                    const phoneField = config.fields.find(f => f.type === 'tel');
+                                    const emailField = config.fields.find(f => f.type === 'email');
+
+                                    return (
+                                      <div key={contact.id} className="bg-white dark:bg-gray-800 p-3 rounded-lg flex items-center justify-between">
+                                        <div className="flex-1">
+                                          <p className="font-medium text-gray-900 dark:text-gray-100">
+                                            {nameField ? contact[nameField.name] : 'Sin nombre'}
+                                          </p>
+                                          <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                                            {phoneField && contact[phoneField.name] && (
+                                              <p><i className="fas fa-phone mr-2"></i>{contact[phoneField.name]}</p>
+                                            )}
+                                            {emailField && contact[emailField.name] && (
+                                              <p><i className="fas fa-envelope mr-2"></i>{contact[emailField.name]}</p>
+                                            )}
+                                          </div>
+                                        </div>
+                                        {idx === 0 && duplicateContacts.length > 1 && (
+                                          <button
+                                            onClick={() => handleMergeContacts(contact.id, duplicateContacts[1].id)}
+                                            className="ml-4 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-all"
+                                          >
+                                            <i className="fas fa-compress-arrows-alt mr-2"></i>
+                                            Fusionar
+                                          </button>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <div className="text-center py-12">
+                            <i className="fas fa-check-circle text-emerald-600 text-5xl mb-3"></i>
+                            <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">
+                              No se encontraron duplicados
+                            </h4>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              Todos los contactos son únicos
+                            </p>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+
+                  {/* Validation Tab */}
+                  {cleaningTab === 'validation' && (
+                    <div className="space-y-4">
+                      {validationIssues.filter(i => i.type === 'invalid_phone' || i.type === 'invalid_email' || i.type === 'missing_required').length > 0 ? (
+                        validationIssues
+                          .filter(i => i.type === 'invalid_phone' || i.type === 'invalid_email' || i.type === 'missing_required')
+                          .map((issue, index) => {
+                            const contact = contacts.find(c => c.id === issue.contactId);
+                            if (!contact) return null;
+
+                            const nameField = config.fields.find(f =>
+                              f.name.toLowerCase().includes('nombre') ||
+                              f.name.toLowerCase().includes('name')
+                            );
+
+                            return (
+                              <div key={index} className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-200 dark:border-red-800">
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <div className="flex items-center space-x-2 mb-2">
+                                      <i className={`fas ${
+                                        issue.type === 'invalid_phone' ? 'fa-phone-slash' :
+                                        issue.type === 'invalid_email' ? 'fa-envelope-open-text' :
+                                        'fa-exclamation-circle'
+                                      } text-red-600`}></i>
+                                      <span className="font-medium text-gray-900 dark:text-gray-100">
+                                        {nameField ? contact[nameField.name] : 'Sin nombre'}
+                                      </span>
+                                    </div>
+                                    <p className="text-sm text-red-700 dark:text-red-300 mb-1">{issue.message}</p>
+                                    {issue.suggestedFix && (
+                                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                                        <i className="fas fa-lightbulb mr-1"></i>
+                                        Sugerencia: {issue.suggestedFix}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <button
+                                    onClick={() => {
+                                      handleEditContact(contact);
+                                      setShowDataCleaningModal(false);
+                                    }}
+                                    className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-all"
+                                  >
+                                    <i className="fas fa-edit mr-2"></i>
+                                    Editar
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })
+                      ) : (
+                        <div className="text-center py-12">
+                          <i className="fas fa-check-circle text-emerald-600 text-5xl mb-3"></i>
+                          <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">
+                            No se encontraron errores de validación
+                          </h4>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Todos los datos son válidos
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Formatting Tab */}
+                  {cleaningTab === 'formatting' && (
+                    <div className="space-y-4">
+                      {validationIssues.filter(i => i.type === 'formatting').length > 0 ? (
+                        validationIssues
+                          .filter(i => i.type === 'formatting')
+                          .map((issue, index) => {
+                            const contact = contacts.find(c => c.id === issue.contactId);
+                            if (!contact) return null;
+
+                            const nameField = config.fields.find(f =>
+                              f.name.toLowerCase().includes('nombre') ||
+                              f.name.toLowerCase().includes('name')
+                            );
+
+                            return (
+                              <div key={index} className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <div className="flex items-center space-x-2 mb-2">
+                                      <i className="fas fa-magic text-blue-600"></i>
+                                      <span className="font-medium text-gray-900 dark:text-gray-100">
+                                        {nameField ? contact[nameField.name] : 'Sin nombre'}
+                                      </span>
+                                    </div>
+                                    <p className="text-sm text-blue-700 dark:text-blue-300 mb-1">{issue.message}</p>
+                                    {issue.suggestedFix && (
+                                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                                        <i className="fas fa-lightbulb mr-1"></i>
+                                        Sugerencia: {issue.suggestedFix}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })
+                      ) : (
+                        <div className="text-center py-12">
+                          <i className="fas fa-check-circle text-emerald-600 text-5xl mb-3"></i>
+                          <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">
+                            No se encontraron problemas de formato
+                          </h4>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            Todos los datos están correctamente formateados
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-gray-100 dark:border-gray-700 flex justify-end">
+              <button
+                onClick={() => setShowDataCleaningModal(false)}
                 className="px-6 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
               >
                 Cerrar

@@ -442,3 +442,251 @@ export function validatePhone(phone: string): boolean {
 export function cleanPhone(phone: string): string {
   return phone.replace(/\D/g, '');
 }
+
+export function validateEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
+export function normalizeText(text: string): string {
+  return text.trim().replace(/\s+/g, ' ');
+}
+
+export function capitalizeWords(text: string): string {
+  return text
+    .toLowerCase()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+// Data Validation and Cleaning
+export interface ValidationIssue {
+  id: string;
+  contactId: string;
+  type: 'duplicate' | 'invalid_phone' | 'invalid_email' | 'missing_required' | 'formatting';
+  field: string;
+  severity: 'error' | 'warning';
+  message: string;
+  suggestedFix?: string;
+  duplicateWith?: string; // ID del contacto duplicado
+}
+
+export function findDuplicateContacts(contacts: any[]): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+  const phoneMap = new Map<string, string[]>();
+  const emailMap = new Map<string, string[]>();
+
+  // Agrupar contactos por teléfono y email
+  contacts.forEach(contact => {
+    const phoneField = Object.keys(contact).find(key => key.toLowerCase().includes('phone') || key.toLowerCase().includes('telefono') || key.toLowerCase().includes('tel'));
+    const emailField = Object.keys(contact).find(key => key.toLowerCase().includes('email') || key.toLowerCase().includes('correo'));
+
+    if (phoneField && contact[phoneField]) {
+      const cleanedPhone = cleanPhone(contact[phoneField]);
+      if (cleanedPhone) {
+        if (!phoneMap.has(cleanedPhone)) {
+          phoneMap.set(cleanedPhone, []);
+        }
+        phoneMap.get(cleanedPhone)!.push(contact.id);
+      }
+    }
+
+    if (emailField && contact[emailField]) {
+      const email = contact[emailField].toLowerCase().trim();
+      if (email) {
+        if (!emailMap.has(email)) {
+          emailMap.set(email, []);
+        }
+        emailMap.get(email)!.push(contact.id);
+      }
+    }
+  });
+
+  // Crear issues para duplicados
+  phoneMap.forEach((ids, phone) => {
+    if (ids.length > 1) {
+      ids.forEach((id, index) => {
+        issues.push({
+          id: `dup-phone-${id}-${index}`,
+          contactId: id,
+          type: 'duplicate',
+          field: 'phone',
+          severity: 'warning',
+          message: `Teléfono duplicado: ${phone} (${ids.length} contactos)`,
+          duplicateWith: ids.filter(dupId => dupId !== id)[0]
+        });
+      });
+    }
+  });
+
+  emailMap.forEach((ids, email) => {
+    if (ids.length > 1) {
+      ids.forEach((id, index) => {
+        issues.push({
+          id: `dup-email-${id}-${index}`,
+          contactId: id,
+          type: 'duplicate',
+          field: 'email',
+          severity: 'warning',
+          message: `Email duplicado: ${email} (${ids.length} contactos)`,
+          duplicateWith: ids.filter(dupId => dupId !== id)[0]
+        });
+      });
+    }
+  });
+
+  return issues;
+}
+
+export function validateContactData(contacts: any[], config: CRMConfig): ValidationIssue[] {
+  const issues: ValidationIssue[] = [];
+
+  contacts.forEach(contact => {
+    // Validar campos requeridos
+    config.fields.filter(f => f.required).forEach(field => {
+      if (!contact[field.name] || contact[field.name].toString().trim() === '') {
+        issues.push({
+          id: `missing-${contact.id}-${field.name}`,
+          contactId: contact.id,
+          type: 'missing_required',
+          field: field.name,
+          severity: 'error',
+          message: `Campo requerido vacío: ${field.label}`
+        });
+      }
+    });
+
+    // Validar teléfonos
+    config.fields.filter(f => f.type === 'tel').forEach(field => {
+      if (contact[field.name] && !validatePhone(contact[field.name])) {
+        issues.push({
+          id: `invalid-phone-${contact.id}-${field.name}`,
+          contactId: contact.id,
+          type: 'invalid_phone',
+          field: field.name,
+          severity: 'error',
+          message: `Teléfono inválido: ${contact[field.name]}`,
+          suggestedFix: cleanPhone(contact[field.name])
+        });
+      }
+    });
+
+    // Validar emails
+    config.fields.filter(f => f.type === 'email').forEach(field => {
+      if (contact[field.name] && !validateEmail(contact[field.name])) {
+        issues.push({
+          id: `invalid-email-${contact.id}-${field.name}`,
+          contactId: contact.id,
+          type: 'invalid_email',
+          field: field.name,
+          severity: 'error',
+          message: `Email inválido: ${contact[field.name]}`
+        });
+      }
+    });
+
+    // Detectar problemas de formato
+    config.fields.filter(f => f.type === 'text').forEach(field => {
+      const value = contact[field.name];
+      if (value && typeof value === 'string') {
+        // Detectar espacios múltiples o espacios al inicio/fin
+        if (value !== value.trim() || /\s{2,}/.test(value)) {
+          issues.push({
+            id: `formatting-${contact.id}-${field.name}`,
+            contactId: contact.id,
+            type: 'formatting',
+            field: field.name,
+            severity: 'warning',
+            message: `Formato incorrecto en ${field.label}: espacios extras`,
+            suggestedFix: normalizeText(value)
+          });
+        }
+      }
+    });
+  });
+
+  return issues;
+}
+
+export function mergeContacts(keepContact: any, mergeContact: any, config: CRMConfig): any {
+  const merged = { ...keepContact };
+
+  // Fusionar campos - priorizar valores no vacíos de mergeContact
+  config.fields.forEach(field => {
+    if (!merged[field.name] || merged[field.name].toString().trim() === '') {
+      if (mergeContact[field.name] && mergeContact[field.name].toString().trim() !== '') {
+        merged[field.name] = mergeContact[field.name];
+      }
+    }
+  });
+
+  // Fusionar tags
+  if (mergeContact.tags && mergeContact.tags.length > 0) {
+    const existingTags = merged.tags || [];
+    merged.tags = Array.from(new Set([...existingTags, ...mergeContact.tags]));
+  }
+
+  // Actualizar contador de mensajes
+  merged.messagesSent = (merged.messagesSent || 0) + (mergeContact.messagesSent || 0);
+
+  // Mantener la fecha de creación más antigua
+  if (mergeContact.createdAt && (!merged.createdAt || new Date(mergeContact.createdAt) < new Date(merged.createdAt))) {
+    merged.createdAt = mergeContact.createdAt;
+  }
+
+  // Mantener la fecha de última interacción más reciente
+  if (mergeContact.lastInteraction && (!merged.lastInteraction || new Date(mergeContact.lastInteraction) > new Date(merged.lastInteraction))) {
+    merged.lastInteraction = mergeContact.lastInteraction;
+  }
+
+  return merged;
+}
+
+export function applyDataCleaning(contacts: any[], config: CRMConfig): { cleaned: any[], changes: number } {
+  let changes = 0;
+
+  const cleaned = contacts.map(contact => {
+    const cleanedContact = { ...contact };
+
+    // Limpiar teléfonos
+    config.fields.filter(f => f.type === 'tel').forEach(field => {
+      if (cleanedContact[field.name]) {
+        const original = cleanedContact[field.name];
+        const cleaned = cleanPhone(original);
+        if (original !== cleaned) {
+          cleanedContact[field.name] = cleaned;
+          changes++;
+        }
+      }
+    });
+
+    // Normalizar textos
+    config.fields.filter(f => f.type === 'text').forEach(field => {
+      if (cleanedContact[field.name] && typeof cleanedContact[field.name] === 'string') {
+        const original = cleanedContact[field.name];
+        const normalized = normalizeText(original);
+        if (original !== normalized) {
+          cleanedContact[field.name] = normalized;
+          changes++;
+        }
+      }
+    });
+
+    // Normalizar emails
+    config.fields.filter(f => f.type === 'email').forEach(field => {
+      if (cleanedContact[field.name]) {
+        const original = cleanedContact[field.name];
+        const normalized = original.toLowerCase().trim();
+        if (original !== normalized) {
+          cleanedContact[field.name] = normalized;
+          changes++;
+        }
+      }
+    });
+
+    return cleanedContact;
+  });
+
+  return { cleaned, changes };
+}
