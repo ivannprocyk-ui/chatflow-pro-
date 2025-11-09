@@ -38,6 +38,7 @@ export default function CRMPanel() {
   const [validationIssues, setValidationIssues] = useState<ValidationIssue[]>([]);
   const [cleaningTab, setCleaningTab] = useState<'overview' | 'duplicates' | 'validation' | 'formatting'>('overview');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [duplicateContactIds, setDuplicateContactIds] = useState<Set<string>>(new Set());
   const { showSuccess, showError} = useToast();
 
   useEffect(() => {
@@ -45,7 +46,15 @@ export default function CRMPanel() {
     setContacts(data);
     setContactLists(loadContactLists());
     setTags(loadTags());
+    // Analizar duplicados al cargar
+    analyzeContactsForDuplicates(data);
   }, []);
+
+  const analyzeContactsForDuplicates = (contactsToAnalyze: any[]) => {
+    const duplicateResults = findDuplicateContacts(contactsToAnalyze, config);
+    const duplicateIds = new Set(duplicateResults.map(issue => issue.contactId));
+    setDuplicateContactIds(duplicateIds);
+  };
 
   const initializeFormData = (contact?: any) => {
     const data: any = {};
@@ -96,6 +105,7 @@ export default function CRMPanel() {
 
     setContacts(updatedContacts);
     saveCRMData(updatedContacts);
+    analyzeContactsForDuplicates(updatedContacts);
 
     showSuccess(editingContact ? 'Contacto actualizado exitosamente' : 'Contacto agregado exitosamente');
 
@@ -115,6 +125,7 @@ export default function CRMPanel() {
       const updatedContacts = contacts.filter(c => c.id !== contactId);
       setContacts(updatedContacts);
       saveCRMData(updatedContacts);
+      analyzeContactsForDuplicates(updatedContacts);
     }
   };
 
@@ -217,6 +228,7 @@ export default function CRMPanel() {
 
     setContacts(updatedContacts);
     saveCRMData(updatedContacts);
+    analyzeContactsForDuplicates(updatedContacts);
     setShowMassTagModal(false);
 
     const actionText = action === 'add' ? 'asignadas' : 'eliminadas';
@@ -291,6 +303,7 @@ export default function CRMPanel() {
 
     setContacts(updatedContacts);
     saveCRMData(updatedContacts);
+    analyzeContactsForDuplicates(updatedContacts);
     showSuccess('Contactos fusionados exitosamente');
 
     // Re-analyze after merge
@@ -316,6 +329,7 @@ export default function CRMPanel() {
       const updatedContacts = contacts.filter(c => c.id !== contactId);
       setContacts(updatedContacts);
       saveCRMData(updatedContacts);
+      analyzeContactsForDuplicates(updatedContacts);
       showSuccess(`Contacto "${contactName}" eliminado exitosamente`);
 
       // Re-analyze after delete
@@ -1088,7 +1102,15 @@ export default function CRMPanel() {
                       {getStatusBadge(contact.status)}
                     </td>
                     <td className="px-3 py-4 text-sm">
-                      {renderTagBadges(contact, 2)}
+                      <div className="flex flex-wrap gap-1 items-center">
+                        {renderTagBadges(contact, 2)}
+                        {duplicateContactIds.has(contact.id) && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">
+                            <i className="fas fa-exclamation-triangle mr-1"></i>
+                            Duplicado
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
                       {contact.lastInteraction ? new Date(contact.lastInteraction).toLocaleDateString() : '-'}
@@ -1144,6 +1166,12 @@ export default function CRMPanel() {
                         </h4>
                         <div className="mt-1 flex flex-wrap gap-1">
                           {getStatusBadge(contact.status)}
+                          {duplicateContactIds.has(contact.id) && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">
+                              <i className="fas fa-exclamation-triangle mr-1"></i>
+                              Duplicado
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1265,6 +1293,12 @@ export default function CRMPanel() {
                     <div className="mt-1 flex flex-wrap gap-1 items-center">
                       {getStatusBadge(contact.status)}
                       {renderTagBadges(contact, 2)}
+                      {duplicateContactIds.has(contact.id) && (
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">
+                          <i className="fas fa-exclamation-triangle mr-1"></i>
+                          Duplicado
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -1389,6 +1423,16 @@ export default function CRMPanel() {
                             {contact.tags && contact.tags.length > 0 && (
                               <div className="pt-1.5 border-t border-gray-100 dark:border-gray-700">
                                 {renderTagBadges(contact, 2)}
+                              </div>
+                            )}
+
+                            {/* Duplicate Indicator */}
+                            {duplicateContactIds.has(contact.id) && (
+                              <div className="pt-1.5 border-t border-gray-100 dark:border-gray-700">
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">
+                                  <i className="fas fa-exclamation-triangle mr-1"></i>
+                                  Duplicado
+                                </span>
                               </div>
                             )}
 
