@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { loadCRMData, saveCRMData, loadCRMConfig, loadContactLists, saveContactLists, CRMFieldConfig, CRMConfig, loadTags, saveTags, createTag, updateTag, deleteTag, Tag, TAG_COLORS, ValidationIssue, validateContactData, findDuplicateContacts, applyDataCleaning, mergeContacts, exportContacts, ExportOptions } from '@/react-app/utils/storage';
+import { loadCRMData, saveCRMData, loadCRMConfig, loadContactLists, saveContactLists, CRMFieldConfig, CRMConfig, loadTags, saveTags, createTag, updateTag, deleteTag, Tag, TAG_COLORS, ValidationIssue, validateContactData, findDuplicateContacts, applyDataCleaning, mergeContacts, exportContacts, ExportOptions, MessageHistory, MessageStats, MessageFilter, getContactMessageHistory, getContactMessageStats, filterMessageHistory } from '@/react-app/utils/storage';
 import { useToast } from '@/react-app/components/Toast';
 import ImportWizard from '@/react-app/components/ImportWizard';
 
@@ -42,6 +42,9 @@ export default function CRMPanel() {
   const [duplicateContactIds, setDuplicateContactIds] = useState<Set<string>>(new Set());
   const [showImportWizard, setShowImportWizard] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [contactMessages, setContactMessages] = useState<MessageHistory[]>([]);
+  const [messageStats, setMessageStats] = useState<MessageStats | null>(null);
+  const [messageFilter, setMessageFilter] = useState<MessageFilter>({});
   const { showSuccess, showError} = useToast();
 
   useEffect(() => {
@@ -134,6 +137,8 @@ export default function CRMPanel() {
 
   const handleViewContact = (contact: any) => {
     setViewingContact(contact);
+    setMessageFilter({}); // Reset filters
+
     // Load calendar events for this contact
     const eventsData = localStorage.getItem('chatflow_calendar_events');
     if (eventsData) {
@@ -157,6 +162,13 @@ export default function CRMPanel() {
     } else {
       setContactEvents([]);
     }
+
+    // Load message history and stats for this contact
+    const messages = getContactMessageHistory(contact.id);
+    setContactMessages(messages);
+
+    const stats = getContactMessageStats(contact.id);
+    setMessageStats(stats);
   };
 
   // Tag Management Handlers
@@ -2065,6 +2077,198 @@ export default function CRMPanel() {
                     <p className="text-sm text-gray-600 dark:text-gray-400">
                       Este contacto no tiene eventos de calendario asociados
                     </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Message History Section */}
+              <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                  <i className="fas fa-comments text-green-600 mr-2"></i>
+                  Historial de Mensajes WhatsApp
+                  <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
+                    ({contactMessages.length})
+                  </span>
+                </h3>
+
+                {/* Message Statistics */}
+                {messageStats && messageStats.totalSent > 0 && (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <div className="text-xs text-blue-700 dark:text-blue-400 font-medium mb-1">Total Enviados</div>
+                      <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">{messageStats.totalSent}</div>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 p-4 rounded-lg border border-green-200 dark:border-green-800">
+                      <div className="text-xs text-green-700 dark:text-green-400 font-medium mb-1">Entregados</div>
+                      <div className="text-2xl font-bold text-green-900 dark:text-green-100">{messageStats.statusBreakdown.delivered}</div>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+                      <div className="text-xs text-purple-700 dark:text-purple-400 font-medium mb-1">Leídos</div>
+                      <div className="text-2xl font-bold text-purple-900 dark:text-purple-100">{messageStats.statusBreakdown.read}</div>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 p-4 rounded-lg border border-red-200 dark:border-red-800">
+                      <div className="text-xs text-red-700 dark:text-red-400 font-medium mb-1">Fallidos</div>
+                      <div className="text-2xl font-bold text-red-900 dark:text-red-100">{messageStats.statusBreakdown.failed}</div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Message Filters */}
+                {contactMessages.length > 0 && (
+                  <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Estado
+                        </label>
+                        <select
+                          value={messageFilter.status || ''}
+                          onChange={(e) => setMessageFilter({ ...messageFilter, status: e.target.value as any || undefined })}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="">Todos</option>
+                          <option value="sent">Enviados</option>
+                          <option value="delivered">Entregados</option>
+                          <option value="read">Leídos</option>
+                          <option value="failed">Fallidos</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Desde
+                        </label>
+                        <input
+                          type="date"
+                          value={messageFilter.dateFrom || ''}
+                          onChange={(e) => setMessageFilter({ ...messageFilter, dateFrom: e.target.value || undefined })}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Hasta
+                        </label>
+                        <input
+                          type="date"
+                          value={messageFilter.dateTo || ''}
+                          onChange={(e) => setMessageFilter({ ...messageFilter, dateTo: e.target.value || undefined })}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      <div className="flex items-end">
+                        <button
+                          onClick={() => setMessageFilter({})}
+                          className="w-full px-3 py-2 text-sm bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+                        >
+                          <i className="fas fa-times mr-2"></i>
+                          Limpiar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Message Timeline */}
+                {contactMessages.length > 0 ? (
+                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                    {filterMessageHistory(contactMessages, messageFilter).map((message) => {
+                      const statusConfig = {
+                        sent: { color: 'bg-blue-500', icon: 'fa-check', label: 'Enviado' },
+                        delivered: { color: 'bg-green-500', icon: 'fa-check-double', label: 'Entregado' },
+                        read: { color: 'bg-purple-500', icon: 'fa-eye', label: 'Leído' },
+                        failed: { color: 'bg-red-500', icon: 'fa-times-circle', label: 'Fallido' }
+                      };
+
+                      const config = statusConfig[message.status];
+
+                      return (
+                        <div
+                          key={message.id}
+                          className="border-l-4 pl-4 py-3 bg-white dark:bg-gray-700 rounded-r-lg hover:shadow-md transition-all"
+                          style={{ borderColor: config.color.replace('bg-', '#') }}
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2 mb-1">
+                                <h4 className="font-semibold text-gray-900 dark:text-gray-100">
+                                  {message.templateName}
+                                </h4>
+                                <span className={`px-2 py-0.5 rounded-md text-xs font-medium text-white ${config.color}`}>
+                                  <i className={`fas ${config.icon} mr-1`}></i>
+                                  {config.label}
+                                </span>
+                                {message.campaignName && (
+                                  <span className="px-2 py-0.5 rounded-md text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300">
+                                    <i className="fas fa-bullhorn mr-1"></i>
+                                    {message.campaignName}
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="flex items-center space-x-4 text-xs text-gray-600 dark:text-gray-400">
+                                <span className="flex items-center">
+                                  <i className="fas fa-calendar text-blue-600 mr-1.5"></i>
+                                  {format(new Date(message.sentAt), "dd 'de' MMMM 'de' yyyy", { locale: es })}
+                                </span>
+                                <span className="flex items-center">
+                                  <i className="fas fa-clock text-green-600 mr-1.5"></i>
+                                  {format(new Date(message.sentAt), 'HH:mm', { locale: es })}
+                                </span>
+                                {message.phoneNumber && (
+                                  <span className="flex items-center">
+                                    <i className="fas fa-phone text-purple-600 mr-1.5"></i>
+                                    {message.phoneNumber}
+                                  </span>
+                                )}
+                              </div>
+
+                              {message.errorMessage && (
+                                <div className="mt-2 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-2 rounded">
+                                  <i className="fas fa-exclamation-triangle mr-1"></i>
+                                  {message.errorMessage}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    <i className="fas fa-comment-slash text-gray-400 dark:text-gray-500 text-5xl mb-3"></i>
+                    <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">
+                      No hay mensajes enviados
+                    </h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Aún no se han enviado mensajes de WhatsApp a este contacto
+                    </p>
+                  </div>
+                )}
+
+                {/* Top Templates */}
+                {messageStats && messageStats.topTemplates.length > 0 && (
+                  <div className="mt-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
+                      <i className="fas fa-star text-yellow-500 mr-2"></i>
+                      Plantillas Más Usadas
+                    </h4>
+                    <div className="space-y-2">
+                      {messageStats.topTemplates.map((template, index) => (
+                        <div key={index} className="flex items-center justify-between text-sm">
+                          <span className="text-gray-700 dark:text-gray-300">{template.templateName}</span>
+                          <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-xs font-medium">
+                            {template.count} {template.count === 1 ? 'vez' : 'veces'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>

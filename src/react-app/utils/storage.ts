@@ -472,6 +472,45 @@ export interface ValidationIssue {
   duplicateWith?: string; // ID del contacto duplicado
 }
 
+// ============================================================================
+// MESSAGE HISTORY INTERFACES
+// ============================================================================
+
+export interface MessageHistory {
+  id: string;
+  contactId: string;
+  templateName: string;
+  templateId?: string;
+  sentAt: string;
+  status: 'sent' | 'delivered' | 'read' | 'failed';
+  errorMessage?: string;
+  campaignId?: string;
+  campaignName?: string;
+  listId?: string;
+  listName?: string;
+  messageId?: string; // WhatsApp message ID
+  phoneNumber: string;
+  metadata?: {
+    [key: string]: any;
+  };
+}
+
+export interface MessageStats {
+  totalSent: number;
+  lastContactedAt?: string;
+  responseRate?: number;
+  topTemplates: Array<{
+    templateName: string;
+    count: number;
+  }>;
+  statusBreakdown: {
+    sent: number;
+    delivered: number;
+    read: number;
+    failed: number;
+  };
+}
+
 export function findDuplicateContacts(contacts: any[], config?: CRMConfig): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const phoneMap = new Map<string, string[]>();
@@ -909,4 +948,199 @@ export async function exportContacts(options: ExportOptions): Promise<void> {
     default:
       throw new Error(`Unsupported export format: ${options.format}`);
   }
+}
+
+// ============================================================================
+// MESSAGE HISTORY FUNCTIONS
+// ============================================================================
+
+const MESSAGE_HISTORY_KEY = 'chatflow_message_history';
+
+/**
+ * Load all message history from localStorage
+ */
+export function loadMessageHistory(): MessageHistory[] {
+  try {
+    const stored = localStorage.getItem(MESSAGE_HISTORY_KEY);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (error) {
+    console.error('Error loading message history:', error);
+  }
+  return [];
+}
+
+/**
+ * Save message history to localStorage
+ */
+export function saveMessageHistory(messages: MessageHistory[]): void {
+  try {
+    localStorage.setItem(MESSAGE_HISTORY_KEY, JSON.stringify(messages));
+  } catch (error) {
+    console.error('Error saving message history:', error);
+  }
+}
+
+/**
+ * Get message history for a specific contact
+ */
+export function getContactMessageHistory(contactId: string): MessageHistory[] {
+  const allMessages = loadMessageHistory();
+  return allMessages
+    .filter(msg => msg.contactId === contactId)
+    .sort((a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime());
+}
+
+/**
+ * Add a new message to history
+ */
+export function addMessageToHistory(message: Omit<MessageHistory, 'id'>): MessageHistory {
+  const messages = loadMessageHistory();
+  const newMessage: MessageHistory = {
+    ...message,
+    id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+  };
+  messages.push(newMessage);
+  saveMessageHistory(messages);
+  return newMessage;
+}
+
+/**
+ * Update message status (for delivery/read receipts)
+ */
+export function updateMessageStatus(
+  messageId: string,
+  status: MessageHistory['status'],
+  errorMessage?: string
+): void {
+  const messages = loadMessageHistory();
+  const messageIndex = messages.findIndex(m => m.id === messageId);
+
+  if (messageIndex !== -1) {
+    messages[messageIndex].status = status;
+    if (errorMessage) {
+      messages[messageIndex].errorMessage = errorMessage;
+    }
+    saveMessageHistory(messages);
+  }
+}
+
+/**
+ * Get message statistics for a contact
+ */
+export function getContactMessageStats(contactId: string): MessageStats {
+  const messages = getContactMessageHistory(contactId);
+
+  if (messages.length === 0) {
+    return {
+      totalSent: 0,
+      topTemplates: [],
+      statusBreakdown: {
+        sent: 0,
+        delivered: 0,
+        read: 0,
+        failed: 0
+      }
+    };
+  }
+
+  // Count templates
+  const templateCounts = new Map<string, number>();
+  messages.forEach(msg => {
+    const count = templateCounts.get(msg.templateName) || 0;
+    templateCounts.set(msg.templateName, count + 1);
+  });
+
+  // Get top templates
+  const topTemplates = Array.from(templateCounts.entries())
+    .map(([templateName, count]) => ({ templateName, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
+  // Count by status
+  const statusBreakdown = {
+    sent: messages.filter(m => m.status === 'sent').length,
+    delivered: messages.filter(m => m.status === 'delivered').length,
+    read: messages.filter(m => m.status === 'read').length,
+    failed: messages.filter(m => m.status === 'failed').length
+  };
+
+  // Get last contacted
+  const lastContactedAt = messages.length > 0 ? messages[0].sentAt : undefined;
+
+  return {
+    totalSent: messages.length,
+    lastContactedAt,
+    topTemplates,
+    statusBreakdown
+  };
+}
+
+/**
+ * Filter message history
+ */
+export interface MessageFilter {
+  templateName?: string;
+  status?: MessageHistory['status'];
+  dateFrom?: string;
+  dateTo?: string;
+  campaignId?: string;
+}
+
+export function filterMessageHistory(
+  messages: MessageHistory[],
+  filter: MessageFilter
+): MessageHistory[] {
+  return messages.filter(msg => {
+    if (filter.templateName && msg.templateName !== filter.templateName) {
+      return false;
+    }
+    if (filter.status && msg.status !== filter.status) {
+      return false;
+    }
+    if (filter.campaignId && msg.campaignId !== filter.campaignId) {
+      return false;
+    }
+    if (filter.dateFrom) {
+      const msgDate = new Date(msg.sentAt);
+      const fromDate = new Date(filter.dateFrom);
+      if (msgDate < fromDate) {
+        return false;
+      }
+    }
+    if (filter.dateTo) {
+      const msgDate = new Date(msg.sentAt);
+      const toDate = new Date(filter.dateTo);
+      toDate.setHours(23, 59, 59, 999); // Include entire day
+      if (msgDate > toDate) {
+        return false;
+      }
+    }
+    return true;
+  });
+}
+
+/**
+ * Delete all messages for a contact
+ */
+export function deleteContactMessageHistory(contactId: string): void {
+  const allMessages = loadMessageHistory();
+  const filtered = allMessages.filter(msg => msg.contactId !== contactId);
+  saveMessageHistory(filtered);
+}
+
+/**
+ * Get message count by template for a contact
+ */
+export function getTemplateUsageByContact(contactId: string): Map<string, number> {
+  const messages = getContactMessageHistory(contactId);
+  const templateCounts = new Map<string, number>();
+
+  messages.forEach(msg => {
+    const count = templateCounts.get(msg.templateName) || 0;
+    templateCounts.set(msg.templateName, count + 1);
+  });
+
+  return templateCounts;
 }
