@@ -472,67 +472,87 @@ export interface ValidationIssue {
   duplicateWith?: string; // ID del contacto duplicado
 }
 
-export function findDuplicateContacts(contacts: any[]): ValidationIssue[] {
+export function findDuplicateContacts(contacts: any[], config?: CRMConfig): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const phoneMap = new Map<string, string[]>();
   const emailMap = new Map<string, string[]>();
 
+  // Usar configuración por defecto si no se proporciona
+  const actualConfig = config || loadCRMConfig();
+
+  // Buscar campos de teléfono y email en la configuración
+  const phoneFields = actualConfig.fields.filter(f => f.type === 'phone');
+  const emailFields = actualConfig.fields.filter(f => f.type === 'email');
+
   // Agrupar contactos por teléfono y email
   contacts.forEach(contact => {
-    const phoneField = Object.keys(contact).find(key => key.toLowerCase().includes('phone') || key.toLowerCase().includes('telefono') || key.toLowerCase().includes('tel'));
-    const emailField = Object.keys(contact).find(key => key.toLowerCase().includes('email') || key.toLowerCase().includes('correo'));
-
-    if (phoneField && contact[phoneField]) {
-      const cleanedPhone = cleanPhone(contact[phoneField]);
-      if (cleanedPhone) {
-        if (!phoneMap.has(cleanedPhone)) {
-          phoneMap.set(cleanedPhone, []);
+    // Revisar todos los campos de teléfono
+    phoneFields.forEach(phoneField => {
+      if (contact[phoneField.name]) {
+        const cleanedPhone = cleanPhone(contact[phoneField.name]);
+        if (cleanedPhone && cleanedPhone.length >= 8) { // Validar longitud mínima
+          if (!phoneMap.has(cleanedPhone)) {
+            phoneMap.set(cleanedPhone, []);
+          }
+          phoneMap.get(cleanedPhone)!.push(contact.id);
         }
-        phoneMap.get(cleanedPhone)!.push(contact.id);
       }
-    }
+    });
 
-    if (emailField && contact[emailField]) {
-      const email = contact[emailField].toLowerCase().trim();
-      if (email) {
-        if (!emailMap.has(email)) {
-          emailMap.set(email, []);
+    // Revisar todos los campos de email
+    emailFields.forEach(emailField => {
+      if (contact[emailField.name]) {
+        const email = contact[emailField.name].toLowerCase().trim();
+        if (email && validateEmail(email)) {
+          if (!emailMap.has(email)) {
+            emailMap.set(email, []);
+          }
+          emailMap.get(email)!.push(contact.id);
         }
-        emailMap.get(email)!.push(contact.id);
       }
-    }
+    });
   });
 
-  // Crear issues para duplicados
+  // Crear issues para duplicados de teléfono
   phoneMap.forEach((ids, phone) => {
     if (ids.length > 1) {
-      ids.forEach((id, index) => {
-        issues.push({
-          id: `dup-phone-${id}-${index}`,
-          contactId: id,
-          type: 'duplicate',
-          field: 'phone',
-          severity: 'warning',
-          message: `Teléfono duplicado: ${phone} (${ids.length} contactos)`,
-          duplicateWith: ids.filter(dupId => dupId !== id)[0]
+      // Eliminar duplicados en el array de IDs (por si un contacto aparece dos veces)
+      const uniqueIds = Array.from(new Set(ids));
+      if (uniqueIds.length > 1) {
+        uniqueIds.forEach((id, index) => {
+          const otherIds = uniqueIds.filter(dupId => dupId !== id);
+          issues.push({
+            id: `dup-phone-${id}-${index}`,
+            contactId: id,
+            type: 'duplicate',
+            field: 'phone',
+            severity: 'warning',
+            message: `Teléfono duplicado: ${phone} (${uniqueIds.length} contactos)`,
+            duplicateWith: otherIds[0]
+          });
         });
-      });
+      }
     }
   });
 
+  // Crear issues para duplicados de email
   emailMap.forEach((ids, email) => {
     if (ids.length > 1) {
-      ids.forEach((id, index) => {
-        issues.push({
-          id: `dup-email-${id}-${index}`,
-          contactId: id,
-          type: 'duplicate',
-          field: 'email',
-          severity: 'warning',
-          message: `Email duplicado: ${email} (${ids.length} contactos)`,
-          duplicateWith: ids.filter(dupId => dupId !== id)[0]
+      const uniqueIds = Array.from(new Set(ids));
+      if (uniqueIds.length > 1) {
+        uniqueIds.forEach((id, index) => {
+          const otherIds = uniqueIds.filter(dupId => dupId !== id);
+          issues.push({
+            id: `dup-email-${id}-${index}`,
+            contactId: id,
+            type: 'duplicate',
+            field: 'email',
+            severity: 'warning',
+            message: `Email duplicado: ${email} (${uniqueIds.length} contactos)`,
+            duplicateWith: otherIds[0]
+          });
         });
-      });
+      }
     }
   });
 
@@ -558,7 +578,7 @@ export function validateContactData(contacts: any[], config: CRMConfig): Validat
     });
 
     // Validar teléfonos
-    config.fields.filter(f => f.type === 'tel').forEach(field => {
+    config.fields.filter(f => f.type === 'phone').forEach(field => {
       if (contact[field.name] && !validatePhone(contact[field.name])) {
         issues.push({
           id: `invalid-phone-${contact.id}-${field.name}`,
@@ -650,7 +670,7 @@ export function applyDataCleaning(contacts: any[], config: CRMConfig): { cleaned
     const cleanedContact = { ...contact };
 
     // Limpiar teléfonos
-    config.fields.filter(f => f.type === 'tel').forEach(field => {
+    config.fields.filter(f => f.type === 'phone').forEach(field => {
       if (cleanedContact[field.name]) {
         const original = cleanedContact[field.name];
         const cleaned = cleanPhone(original);

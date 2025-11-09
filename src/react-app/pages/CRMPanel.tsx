@@ -231,7 +231,7 @@ export default function CRMPanel() {
     // Analyze contacts for issues
     setTimeout(() => {
       const validationResults = validateContactData(contacts, config);
-      const duplicateResults = findDuplicateContacts(contacts);
+      const duplicateResults = findDuplicateContacts(contacts, config);
       const allIssues = [...validationResults, ...duplicateResults];
       setValidationIssues(allIssues);
       setIsAnalyzing(false);
@@ -246,7 +246,7 @@ export default function CRMPanel() {
 
     // Re-analyze after cleaning
     const validationResults = validateContactData(cleaned, config);
-    const duplicateResults = findDuplicateContacts(cleaned);
+    const duplicateResults = findDuplicateContacts(cleaned, config);
     setValidationIssues([...validationResults, ...duplicateResults]);
   };
 
@@ -270,7 +270,7 @@ export default function CRMPanel() {
 
     // Re-analyze after merge
     const validationResults = validateContactData(updatedContacts, config);
-    const duplicateResults = findDuplicateContacts(updatedContacts);
+    const duplicateResults = findDuplicateContacts(updatedContacts, config);
     setValidationIssues([...validationResults, ...duplicateResults]);
   };
 
@@ -2336,10 +2336,10 @@ export default function CRMPanel() {
                         </div>
                       </div>
 
-                      <div className="bg-gray-50 dark:bg-gray-900 p-6 rounded-lg">
+                      <div className="bg-white dark:bg-gray-900 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Detalles de Problemas</h3>
                         <div className="space-y-3">
-                          <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg">
+                          <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
                             <div className="flex items-center space-x-3">
                               <i className="fas fa-copy text-orange-600"></i>
                               <span className="text-gray-700 dark:text-gray-300">Contactos Duplicados</span>
@@ -2347,7 +2347,7 @@ export default function CRMPanel() {
                             <span className="font-bold text-orange-600">{validationIssues.filter(i => i.type === 'duplicate').length / 2}</span>
                           </div>
 
-                          <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg">
+                          <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
                             <div className="flex items-center space-x-3">
                               <i className="fas fa-phone-slash text-red-600"></i>
                               <span className="text-gray-700 dark:text-gray-300">Teléfonos Inválidos</span>
@@ -2355,7 +2355,7 @@ export default function CRMPanel() {
                             <span className="font-bold text-red-600">{validationIssues.filter(i => i.type === 'invalid_phone').length}</span>
                           </div>
 
-                          <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg">
+                          <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
                             <div className="flex items-center space-x-3">
                               <i className="fas fa-envelope-open-text text-red-600"></i>
                               <span className="text-gray-700 dark:text-gray-300">Emails Inválidos</span>
@@ -2363,7 +2363,7 @@ export default function CRMPanel() {
                             <span className="font-bold text-red-600">{validationIssues.filter(i => i.type === 'invalid_email').length}</span>
                           </div>
 
-                          <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg">
+                          <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
                             <div className="flex items-center space-x-3">
                               <i className="fas fa-exclamation-circle text-red-600"></i>
                               <span className="text-gray-700 dark:text-gray-300">Campos Requeridos Vacíos</span>
@@ -2371,7 +2371,7 @@ export default function CRMPanel() {
                             <span className="font-bold text-red-600">{validationIssues.filter(i => i.type === 'missing_required').length}</span>
                           </div>
 
-                          <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg">
+                          <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
                             <div className="flex items-center space-x-3">
                               <i className="fas fa-magic text-blue-600"></i>
                               <span className="text-gray-700 dark:text-gray-300">Problemas de Formato</span>
@@ -2418,7 +2418,7 @@ export default function CRMPanel() {
                             const duplicateContacts = contacts.filter(c => contactIds.includes(c.id));
 
                             return (
-                              <div key={index} className="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                              <div key={index} className="bg-orange-50 dark:bg-gray-900 p-4 rounded-lg border border-orange-200 dark:border-gray-700">
                                 <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
                                   <i className="fas fa-copy text-orange-600 mr-2"></i>
                                   Grupo de Duplicados #{index + 1}
