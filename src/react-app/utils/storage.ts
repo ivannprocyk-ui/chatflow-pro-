@@ -665,42 +665,48 @@ export function mergeContacts(keepContact: any, mergeContact: any, config: CRMCo
 
 export function applyDataCleaning(contacts: any[], config: CRMConfig): { cleaned: any[], changes: number } {
   let changes = 0;
+  const changeDetails: string[] = [];
 
   const cleaned = contacts.map(contact => {
     const cleanedContact = { ...contact };
 
-    // Limpiar teléfonos
+    // Limpiar teléfonos - quitar caracteres no numéricos
     config.fields.filter(f => f.type === 'phone').forEach(field => {
       if (cleanedContact[field.name]) {
         const original = cleanedContact[field.name];
         const cleaned = cleanPhone(original);
-        if (original !== cleaned) {
+        if (original !== cleaned && cleaned.length >= 8) {
           cleanedContact[field.name] = cleaned;
           changes++;
+          console.log(`Limpieza: Teléfono "${original}" -> "${cleaned}"`);
         }
       }
     });
 
-    // Normalizar textos
+    // Normalizar textos - quitar espacios extra y capitalizar
     config.fields.filter(f => f.type === 'text').forEach(field => {
       if (cleanedContact[field.name] && typeof cleanedContact[field.name] === 'string') {
         const original = cleanedContact[field.name];
-        const normalized = normalizeText(original);
+        let normalized = normalizeText(original);
+
+        // Detectar si tiene espacios extra o está sin trim
         if (original !== normalized) {
           cleanedContact[field.name] = normalized;
           changes++;
+          console.log(`Limpieza: Texto "${original}" -> "${normalized}"`);
         }
       }
     });
 
-    // Normalizar emails
+    // Normalizar emails - minúsculas y trim
     config.fields.filter(f => f.type === 'email').forEach(field => {
-      if (cleanedContact[field.name]) {
+      if (cleanedContact[field.name] && typeof cleanedContact[field.name] === 'string') {
         const original = cleanedContact[field.name];
         const normalized = original.toLowerCase().trim();
         if (original !== normalized) {
           cleanedContact[field.name] = normalized;
           changes++;
+          console.log(`Limpieza: Email "${original}" -> "${normalized}"`);
         }
       }
     });
@@ -708,5 +714,6 @@ export function applyDataCleaning(contacts: any[], config: CRMConfig): { cleaned
     return cleanedContact;
   });
 
+  console.log(`Total de cambios aplicados: ${changes}`);
   return { cleaned, changes };
 }

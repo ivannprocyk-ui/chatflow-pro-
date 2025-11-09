@@ -239,20 +239,31 @@ export default function CRMPanel() {
   };
 
   const handleApplyAutoCleaning = () => {
+    console.log('=== INICIANDO LIMPIEZA AUTOMÁTICA ===');
+    console.log('Total contactos:', contacts.length);
+    console.log('Configuración campos:', config.fields.map(f => `${f.name} (${f.type})`));
+
     const { cleaned, changes } = applyDataCleaning(contacts, config);
 
+    console.log('=== RESULTADO LIMPIEZA ===');
+    console.log('Cambios aplicados:', changes);
+
     if (changes === 0) {
-      showSuccess('No se encontraron problemas de formato para limpiar');
+      showSuccess('✓ No se encontraron problemas de formato para limpiar. Tus datos están limpios.');
     } else {
       setContacts(cleaned);
       saveCRMData(cleaned);
-      showSuccess(`Se limpiaron ${changes} problema${changes > 1 ? 's' : ''} de formato en los contactos`);
+      showSuccess(`✓ Se limpiaron ${changes} problema${changes > 1 ? 's' : ''} de formato (revisa la consola para detalles)`);
     }
 
     // Re-analyze after cleaning
     const validationResults = validateContactData(cleaned, config);
     const duplicateResults = findDuplicateContacts(cleaned, config);
     setValidationIssues([...validationResults, ...duplicateResults]);
+
+    console.log('=== NUEVO ANÁLISIS ===');
+    console.log('Issues de validación:', validationResults.length);
+    console.log('Issues de duplicados:', duplicateResults.length);
   };
 
   const handleMergeContacts = (keepContactId: string, mergeContactId: string) => {
