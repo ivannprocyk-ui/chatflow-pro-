@@ -63,6 +63,15 @@ export interface CRMChartConfig {
   dateRangeEnd?: string;
 }
 
+// Tag Configuration
+export interface Tag {
+  id: string;
+  name: string;
+  color: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface CRMConfig {
   fields: CRMFieldConfig[];
   statuses: CRMStatusConfig[];
@@ -101,6 +110,59 @@ const defaultCRMConfig: CRMConfig = {
     }
   }
 };
+
+// Tag color palette (10 predefined colors)
+export const TAG_COLORS = [
+  '#EF4444', // Red
+  '#F59E0B', // Amber
+  '#10B981', // Green
+  '#3B82F6', // Blue
+  '#8B5CF6', // Purple
+  '#EC4899', // Pink
+  '#14B8A6', // Teal
+  '#F97316', // Orange
+  '#6366F1', // Indigo
+  '#84CC16', // Lime
+];
+
+// Default predefined tags
+const defaultTags: Tag[] = [
+  {
+    id: 'tag-vip',
+    name: 'VIP',
+    color: '#8B5CF6', // Purple
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'tag-new-client',
+    name: 'Cliente Nuevo',
+    color: '#10B981', // Green
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'tag-urgent-follow',
+    name: 'Seguimiento Urgente',
+    color: '#EF4444', // Red
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'tag-inactive',
+    name: 'Inactivo',
+    color: '#6B7280', // Gray
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'tag-hot-prospect',
+    name: 'Prospecto Caliente',
+    color: '#F59E0B', // Amber
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];
 
 const defaultConfig: AppConfig = {
   api: {
@@ -289,12 +351,82 @@ export function appendToSendLog(entry: any): void {
   }
 }
 
+// Tags
+export function loadTags(): Tag[] {
+  try {
+    const stored = localStorage.getItem('chatflow_tags');
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (error) {
+    console.error('Error loading tags:', error);
+  }
+  return defaultTags;
+}
+
+export function saveTags(tags: Tag[]): void {
+  try {
+    localStorage.setItem('chatflow_tags', JSON.stringify(tags));
+  } catch (error) {
+    console.error('Error saving tags:', error);
+  }
+}
+
+export function createTag(name: string, color: string): Tag {
+  return {
+    id: `tag-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    name,
+    color,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+export function updateTag(tagId: string, updates: Partial<Pick<Tag, 'name' | 'color'>>): void {
+  try {
+    const tags = loadTags();
+    const tagIndex = tags.findIndex(t => t.id === tagId);
+    if (tagIndex !== -1) {
+      tags[tagIndex] = {
+        ...tags[tagIndex],
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      };
+      saveTags(tags);
+    }
+  } catch (error) {
+    console.error('Error updating tag:', error);
+  }
+}
+
+export function deleteTag(tagId: string): void {
+  try {
+    const tags = loadTags();
+    const filteredTags = tags.filter(t => t.id !== tagId);
+    saveTags(filteredTags);
+
+    // Also remove this tag from all contacts
+    const contacts = loadCRMData();
+    const updatedContacts = contacts.map(contact => ({
+      ...contact,
+      tags: (contact.tags || []).filter((t: string) => t !== tagId)
+    }));
+    saveCRMData(updatedContacts);
+  } catch (error) {
+    console.error('Error deleting tag:', error);
+  }
+}
+
 export function initializeDemoData(): void {
   try {
     // Initialize only the CRM configuration if it doesn't exist
     // All other data (templates, contacts, CRM data) should come from user input or API
     if (!localStorage.getItem('chatflow_crm_config')) {
       saveCRMConfig(defaultCRMConfig);
+    }
+    // Initialize default tags if they don't exist
+    if (!localStorage.getItem('chatflow_tags')) {
+      saveTags(defaultTags);
     }
   } catch (error) {
     console.error('Error initializing config:', error);
