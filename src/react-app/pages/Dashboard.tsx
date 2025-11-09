@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { loadConfig, loadCRMData, loadCRMConfig } from '@/react-app/utils/storage';
+import { loadConfig, loadCRMData, loadCRMConfig, getDashboardAnalytics, DashboardAnalytics } from '@/react-app/utils/storage';
 import { useToast } from '@/react-app/components/Toast';
 import { format, isToday, isBefore, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface MetaInsightsData {
   phone_numbers: Array<{
@@ -44,6 +45,7 @@ export default function Dashboard() {
   });
   const [todayEvents, setTodayEvents] = useState<any[]>([]);
   const [templates, setTemplates] = useState<any[]>([]);
+  const [analytics, setAnalytics] = useState<DashboardAnalytics | null>(null);
   const chartRef = useRef<HTMLCanvasElement>(null);
   const donutChartRef = useRef<HTMLCanvasElement>(null);
   // CRM Chart refs
@@ -58,6 +60,7 @@ export default function Dashboard() {
     loadCRMContacts();
     loadTodayEvents();
     loadTemplates();
+    loadAnalytics();
     if (config.api.accessToken && config.api.wabaId) {
       loadMetaAnalytics();
     } else {
@@ -142,6 +145,15 @@ export default function Dashboard() {
       setTemplates(approvedTemplates);
     } catch (error) {
       console.error('Error loading templates:', error);
+    }
+  };
+
+  const loadAnalytics = () => {
+    try {
+      const analyticsData = getDashboardAnalytics(crmConfig);
+      setAnalytics(analyticsData);
+    } catch (error) {
+      console.error('Error loading analytics:', error);
     }
   };
 
@@ -879,6 +891,326 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      {/* Advanced Analytics Section */}
+      {analytics && (
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
+            <i className="fas fa-chart-line text-indigo-600 dark:text-indigo-400 mr-3"></i>
+            Analíticas Avanzadas
+          </h2>
+
+          {/* KPIs Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {/* Total Contacts */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white">
+                  <i className="fas fa-users"></i>
+                </div>
+                {analytics.kpis.contactsGrowth !== 0 && (
+                  <span className={`text-xs font-bold px-2 py-1 rounded-full ${analytics.kpis.contactsGrowth > 0 ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'}`}>
+                    {analytics.kpis.contactsGrowth > 0 ? '+' : ''}{analytics.kpis.contactsGrowth.toFixed(1)}%
+                  </span>
+                )}
+              </div>
+              <h3 className="text-gray-600 dark:text-gray-300 text-sm font-medium mb-1">Total Contactos</h3>
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{analytics.kpis.totalContacts}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">vs. últimos 30 días</p>
+            </div>
+
+            {/* Messages Sent Today */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white">
+                  <i className="fas fa-paper-plane"></i>
+                </div>
+              </div>
+              <h3 className="text-gray-600 dark:text-gray-300 text-sm font-medium mb-1">Mensajes Hoy</h3>
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{analytics.kpis.messagesSentToday}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Semana: {analytics.kpis.messagesSentWeek} | Mes: {analytics.kpis.messagesSentMonth}</p>
+            </div>
+
+            {/* Active Contacts */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white">
+                  <i className="fas fa-user-check"></i>
+                </div>
+              </div>
+              <h3 className="text-gray-600 dark:text-gray-300 text-sm font-medium mb-1">Contactos Activos</h3>
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{analytics.kpis.activeContacts}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Inactivos: {analytics.kpis.inactiveContacts}</p>
+            </div>
+
+            {/* Response Rate */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white">
+                  <i className="fas fa-chart-pie"></i>
+                </div>
+              </div>
+              <h3 className="text-gray-600 dark:text-gray-300 text-sm font-medium mb-1">Tasa de Respuesta</h3>
+              <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{analytics.kpis.averageResponseRate.toFixed(1)}%</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Mensajes leídos</p>
+            </div>
+          </div>
+
+          {/* Charts Grid - Row 1: Contact Growth & Messages by Day */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            {/* Contact Growth Chart */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                <i className="fas fa-chart-line text-blue-500 mr-2"></i>
+                Crecimiento de Contactos (30 días)
+              </h3>
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart data={analytics.contactGrowth}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                    tickFormatter={(value) => {
+                      const date = new Date(value);
+                      return `${date.getDate()}/${date.getMonth() + 1}`;
+                    }}
+                  />
+                  <YAxis tick={{ fill: '#9CA3AF', fontSize: 12 }} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#1F2937',
+                      border: 'none',
+                      borderRadius: '8px',
+                      color: '#F9FAFB'
+                    }}
+                    labelFormatter={(value) => {
+                      const date = new Date(value);
+                      return date.toLocaleDateString('es-ES');
+                    }}
+                  />
+                  <Legend wrapperStyle={{ color: '#9CA3AF' }} />
+                  <Line
+                    type="monotone"
+                    dataKey="count"
+                    stroke="#3B82F6"
+                    strokeWidth={2}
+                    dot={{ fill: '#3B82F6', r: 4 }}
+                    name="Contactos"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Messages by Day Chart */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                <i className="fas fa-envelope text-green-500 mr-2"></i>
+                Mensajes por Día (14 días)
+              </h3>
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={analytics.messagesByDay}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                    tickFormatter={(value) => {
+                      const date = new Date(value);
+                      return `${date.getDate()}/${date.getMonth() + 1}`;
+                    }}
+                  />
+                  <YAxis tick={{ fill: '#9CA3AF', fontSize: 12 }} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#1F2937',
+                      border: 'none',
+                      borderRadius: '8px',
+                      color: '#F9FAFB'
+                    }}
+                    labelFormatter={(value) => {
+                      const date = new Date(value);
+                      return date.toLocaleDateString('es-ES');
+                    }}
+                  />
+                  <Legend wrapperStyle={{ color: '#9CA3AF' }} />
+                  <Bar dataKey="sent" fill="#10B981" name="Enviados" />
+                  <Bar dataKey="delivered" fill="#3B82F6" name="Entregados" />
+                  <Bar dataKey="failed" fill="#EF4444" name="Fallidos" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Charts Grid - Row 2: Status Distribution & Best Hours */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            {/* Status Distribution Pie Chart */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                <i className="fas fa-chart-pie text-purple-500 mr-2"></i>
+                Distribución por Estado
+              </h3>
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie
+                    data={analytics.statusDistribution}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {analytics.statusDistribution.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#1F2937',
+                      border: 'none',
+                      borderRadius: '8px',
+                      color: '#F9FAFB'
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Best Hours Chart */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                <i className="fas fa-clock text-indigo-500 mr-2"></i>
+                Mejores Horarios de Envío
+              </h3>
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={analytics.bestHours} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} />
+                  <XAxis type="number" tick={{ fill: '#9CA3AF', fontSize: 12 }} />
+                  <YAxis
+                    type="category"
+                    dataKey="hour"
+                    tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                    tickFormatter={(value) => `${value}:00`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#1F2937',
+                      border: 'none',
+                      borderRadius: '8px',
+                      color: '#F9FAFB'
+                    }}
+                    labelFormatter={(value) => `${value}:00 hrs`}
+                  />
+                  <Bar dataKey="count" fill="#6366F1" name="Mensajes" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Charts Grid - Row 3: Best Days */}
+          <div className="grid grid-cols-1 gap-6 mb-6">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                <i className="fas fa-calendar-alt text-teal-500 mr-2"></i>
+                Mejores Días de la Semana
+              </h3>
+              <ResponsiveContainer width="100%" height={250}>
+                <BarChart data={analytics.bestDays}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.2} />
+                  <XAxis dataKey="day" tick={{ fill: '#9CA3AF', fontSize: 12 }} />
+                  <YAxis tick={{ fill: '#9CA3AF', fontSize: 12 }} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#1F2937',
+                      border: 'none',
+                      borderRadius: '8px',
+                      color: '#F9FAFB'
+                    }}
+                  />
+                  <Bar dataKey="count" fill="#14B8A6" name="Mensajes" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Tables Grid - Row 4: Template Performance & Top Contacts */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Template Performance Table */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                <i className="fas fa-file-alt text-emerald-500 mr-2"></i>
+                Rendimiento de Plantillas (Top 10)
+              </h3>
+              <div className="overflow-x-auto">
+                {analytics.templatePerformance.length > 0 ? (
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-100 dark:bg-gray-700">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300">Plantilla</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-600 dark:text-gray-300">Enviados</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-600 dark:text-gray-300">Entregados</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-600 dark:text-gray-300">Leídos</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                      {analytics.templatePerformance.slice(0, 5).map((template, index) => (
+                        <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                          <td className="px-3 py-2 text-gray-900 dark:text-gray-100 font-medium truncate max-w-[150px]">{template.name}</td>
+                          <td className="px-3 py-2 text-center text-gray-600 dark:text-gray-300">{template.sent}</td>
+                          <td className="px-3 py-2 text-center text-gray-600 dark:text-gray-300">{template.delivered}</td>
+                          <td className="px-3 py-2 text-center text-gray-600 dark:text-gray-300">{template.read}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                    <i className="fas fa-inbox text-3xl mb-2"></i>
+                    <p className="text-sm">No hay datos de plantillas aún</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Top Contacts Table */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                <i className="fas fa-user-friends text-pink-500 mr-2"></i>
+                Top Contactos (Top 10)
+              </h3>
+              <div className="overflow-x-auto">
+                {analytics.topContacts.length > 0 ? (
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-100 dark:bg-gray-700">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-xs font-medium text-gray-600 dark:text-gray-300">Nombre</th>
+                        <th className="px-3 py-2 text-center text-xs font-medium text-gray-600 dark:text-gray-300">Mensajes</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                      {analytics.topContacts.slice(0, 10).map((contact, index) => (
+                        <tr key={contact.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                          <td className="px-3 py-2 text-gray-900 dark:text-gray-100 font-medium truncate max-w-[200px]">{contact.name}</td>
+                          <td className="px-3 py-2 text-center text-gray-600 dark:text-gray-300">
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                              {contact.messageCount}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                    <i className="fas fa-inbox text-3xl mb-2"></i>
+                    <p className="text-sm">No hay datos de contactos aún</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Meta WhatsApp Insights Stats */}
       {hasMetaConnection && (

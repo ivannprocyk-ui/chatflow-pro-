@@ -1144,3 +1144,214 @@ export function getTemplateUsageByContact(contactId: string): Map<string, number
 
   return templateCounts;
 }
+
+// ============================================================================
+// ANALYTICS AND INSIGHTS FUNCTIONS
+// ============================================================================
+
+export interface DashboardAnalytics {
+  kpis: {
+    totalContacts: number;
+    contactsGrowth: number; // % change from previous period
+    messagesSentToday: number;
+    messagesSentWeek: number;
+    messagesSentMonth: number;
+    activeContacts: number; // Contacted in last 30 days
+    inactiveContacts: number;
+    averageResponseRate: number;
+  };
+  contactGrowth: Array<{ date: string; count: number }>;
+  messagesByDay: Array<{ date: string; sent: number; delivered: number; failed: number }>;
+  statusDistribution: Array<{ name: string; value: number; color: string }>;
+  templatePerformance: Array<{ name: string; sent: number; delivered: number; read: number; failed: number }>;
+  bestHours: Array<{ hour: number; count: number }>;
+  bestDays: Array<{ day: string; count: number }>;
+  topContacts: Array<{ id: string; name: string; messageCount: number }>;
+}
+
+/**
+ * Get comprehensive dashboard analytics
+ */
+export function getDashboardAnalytics(config: CRMConfig): DashboardAnalytics {
+  const contacts = loadCRMData();
+  const messages = loadMessageHistory();
+  const now = new Date();
+
+  // Helper functions
+  const getDateDaysAgo = (days: number) => {
+    const date = new Date(now);
+    date.setDate(date.getDate() - days);
+    return date;
+  };
+
+  const isWithinDays = (date: Date, days: number) => {
+    return date >= getDateDaysAgo(days);
+  };
+
+  // KPIs
+  const totalContacts = contacts.length;
+
+  // Contact growth (last 30 days vs previous 30 days)
+  const last30Days = contacts.filter(c => new Date(c.createdAt) >= getDateDaysAgo(30)).length;
+  const previous30Days = contacts.filter(c => {
+    const created = new Date(c.createdAt);
+    return created >= getDateDaysAgo(60) && created < getDateDaysAgo(30);
+  }).length;
+  const contactsGrowth = previous30Days > 0 ? ((last30Days - previous30Days) / previous30Days) * 100 : 0;
+
+  // Messages by period
+  const messagesSentToday = messages.filter(m => {
+    const sentDate = new Date(m.sentAt);
+    return sentDate.toDateString() === now.toDateString();
+  }).length;
+
+  const messagesSentWeek = messages.filter(m => isWithinDays(new Date(m.sentAt), 7)).length;
+  const messagesSentMonth = messages.filter(m => isWithinDays(new Date(m.sentAt), 30)).length;
+
+  // Active/Inactive contacts
+  const contactMessagesMap = new Map<string, Date>();
+  messages.forEach(msg => {
+    const existing = contactMessagesMap.get(msg.contactId);
+    const msgDate = new Date(msg.sentAt);
+    if (!existing || msgDate > existing) {
+      contactMessagesMap.set(msg.contactId, msgDate);
+    }
+  });
+
+  const activeContacts = Array.from(contactMessagesMap.values())
+    .filter(lastContact => isWithinDays(lastContact, 30)).length;
+  const inactiveContacts = totalContacts - activeContacts;
+
+  // Response rate (read messages / total messages)
+  const totalSent = messages.length;
+  const totalRead = messages.filter(m => m.status === 'read').length;
+  const averageResponseRate = totalSent > 0 ? (totalRead / totalSent) * 100 : 0;
+
+  // Contact growth over time (last 30 days)
+  const contactGrowth: Array<{ date: string; count: number }> = [];
+  for (let i = 29; i >= 0; i--) {
+    const date = getDateDaysAgo(i);
+    const count = contacts.filter(c => new Date(c.createdAt) <= date).length;
+    contactGrowth.push({
+      date: date.toISOString().split('T')[0],
+      count
+    });
+  }
+
+  // Messages by day (last 14 days)
+  const messagesByDay: Array<{ date: string; sent: number; delivered: number; failed: number }> = [];
+  for (let i = 13; i >= 0; i--) {
+    const date = getDateDaysAgo(i);
+    const dateStr = date.toISOString().split('T')[0];
+    const dayMessages = messages.filter(m => {
+      const msgDate = new Date(m.sentAt);
+      return msgDate.toISOString().split('T')[0] === dateStr;
+    });
+
+    messagesByDay.push({
+      date: dateStr,
+      sent: dayMessages.filter(m => m.status === 'sent').length,
+      delivered: dayMessages.filter(m => m.status === 'delivered').length,
+      failed: dayMessages.filter(m => m.status === 'failed').length
+    });
+  }
+
+  // Status distribution
+  const statusCounts = new Map<string, number>();
+  contacts.forEach(c => {
+    const count = statusCounts.get(c.status) || 0;
+    statusCounts.set(c.status, count + 1);
+  });
+
+  const statusColors: Record<string, string> = {
+    lead: '#F59E0B',
+    contacted: '#3B82F6',
+    qualified: '#8B5CF6',
+    proposal: '#EC4899',
+    negotiation: '#F97316',
+    won: '#10B981',
+    lost: '#EF4444'
+  };
+
+  const statusDistribution = Array.from(statusCounts.entries()).map(([name, value]) => ({
+    name: config.statuses.find(s => s.name === name)?.label || name,
+    value,
+    color: statusColors[name] || '#6B7280'
+  }));
+
+  // Template performance
+  const templateStats = new Map<string, { sent: number; delivered: number; read: number; failed: number }>();
+  messages.forEach(msg => {
+    const stats = templateStats.get(msg.templateName) || { sent: 0, delivered: 0, read: 0, failed: 0 };
+    stats[msg.status]++;
+    templateStats.set(msg.templateName, stats);
+  });
+
+  const templatePerformance = Array.from(templateStats.entries())
+    .map(([name, stats]) => ({ name, ...stats }))
+    .sort((a, b) => (b.sent + b.delivered + b.read) - (a.sent + a.delivered + a.read))
+    .slice(0, 10);
+
+  // Best hours (0-23)
+  const hourCounts = new Array(24).fill(0);
+  messages.forEach(msg => {
+    const hour = new Date(msg.sentAt).getHours();
+    hourCounts[hour]++;
+  });
+  const bestHours = hourCounts
+    .map((count, hour) => ({ hour, count }))
+    .filter(h => h.count > 0)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8);
+
+  // Best days (0=Sunday, 6=Saturday)
+  const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  const dayCounts = new Array(7).fill(0);
+  messages.forEach(msg => {
+    const day = new Date(msg.sentAt).getDay();
+    dayCounts[day]++;
+  });
+  const bestDays = dayCounts
+    .map((count, day) => ({ day: dayNames[day], count }))
+    .sort((a, b) => b.count - a.count);
+
+  // Top contacts by message count
+  const contactMessageCounts = new Map<string, number>();
+  messages.forEach(msg => {
+    const count = contactMessageCounts.get(msg.contactId) || 0;
+    contactMessageCounts.set(msg.contactId, count + 1);
+  });
+
+  const topContacts = Array.from(contactMessageCounts.entries())
+    .map(([id, messageCount]) => {
+      const contact = contacts.find(c => c.id === id);
+      const nameField = config.fields.find(f =>
+        f.name.toLowerCase().includes('nombre') ||
+        f.name.toLowerCase().includes('name')
+      );
+      const name = contact && nameField ? contact[nameField.name] : 'Desconocido';
+      return { id, name, messageCount };
+    })
+    .sort((a, b) => b.messageCount - a.messageCount)
+    .slice(0, 10);
+
+  return {
+    kpis: {
+      totalContacts,
+      contactsGrowth,
+      messagesSentToday,
+      messagesSentWeek,
+      messagesSentMonth,
+      activeContacts,
+      inactiveContacts,
+      averageResponseRate
+    },
+    contactGrowth,
+    messagesByDay,
+    statusDistribution,
+    templatePerformance,
+    bestHours,
+    bestDays,
+    topContacts
+  };
+}
