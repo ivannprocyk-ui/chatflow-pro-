@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { loadConfig, saveConfig, AppConfig } from '@/react-app/utils/storage';
 
 interface ConfigurationProps {
@@ -10,6 +10,10 @@ export default function Configuration({ onConfigUpdate }: ConfigurationProps) {
   const [config, setConfig] = useState(loadConfig());
   const [apiStatus, setApiStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
   const [isSaving, setIsSaving] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('dark_mode');
+    return saved === 'true';
+  });
 
   const handleConfigChange = (section: keyof AppConfig, field: string, value: string) => {
     const newConfig = {
@@ -33,6 +37,17 @@ export default function Configuration({ onConfigUpdate }: ConfigurationProps) {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const toggleDarkMode = () => {
+    const newDarkMode = !darkMode;
+    setDarkMode(newDarkMode);
+    localStorage.setItem('dark_mode', newDarkMode.toString());
+
+    // Dispatch event to App.tsx
+    window.dispatchEvent(new CustomEvent('theme-change', {
+      detail: { darkMode: newDarkMode }
+    }));
   };
 
   const testApiConnection = async () => {
@@ -268,84 +283,61 @@ export default function Configuration({ onConfigUpdate }: ConfigurationProps) {
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Color Principal
-                </label>
-                <div className="flex space-x-3">
+            {/* Dark Mode Toggle */}
+            <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 bg-white dark:bg-gray-800">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-1 flex items-center">
+                    🌙 Modo Oscuro
+                    {darkMode && (
+                      <span className="ml-2 px-2 py-0.5 text-xs bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300 rounded-full font-medium">
+                        ✓ Activo
+                      </span>
+                    )}
+                  </h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Reduce el brillo de la pantalla para usar en ambientes con poca luz</p>
+                </div>
+                <div className="relative inline-block w-14 h-8 cursor-pointer">
                   <input
-                    type="color"
-                    value={config.branding.primaryColor}
-                    onChange={(e) => handleConfigChange('branding', 'primaryColor', e.target.value)}
-                    className="w-16 h-12 border border-gray-300 rounded-lg cursor-pointer"
+                    type="checkbox"
+                    checked={darkMode}
+                    onChange={toggleDarkMode}
+                    className="sr-only peer"
+                    id="dark-mode-toggle"
                   />
-                  <input
-                    type="text"
-                    value={config.branding.primaryColor}
-                    onChange={(e) => handleConfigChange('branding', 'primaryColor', e.target.value)}
-                    className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                  <label
+                    htmlFor="dark-mode-toggle"
+                    className="block w-14 h-8 bg-gray-300 dark:bg-gray-600 rounded-full peer-checked:bg-blue-600 transition-colors cursor-pointer"
+                  ></label>
+                  <div className="absolute left-1 top-1 bg-white w-6 h-6 rounded-full transition-transform peer-checked:translate-x-6 pointer-events-none flex items-center justify-center text-xs shadow-lg">
+                    {darkMode ? '🌙' : '☀️'}
+                  </div>
                 </div>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Color Secundario
-                </label>
-                <div className="flex space-x-3">
-                  <input
-                    type="color"
-                    value={config.branding.secondaryColor}
-                    onChange={(e) => handleConfigChange('branding', 'secondaryColor', e.target.value)}
-                    className="w-16 h-12 border border-gray-300 rounded-lg cursor-pointer"
-                  />
-                  <input
-                    type="text"
-                    value={config.branding.secondaryColor}
-                    onChange={(e) => handleConfigChange('branding', 'secondaryColor', e.target.value)}
-                    className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Color de Acento
-                </label>
-                <div className="flex space-x-3">
-                  <input
-                    type="color"
-                    value={config.branding.accentColor}
-                    onChange={(e) => handleConfigChange('branding', 'accentColor', e.target.value)}
-                    className="w-16 h-12 border border-gray-300 rounded-lg cursor-pointer"
-                  />
-                  <input
-                    type="text"
-                    value={config.branding.accentColor}
-                    onChange={(e) => handleConfigChange('branding', 'accentColor', e.target.value)}
-                    className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
+              <div className="mt-4 flex items-center space-x-2 text-sm text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 px-3 py-2 rounded-lg">
+                <i className="fas fa-lightbulb"></i>
+                <span>El modo oscuro se aplica instantáneamente en toda la aplicación</span>
               </div>
             </div>
 
             {/* Preview */}
             <div className="border border-gray-200 rounded-lg p-4">
               <h4 className="text-lg font-medium text-gray-900 mb-4">Vista Previa</h4>
-              <div className="flex items-center space-x-3 p-4 rounded-lg" style={{ backgroundColor: config.branding.primaryColor + '20' }}>
+              <div className="flex items-center space-x-3 p-4 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100">
                 {config.branding.logoUrl ? (
-                  <img src={config.branding.logoUrl} alt="Logo" className="w-12 h-12 rounded-lg object-cover" />
+                  <img src={config.branding.logoUrl} alt="Logo" className="w-12 h-12 rounded-lg object-cover ring-2 ring-white" />
                 ) : (
-                  <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: config.branding.primaryColor }}>
-                    <i className="fas fa-comments text-white"></i>
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-gradient-to-br from-blue-600 to-purple-600 text-white">
+                    <i className="fas fa-comments"></i>
                   </div>
                 )}
                 <div>
-                  <h3 className="text-xl font-bold" style={{ color: config.branding.primaryColor }}>
+                  <h3 className="text-xl font-bold text-blue-600">
                     {config.branding.appName}
                   </h3>
-                  <p style={{ color: config.branding.secondaryColor }}>WhatsApp Business Platform</p>
+                  <p className="text-purple-700 text-sm">WhatsApp Business Platform</p>
                 </div>
               </div>
             </div>

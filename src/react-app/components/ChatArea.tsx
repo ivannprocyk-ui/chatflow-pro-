@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Send, Paperclip, Smile, Phone, Video, MoreVertical, ArrowLeft } from 'lucide-react';
-import type { Conversation, Message, MessageReaction } from '@/shared/types';
+import type { Conversation, Message, MessageReaction } from '@/react-app/types';
 import MessageBubble from './MessageBubble';
 import clsx from 'clsx';
 

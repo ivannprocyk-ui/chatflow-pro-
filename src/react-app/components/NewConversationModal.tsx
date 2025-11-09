@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Dialog } from '@headlessui/react';
 import { X, User, Users } from 'lucide-react';
-import type { Conversation } from '@/shared/types';
+import type { Conversation } from '@/react-app/types';
 
 interface NewConversationModalProps {
   isOpen: boolean;

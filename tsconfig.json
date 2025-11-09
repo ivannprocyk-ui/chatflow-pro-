@@ -17,12 +17,14 @@
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"],
-      "@/react-app/*": ["./src/react-app/*", "./*"],
-      "@/shared/*": ["./shared/*", "./src/shared/*", "./*"]
+      "@/*": ["./src/*"],
+      "@/react-app/*": ["./src/react-app/*"]
     }
   },
+  "include": ["src"],
   "exclude": [
+    "node_modules",
+    "dist",
     "server/**",
     "workers/**",
     "functions/**",

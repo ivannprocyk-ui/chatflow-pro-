@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { MessageCircle, Search, Plus, MoreVertical } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
-import type { Conversation } from '@/shared/types';
+import type { Conversation } from '@/react-app/types';
 import clsx from 'clsx';
 
 interface ConversationListProps {

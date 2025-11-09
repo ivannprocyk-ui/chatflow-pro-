@@ -38,8 +38,8 @@ export default function Toast({ message, type, onClose, duration = 3000 }: Toast
 
   return (
     <div
-      className={`fixed top-4 right-4 z-50 flex items-center space-x-3 px-6 py-4 rounded-lg shadow-2xl text-white transform transition-all duration-300 ${
-        isVisible ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'
+      className={`fixed bottom-4 right-4 z-50 flex items-center space-x-3 px-6 py-4 rounded-lg shadow-2xl text-white transform transition-all duration-300 ${
+        isVisible ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'
       } ${colors[type]}`}
       style={{ minWidth: '320px' }}
     >
@@ -72,7 +72,7 @@ interface ToastContainerProps {
 
 export function ToastContainer({ toasts, removeToast }: ToastContainerProps) {
   return (
-    <div className="fixed top-0 right-0 z-50 p-4 space-y-3">
+    <div className="fixed bottom-0 right-0 z-50 p-4 space-y-3 flex flex-col-reverse">
       {toasts.map((toast) => (
         <Toast
           key={toast.id}
