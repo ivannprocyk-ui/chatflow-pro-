@@ -240,9 +240,14 @@ export default function CRMPanel() {
 
   const handleApplyAutoCleaning = () => {
     const { cleaned, changes } = applyDataCleaning(contacts, config);
-    setContacts(cleaned);
-    saveCRMData(cleaned);
-    showSuccess(`Se aplicaron ${changes} cambios automáticos`);
+
+    if (changes === 0) {
+      showSuccess('No se encontraron problemas de formato para limpiar');
+    } else {
+      setContacts(cleaned);
+      saveCRMData(cleaned);
+      showSuccess(`Se limpiaron ${changes} problema${changes > 1 ? 's' : ''} de formato en los contactos`);
+    }
 
     // Re-analyze after cleaning
     const validationResults = validateContactData(cleaned, config);
@@ -2381,17 +2386,15 @@ export default function CRMPanel() {
                         </div>
                       </div>
 
-                      {validationIssues.length > 0 && (
-                        <div className="flex justify-center">
-                          <button
-                            onClick={handleApplyAutoCleaning}
-                            className="px-8 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg font-medium hover:from-emerald-600 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
-                          >
-                            <i className="fas fa-magic"></i>
-                            <span>Aplicar Limpieza Automática</span>
-                          </button>
-                        </div>
-                      )}
+                      <div className="flex justify-center">
+                        <button
+                          onClick={handleApplyAutoCleaning}
+                          className="px-8 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg font-medium hover:from-emerald-600 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
+                        >
+                          <i className="fas fa-magic"></i>
+                          <span>Aplicar Limpieza Automática</span>
+                        </button>
+                      </div>
                     </div>
                   )}
 
@@ -2400,28 +2403,49 @@ export default function CRMPanel() {
                     <div className="space-y-4">
                       {(() => {
                         const duplicateIssues = validationIssues.filter(i => i.type === 'duplicate');
-                        const groupedDuplicates = new Map<string, ValidationIssue[]>();
+
+                        // Crear grupos de duplicados correctamente
+                        const processedIds = new Set<string>();
+                        const duplicateGroups: string[][] = [];
 
                         duplicateIssues.forEach(issue => {
-                          const key = issue.duplicateWith || issue.contactId;
-                          if (!groupedDuplicates.has(key)) {
-                            groupedDuplicates.set(key, []);
+                          // Si ya procesamos este contacto, skip
+                          if (processedIds.has(issue.contactId)) return;
+
+                          // Encontrar todos los duplicados de este contacto
+                          const groupIds = new Set<string>([issue.contactId]);
+                          if (issue.duplicateWith) {
+                            groupIds.add(issue.duplicateWith);
                           }
-                          groupedDuplicates.get(key)!.push(issue);
+
+                          // Buscar otros duplicados relacionados
+                          duplicateIssues.forEach(otherIssue => {
+                            if (groupIds.has(otherIssue.contactId) || groupIds.has(otherIssue.duplicateWith || '')) {
+                              groupIds.add(otherIssue.contactId);
+                              if (otherIssue.duplicateWith) {
+                                groupIds.add(otherIssue.duplicateWith);
+                              }
+                            }
+                          });
+
+                          // Marcar todos como procesados
+                          groupIds.forEach(id => processedIds.add(id));
+
+                          // Solo agregar si hay al menos 2 contactos
+                          if (groupIds.size >= 2) {
+                            duplicateGroups.push(Array.from(groupIds));
+                          }
                         });
 
-                        const duplicateGroups = Array.from(groupedDuplicates.values()).filter(group => group.length >= 2);
-
                         return duplicateGroups.length > 0 ? (
-                          duplicateGroups.map((group, index) => {
-                            const contactIds = Array.from(new Set(group.flatMap(g => [g.contactId, g.duplicateWith!])));
-                            const duplicateContacts = contacts.filter(c => contactIds.includes(c.id));
+                          duplicateGroups.map((groupIds, index) => {
+                            const duplicateContacts = contacts.filter(c => groupIds.includes(c.id));
 
                             return (
                               <div key={index} className="bg-orange-50 dark:bg-gray-900 p-4 rounded-lg border border-orange-200 dark:border-gray-700">
                                 <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
                                   <i className="fas fa-copy text-orange-600 mr-2"></i>
-                                  Grupo de Duplicados #{index + 1}
+                                  Grupo de Duplicados #{index + 1} ({duplicateContacts.length} contactos)
                                 </h4>
                                 <div className="space-y-2">
                                   {duplicateContacts.map((contact, idx) => {
@@ -2429,7 +2453,7 @@ export default function CRMPanel() {
                                       f.name.toLowerCase().includes('nombre') ||
                                       f.name.toLowerCase().includes('name')
                                     );
-                                    const phoneField = config.fields.find(f => f.type === 'tel');
+                                    const phoneField = config.fields.find(f => f.type === 'phone');
                                     const emailField = config.fields.find(f => f.type === 'email');
 
                                     return (
