@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { loadCRMData, saveCRMData, loadCRMConfig, loadContactLists, saveContactLists, CRMFieldConfig, CRMConfig, loadTags, saveTags, createTag, updateTag, deleteTag, Tag, TAG_COLORS, ValidationIssue, validateContactData, findDuplicateContacts, applyDataCleaning, mergeContacts } from '@/react-app/utils/storage';
+import { loadCRMData, saveCRMData, loadCRMConfig, loadContactLists, saveContactLists, CRMFieldConfig, CRMConfig, loadTags, saveTags, createTag, updateTag, deleteTag, Tag, TAG_COLORS, ValidationIssue, validateContactData, findDuplicateContacts, applyDataCleaning, mergeContacts, exportContacts, ExportOptions } from '@/react-app/utils/storage';
 import { useToast } from '@/react-app/components/Toast';
+import ImportWizard from '@/react-app/components/ImportWizard';
 
 type ViewMode = 'table' | 'list' | 'cards' | 'kanban';
 
@@ -39,6 +40,8 @@ export default function CRMPanel() {
   const [cleaningTab, setCleaningTab] = useState<'overview' | 'duplicates' | 'validation' | 'formatting'>('overview');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [duplicateContactIds, setDuplicateContactIds] = useState<Set<string>>(new Set());
+  const [showImportWizard, setShowImportWizard] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
   const { showSuccess, showError} = useToast();
 
   useEffect(() => {
@@ -336,6 +339,49 @@ export default function CRMPanel() {
       const validationResults = validateContactData(updatedContacts, config);
       const duplicateResults = findDuplicateContacts(updatedContacts, config);
       setValidationIssues([...validationResults, ...duplicateResults]);
+    }
+  };
+
+  const handleImportContacts = (importedContacts: any[]) => {
+    // Merge imported contacts with existing ones
+    const updatedContacts = [...contacts, ...importedContacts];
+    setContacts(updatedContacts);
+    saveCRMData(updatedContacts);
+    analyzeContactsForDuplicates(updatedContacts);
+    showSuccess(`${importedContacts.length} contactos importados exitosamente`);
+
+    // Re-analyze data quality
+    const validationResults = validateContactData(updatedContacts, config);
+    const duplicateResults = findDuplicateContacts(updatedContacts, config);
+    setValidationIssues([...validationResults, ...duplicateResults]);
+
+    setShowImportWizard(false);
+  };
+
+  const handleExport = async (format: 'csv' | 'excel' | 'vcard') => {
+    const contactsToExport = selectedContacts.size > 0
+      ? contacts.filter(c => selectedContacts.has(c.id))
+      : filteredContacts;
+
+    if (contactsToExport.length === 0) {
+      showError('No hay contactos para exportar');
+      return;
+    }
+
+    try {
+      await exportContacts({
+        format,
+        contacts: contactsToExport,
+        config
+      });
+
+      const count = contactsToExport.length;
+      const formatName = format === 'csv' ? 'CSV' : format === 'excel' ? 'Excel' : 'vCard';
+      showSuccess(`${count} contactos exportados a ${formatName}`);
+      setShowExportModal(false);
+    } catch (error) {
+      console.error('Error exporting contacts:', error);
+      showError('Error al exportar contactos');
     }
   };
 
@@ -727,10 +773,17 @@ export default function CRMPanel() {
         </div>
         <div className="flex space-x-4">
           <button
-            onClick={exportData}
+            onClick={() => setShowImportWizard(true)}
+            className="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white px-6 py-3 rounded-xl font-medium hover:from-indigo-600 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
+          >
+            <i className="fas fa-file-import"></i>
+            <span>Importar</span>
+          </button>
+          <button
+            onClick={() => setShowExportModal(true)}
             className="bg-gradient-to-r from-cyan-500 to-cyan-600 text-white px-6 py-3 rounded-xl font-medium hover:from-cyan-600 hover:to-cyan-700 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
           >
-            <i className="fas fa-download"></i>
+            <i className="fas fa-file-export"></i>
             <span>Exportar</span>
           </button>
           <button
@@ -2727,6 +2780,93 @@ export default function CRMPanel() {
               >
                 Cerrar
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Import Wizard */}
+      <ImportWizard
+        isOpen={showImportWizard}
+        onClose={() => setShowImportWizard(false)}
+        onImport={handleImportContacts}
+        config={config}
+      />
+
+      {/* Export Modal */}
+      {showExportModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-screen items-center justify-center p-4">
+            <div
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+              onClick={() => setShowExportModal(false)}
+            />
+
+            <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-6">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
+                  <i className="fas fa-file-export text-cyan-600 mr-3"></i>
+                  Exportar Contactos
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                  {selectedContacts.size > 0
+                    ? `Exportar ${selectedContacts.size} contactos seleccionados`
+                    : `Exportar ${filteredContacts.length} contactos`}
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <button
+                  onClick={() => handleExport('excel')}
+                  className="w-full px-6 py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl font-medium hover:from-emerald-600 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-between"
+                >
+                  <div className="flex items-center space-x-3">
+                    <i className="fas fa-file-excel text-2xl"></i>
+                    <div className="text-left">
+                      <div className="font-semibold">Excel (.xlsx)</div>
+                      <div className="text-xs text-emerald-100">Mejor para análisis y edición</div>
+                    </div>
+                  </div>
+                  <i className="fas fa-arrow-right"></i>
+                </button>
+
+                <button
+                  onClick={() => handleExport('csv')}
+                  className="w-full px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-between"
+                >
+                  <div className="flex items-center space-x-3">
+                    <i className="fas fa-file-csv text-2xl"></i>
+                    <div className="text-left">
+                      <div className="font-semibold">CSV (.csv)</div>
+                      <div className="text-xs text-blue-100">Compatible con todas las plataformas</div>
+                    </div>
+                  </div>
+                  <i className="fas fa-arrow-right"></i>
+                </button>
+
+                <button
+                  onClick={() => handleExport('vcard')}
+                  className="w-full px-6 py-4 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl font-medium hover:from-purple-600 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-between"
+                >
+                  <div className="flex items-center space-x-3">
+                    <i className="fas fa-address-card text-2xl"></i>
+                    <div className="text-left">
+                      <div className="font-semibold">vCard (.vcf)</div>
+                      <div className="text-xs text-purple-100">Para importar en teléfonos</div>
+                    </div>
+                  </div>
+                  <i className="fas fa-arrow-right"></i>
+                </button>
+              </div>
+
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => setShowExportModal(false)}
+                  className="px-6 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -717,3 +717,196 @@ export function applyDataCleaning(contacts: any[], config: CRMConfig): { cleaned
   console.log(`Total de cambios aplicados: ${changes}`);
   return { cleaned, changes };
 }
+
+// ============================================================================
+// EXPORT FUNCTIONS
+// ============================================================================
+
+export interface ExportOptions {
+  format: 'csv' | 'excel' | 'vcard';
+  contacts: any[];
+  config: CRMConfig;
+  selectedFields?: string[]; // If empty, export all visible fields
+}
+
+/**
+ * Export contacts to CSV format
+ */
+export function exportToCSV(options: ExportOptions): void {
+  const { contacts, config, selectedFields } = options;
+
+  // Determine which fields to export
+  const fieldsToExport = selectedFields && selectedFields.length > 0
+    ? config.fields.filter(f => selectedFields.includes(f.name))
+    : config.fields.filter(f => f.visible);
+
+  // Create CSV header
+  const headers = fieldsToExport.map(f => f.label).join(',');
+
+  // Create CSV rows
+  const rows = contacts.map(contact => {
+    return fieldsToExport.map(field => {
+      const value = contact[field.name];
+
+      // Handle different field types
+      if (value === null || value === undefined) return '';
+
+      // Escape commas and quotes in CSV
+      const stringValue = String(value);
+      if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+        return `"${stringValue.replace(/"/g, '""')}"`;
+      }
+
+      return stringValue;
+    }).join(',');
+  });
+
+  // Combine header and rows
+  const csv = [headers, ...rows].join('\n');
+
+  // Create and download file
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+
+  link.setAttribute('href', url);
+  link.setAttribute('download', `contactos_${new Date().toISOString().split('T')[0]}.csv`);
+  link.style.visibility = 'hidden';
+
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+/**
+ * Export contacts to Excel format
+ */
+export async function exportToExcel(options: ExportOptions): Promise<void> {
+  const { contacts, config, selectedFields } = options;
+
+  // Dynamic import of xlsx to reduce bundle size
+  const XLSX = await import('xlsx');
+
+  // Determine which fields to export
+  const fieldsToExport = selectedFields && selectedFields.length > 0
+    ? config.fields.filter(f => selectedFields.includes(f.name))
+    : config.fields.filter(f => f.visible);
+
+  // Create worksheet data
+  const data = contacts.map(contact => {
+    const row: any = {};
+    fieldsToExport.forEach(field => {
+      row[field.label] = contact[field.name] ?? '';
+    });
+    return row;
+  });
+
+  // Create workbook and worksheet
+  const worksheet = XLSX.utils.json_to_sheet(data);
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Contactos');
+
+  // Auto-size columns
+  const maxWidth = 50;
+  const colWidths = fieldsToExport.map(field => ({
+    wch: Math.min(field.label.length + 2, maxWidth)
+  }));
+  worksheet['!cols'] = colWidths;
+
+  // Download file
+  XLSX.writeFile(workbook, `contactos_${new Date().toISOString().split('T')[0]}.xlsx`);
+}
+
+/**
+ * Export contacts to vCard format (.vcf)
+ */
+export function exportToVCard(options: ExportOptions): void {
+  const { contacts, config } = options;
+
+  // Find relevant fields
+  const nameField = config.fields.find(f =>
+    f.name.toLowerCase().includes('nombre') ||
+    f.name.toLowerCase().includes('name')
+  );
+
+  const phoneFields = config.fields.filter(f => f.type === 'phone');
+  const emailFields = config.fields.filter(f => f.type === 'email');
+  const companyField = config.fields.find(f =>
+    f.name.toLowerCase().includes('empresa') ||
+    f.name.toLowerCase().includes('company')
+  );
+
+  // Generate vCard for each contact
+  const vcards = contacts.map(contact => {
+    const lines = ['BEGIN:VCARD', 'VERSION:3.0'];
+
+    // Name
+    if (nameField && contact[nameField.name]) {
+      const name = contact[nameField.name];
+      lines.push(`FN:${name}`);
+      lines.push(`N:${name};;;;`);
+    }
+
+    // Phone numbers
+    phoneFields.forEach((field, index) => {
+      if (contact[field.name]) {
+        const type = index === 0 ? 'CELL' : 'WORK';
+        lines.push(`TEL;TYPE=${type}:${contact[field.name]}`);
+      }
+    });
+
+    // Email addresses
+    emailFields.forEach((field, index) => {
+      if (contact[field.name]) {
+        const type = index === 0 ? 'INTERNET' : 'WORK';
+        lines.push(`EMAIL;TYPE=${type}:${contact[field.name]}`);
+      }
+    });
+
+    // Company/Organization
+    if (companyField && contact[companyField.name]) {
+      lines.push(`ORG:${contact[companyField.name]}`);
+    }
+
+    // Notes - add contact ID for reference
+    lines.push(`NOTE:ID: ${contact.id}`);
+
+    lines.push('END:VCARD');
+    return lines.join('\r\n');
+  });
+
+  // Combine all vCards
+  const vcard = vcards.join('\r\n');
+
+  // Create and download file
+  const blob = new Blob([vcard], { type: 'text/vcard;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+
+  link.setAttribute('href', url);
+  link.setAttribute('download', `contactos_${new Date().toISOString().split('T')[0]}.vcf`);
+  link.style.visibility = 'hidden';
+
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+/**
+ * Main export function that delegates to specific format handlers
+ */
+export async function exportContacts(options: ExportOptions): Promise<void> {
+  switch (options.format) {
+    case 'csv':
+      exportToCSV(options);
+      break;
+    case 'excel':
+      await exportToExcel(options);
+      break;
+    case 'vcard':
+      exportToVCard(options);
+      break;
+    default:
+      throw new Error(`Unsupported export format: ${options.format}`);
+  }
+}
