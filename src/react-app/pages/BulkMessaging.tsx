@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Send, AlertCircle, CheckCircle } from 'lucide-react';
-import { loadContactLists, loadSendLog, appendToSendLog, loadConfig, loadCRMData, loadCRMConfig } from '@/react-app/utils/storage';
+import { loadContactLists, loadSendLog, appendToSendLog, loadConfig, loadCRMData, loadCRMConfig, addMessageToHistory } from '@/react-app/utils/storage';
 import { useToast } from '@/react-app/components/Toast';
 
 interface WhatsAppTemplate {
@@ -343,10 +343,41 @@ export default function BulkMessaging() {
 
           if (response.ok) {
             sentCount++;
+
+            // Save to message history
+            const responseData = await response.json();
+            addMessageToHistory({
+              contactId: contact.id || `phone-${phoneNumber}`, // Use contact ID if available, otherwise use phone
+              templateName: selectedTemplate,
+              sentAt: new Date().toISOString(),
+              status: 'sent',
+              phoneNumber: phoneNumber,
+              messageId: responseData.messages?.[0]?.id,
+              campaignName: 'Envío Masivo',
+              metadata: {
+                method: inputMethod,
+                imageUrl: imageUrl || undefined
+              }
+            });
           } else {
             failedCount++;
             const errorData = await response.json();
             errors.push(`${phoneNumber}: ${errorData.error?.message || 'Error desconocido'}`);
+
+            // Save failed message to history
+            addMessageToHistory({
+              contactId: contact.id || `phone-${phoneNumber}`,
+              templateName: selectedTemplate,
+              sentAt: new Date().toISOString(),
+              status: 'failed',
+              phoneNumber: phoneNumber,
+              errorMessage: errorData.error?.message || 'Error desconocido',
+              campaignName: 'Envío Masivo',
+              metadata: {
+                method: inputMethod,
+                imageUrl: imageUrl || undefined
+              }
+            });
           }
 
           // Delay between messages
