@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { loadCRMData, saveCRMData, loadCRMConfig, loadContactLists, saveContactLists, CRMFieldConfig, CRMConfig } from '@/react-app/utils/storage';
+import { loadCRMData, saveCRMData, loadCRMConfig, loadContactLists, saveContactLists, CRMFieldConfig, CRMConfig, loadTags, saveTags, createTag, updateTag, deleteTag, Tag, TAG_COLORS } from '@/react-app/utils/storage';
 import { useToast } from '@/react-app/components/Toast';
 
 type ViewMode = 'table' | 'list' | 'cards' | 'kanban';
@@ -11,6 +11,7 @@ export default function CRMPanel() {
   const [config, setConfig] = useState<CRMConfig>(loadCRMConfig());
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [tagFilter, setTagFilter] = useState<string[]>([]);
   const [dynamicFilters, setDynamicFilters] = useState<Record<string, any>>({});
   const [showFilters, setShowFilters] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -28,12 +29,18 @@ export default function CRMPanel() {
     return (saved as ViewMode) || 'table';
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [showTagManagerModal, setShowTagManagerModal] = useState(false);
+  const [showMassTagModal, setShowMassTagModal] = useState(false);
+  const [editingTag, setEditingTag] = useState<Tag | null>(null);
+  const [tagFormData, setTagFormData] = useState({ name: '', color: TAG_COLORS[0] });
   const { showSuccess, showError} = useToast();
 
   useEffect(() => {
     const data = loadCRMData();
     setContacts(data);
     setContactLists(loadContactLists());
+    setTags(loadTags());
   }, []);
 
   const initializeFormData = (contact?: any) => {
@@ -46,6 +53,9 @@ export default function CRMPanel() {
       data.messagesSent = contact.messagesSent || 0;
       data.lastInteraction = contact.lastInteraction;
       data.createdAt = contact.createdAt;
+      data.tags = contact.tags || [];
+    } else {
+      data.tags = [];
     }
     return data;
   };
@@ -129,6 +139,84 @@ export default function CRMPanel() {
     } else {
       setContactEvents([]);
     }
+  };
+
+  // Tag Management Handlers
+  const handleOpenTagManager = () => {
+    setShowTagManagerModal(true);
+    setEditingTag(null);
+    setTagFormData({ name: '', color: TAG_COLORS[0] });
+  };
+
+  const handleEditTag = (tag: Tag) => {
+    setEditingTag(tag);
+    setTagFormData({ name: tag.name, color: tag.color });
+  };
+
+  const handleSaveTag = () => {
+    if (!tagFormData.name.trim()) {
+      showError('El nombre de la etiqueta es requerido');
+      return;
+    }
+
+    if (editingTag) {
+      // Update existing tag
+      updateTag(editingTag.id, { name: tagFormData.name, color: tagFormData.color });
+      showSuccess('Etiqueta actualizada exitosamente');
+    } else {
+      // Create new tag
+      const newTag = createTag(tagFormData.name, tagFormData.color);
+      const updatedTags = [...tags, newTag];
+      saveTags(updatedTags);
+      setTags(updatedTags);
+      showSuccess('Etiqueta creada exitosamente');
+    }
+
+    setTags(loadTags()); // Reload tags
+    setEditingTag(null);
+    setTagFormData({ name: '', color: TAG_COLORS[0] });
+  };
+
+  const handleDeleteTag = (tagId: string) => {
+    if (confirm('¿Estás seguro de eliminar esta etiqueta? Se eliminará de todos los contactos.')) {
+      deleteTag(tagId);
+      setTags(loadTags());
+      setContacts(loadCRMData()); // Reload contacts to reflect tag removal
+      showSuccess('Etiqueta eliminada exitosamente');
+    }
+  };
+
+  const handleMassTagAssignment = (tagIds: string[], action: 'add' | 'remove') => {
+    if (selectedContacts.size === 0) {
+      showError('No hay contactos seleccionados');
+      return;
+    }
+
+    const updatedContacts = contacts.map(contact => {
+      if (selectedContacts.has(contact.id)) {
+        const currentTags = contact.tags || [];
+        let newTags: string[];
+
+        if (action === 'add') {
+          // Add tags that aren't already present
+          const tagsToAdd = tagIds.filter(tagId => !currentTags.includes(tagId));
+          newTags = [...currentTags, ...tagsToAdd];
+        } else {
+          // Remove specified tags
+          newTags = currentTags.filter((tagId: string) => !tagIds.includes(tagId));
+        }
+
+        return { ...contact, tags: newTags };
+      }
+      return contact;
+    });
+
+    setContacts(updatedContacts);
+    saveCRMData(updatedContacts);
+    setShowMassTagModal(false);
+
+    const actionText = action === 'add' ? 'asignadas' : 'eliminadas';
+    showSuccess(`Etiquetas ${actionText} exitosamente a ${selectedContacts.size} contacto(s)`);
   };
 
   const handleAddToList = () => {
@@ -325,16 +413,20 @@ export default function CRMPanel() {
     const matchesStatus = statusFilter === 'all' || contact.status === statusFilter;
     const matchesDynamicFilters = applyDynamicFilters(contact);
 
-    return matchesSearch && matchesStatus && matchesDynamicFilters;
+    // Tag filter: if any tags are selected, contact must have at least one of them
+    const matchesTags = tagFilter.length === 0 || tagFilter.some(tagId => contact.tags?.includes(tagId));
+
+    return matchesSearch && matchesStatus && matchesDynamicFilters && matchesTags;
   });
 
   const clearAllFilters = () => {
     setSearchTerm('');
     setStatusFilter('all');
+    setTagFilter([]);
     setDynamicFilters({});
   };
 
-  const hasActiveFilters = searchTerm !== '' || statusFilter !== 'all' || Object.keys(dynamicFilters).some(k => dynamicFilters[k]);
+  const hasActiveFilters = searchTerm !== '' || statusFilter !== 'all' || tagFilter.length > 0 || Object.keys(dynamicFilters).some(k => dynamicFilters[k]);
 
   const getStatusBadge = (statusName: string) => {
     const status = config.statuses.find(s => s.name === statusName);
@@ -461,6 +553,38 @@ export default function CRMPanel() {
     return colors[hash % colors.length];
   };
 
+  // Helper function to render tag badges
+  const renderTagBadges = (contact: any, limit: number = 3) => {
+    if (!contact.tags || contact.tags.length === 0) return null;
+
+    const contactTags = contact.tags
+      .map((tagId: string) => tags.find(t => t.id === tagId))
+      .filter((tag: Tag | undefined): tag is Tag => tag !== undefined);
+
+    const visibleTags = contactTags.slice(0, limit);
+    const remainingCount = contactTags.length - visibleTags.length;
+
+    return (
+      <div className="flex flex-wrap gap-1 items-center">
+        {visibleTags.map((tag: Tag) => (
+          <span
+            key={tag.id}
+            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-white"
+            style={{ backgroundColor: tag.color }}
+            title={tag.name}
+          >
+            {tag.name}
+          </span>
+        ))}
+        {remainingCount > 0 && (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-400 dark:bg-gray-600 text-white">
+            +{remainingCount}
+          </span>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="p-6 w-full transition-colors duration-300">
       {/* Header */}
@@ -479,6 +603,13 @@ export default function CRMPanel() {
           >
             <i className="fas fa-download"></i>
             <span>Exportar</span>
+          </button>
+          <button
+            onClick={handleOpenTagManager}
+            className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-6 py-3 rounded-xl font-medium hover:from-purple-600 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
+          >
+            <i className="fas fa-tags"></i>
+            <span>Etiquetas</span>
           </button>
           <button
             onClick={() => {
@@ -692,6 +823,47 @@ export default function CRMPanel() {
                     </div>
                   ))}
                 </div>
+
+                {/* Tag Filter Section */}
+                {tags.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-blue-300 dark:border-blue-700">
+                    <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-200 mb-3 flex items-center">
+                      <i className="fas fa-tags mr-2"></i>
+                      Filtrar por Etiquetas
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {tags.map(tag => {
+                        const isSelected = tagFilter.includes(tag.id);
+                        return (
+                          <button
+                            key={tag.id}
+                            onClick={() => {
+                              if (isSelected) {
+                                setTagFilter(tagFilter.filter(id => id !== tag.id));
+                              } else {
+                                setTagFilter([...tagFilter, tag.id]);
+                              }
+                            }}
+                            className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium text-white transition-all ${
+                              isSelected
+                                ? 'ring-2 ring-offset-2 ring-white dark:ring-offset-blue-900 scale-105'
+                                : 'opacity-60 hover:opacity-100'
+                            }`}
+                            style={{ backgroundColor: tag.color }}
+                          >
+                            {isSelected && <i className="fas fa-check mr-1.5"></i>}
+                            {tag.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {tagFilter.length > 0 && (
+                      <div className="mt-3 text-xs text-blue-700 dark:text-blue-300">
+                        Mostrando contactos con al menos una de las etiquetas seleccionadas ({tagFilter.length})
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -710,6 +882,13 @@ export default function CRMPanel() {
               >
                 <i className="fas fa-list-ul mr-2"></i>
                 Agregar a Lista
+              </button>
+              <button
+                onClick={() => setShowMassTagModal(true)}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700 transition-all shadow-sm"
+              >
+                <i className="fas fa-tags mr-2"></i>
+                Asignar Etiquetas
               </button>
               <button
                 onClick={() => setSelectedContacts(new Set())}
@@ -742,6 +921,9 @@ export default function CRMPanel() {
                   ))}
                   <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">
                     Estado
+                  </th>
+                  <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    Etiquetas
                   </th>
                   <th scope="col" className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">
                     Última Interacción
@@ -782,6 +964,9 @@ export default function CRMPanel() {
                     ))}
                     <td className="whitespace-nowrap px-3 py-4 text-sm">
                       {getStatusBadge(contact.status)}
+                    </td>
+                    <td className="px-3 py-4 text-sm">
+                      {renderTagBadges(contact, 2)}
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 dark:text-gray-400">
                       {contact.lastInteraction ? new Date(contact.lastInteraction).toLocaleDateString() : '-'}
@@ -837,7 +1022,7 @@ export default function CRMPanel() {
                             ? contact[config.fields.find(f => f.name.toLowerCase().includes('nombre') || f.name.toLowerCase().includes('name'))!.name]
                             : 'Sin nombre'}
                         </h4>
-                        <div className="mt-1">
+                        <div className="mt-1 flex flex-wrap gap-1">
                           {getStatusBadge(contact.status)}
                         </div>
                       </div>
@@ -879,6 +1064,13 @@ export default function CRMPanel() {
                         </span>
                       </div>
                     ))}
+
+                  {/* Tags */}
+                  {contact.tags && contact.tags.length > 0 && (
+                    <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+                      {renderTagBadges(contact, 3)}
+                    </div>
+                  )}
 
                   {/* Last Interaction */}
                   {contact.lastInteraction && (
@@ -952,8 +1144,9 @@ export default function CRMPanel() {
                         ? contact[config.fields.find(f => f.name.toLowerCase().includes('nombre') || f.name.toLowerCase().includes('name'))!.name]
                         : 'Sin nombre'}
                     </h4>
-                    <div className="mt-1">
+                    <div className="mt-1 flex flex-wrap gap-1 items-center">
                       {getStatusBadge(contact.status)}
+                      {renderTagBadges(contact, 2)}
                     </div>
                   </div>
 
@@ -1075,6 +1268,14 @@ export default function CRMPanel() {
                                   <span className="truncate">{contact[field.name] || '-'}</span>
                                 </div>
                               ))}
+
+                            {/* Tags */}
+                            {contact.tags && contact.tags.length > 0 && (
+                              <div className="pt-1.5 border-t border-gray-100 dark:border-gray-700">
+                                {renderTagBadges(contact, 2)}
+                              </div>
+                            )}
+
                             {contact.lastInteraction && (
                               <div className="flex items-center text-gray-500 dark:text-gray-400 pt-1.5 border-t border-gray-100 dark:border-gray-700">
                                 <i className="fas fa-clock mr-1.5 text-[10px]"></i>
@@ -1286,6 +1487,74 @@ export default function CRMPanel() {
                       <option key={status.name} value={status.name}>{status.label}</option>
                     ))}
                   </select>
+                </div>
+
+                {/* Tags Selector */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <i className="fas fa-tags mr-2"></i>
+                    Etiquetas
+                  </label>
+                  <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 min-h-[60px]">
+                    {/* Selected Tags */}
+                    {formData.tags && formData.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {formData.tags.map((tagId: string) => {
+                          const tag = tags.find(t => t.id === tagId);
+                          if (!tag) return null;
+                          return (
+                            <span
+                              key={tagId}
+                              className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium text-white transition-all hover:opacity-80"
+                              style={{ backgroundColor: tag.color }}
+                            >
+                              {tag.name}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updatedTags = formData.tags.filter((t: string) => t !== tagId);
+                                  setFormData({ ...formData, tags: updatedTags });
+                                }}
+                                className="ml-2 hover:bg-white/20 rounded-full p-0.5 transition-colors"
+                              >
+                                <i className="fas fa-times text-xs"></i>
+                              </button>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Available Tags */}
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Seleccionar etiquetas:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {tags.filter(tag => !formData.tags?.includes(tag.id)).map(tag => (
+                          <button
+                            key={tag.id}
+                            type="button"
+                            onClick={() => {
+                              const updatedTags = [...(formData.tags || []), tag.id];
+                              setFormData({ ...formData, tags: updatedTags });
+                            }}
+                            className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium text-white transition-all hover:scale-105 opacity-60 hover:opacity-100"
+                            style={{ backgroundColor: tag.color }}
+                          >
+                            <i className="fas fa-plus text-xs mr-1"></i>
+                            {tag.name}
+                          </button>
+                        ))}
+                        {tags.filter(tag => !formData.tags?.includes(tag.id)).length === 0 && formData.tags?.length === tags.length && (
+                          <p className="text-xs text-gray-500 dark:text-gray-400 italic">Todas las etiquetas seleccionadas</p>
+                        )}
+                        {tags.length === 0 && (
+                          <p className="text-xs text-gray-500 dark:text-gray-400 italic">
+                            No hay etiquetas disponibles. <button type="button" onClick={handleOpenTagManager} className="text-purple-600 hover:underline">Crear etiquetas</button>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1601,6 +1870,286 @@ export default function CRMPanel() {
                   setViewingContact(null);
                   setContactEvents([]);
                 }}
+                className="px-6 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tag Manager Modal */}
+      {showTagManagerModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-colors duration-300">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto transition-colors duration-300">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
+                    <i className="fas fa-tags text-purple-600 mr-3"></i>
+                    Gestión de Etiquetas
+                  </h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                    Crea, edita y elimina etiquetas para organizar tus contactos
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowTagManagerModal(false);
+                    setEditingTag(null);
+                    setTagFormData({ name: '', color: TAG_COLORS[0] });
+                  }}
+                  className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+                >
+                  <i className="fas fa-times text-2xl"></i>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              {/* Create/Edit Tag Form */}
+              <div className="mb-6 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-5">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                  <i className="fas fa-plus-circle text-purple-600 mr-2"></i>
+                  {editingTag ? 'Editar Etiqueta' : 'Nueva Etiqueta'}
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Nombre de la etiqueta
+                    </label>
+                    <input
+                      type="text"
+                      value={tagFormData.name}
+                      onChange={(e) => setTagFormData({ ...tagFormData, name: e.target.value })}
+                      placeholder="Ej: VIP, Cliente Nuevo, etc."
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-gray-100 transition-colors"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleSaveTag();
+                        }
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Color
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {TAG_COLORS.map((color) => (
+                        <button
+                          key={color}
+                          onClick={() => setTagFormData({ ...tagFormData, color })}
+                          className={`w-10 h-10 rounded-lg transition-all hover:scale-110 ${
+                            tagFormData.color === color
+                              ? 'ring-4 ring-offset-2 ring-purple-500 dark:ring-offset-gray-800'
+                              : 'opacity-70 hover:opacity-100'
+                          }`}
+                          style={{ backgroundColor: color }}
+                          title={color}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={handleSaveTag}
+                      className="px-6 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-all flex items-center space-x-2"
+                    >
+                      <i className={`fas fa-${editingTag ? 'save' : 'plus'}`}></i>
+                      <span>{editingTag ? 'Actualizar' : 'Crear'} Etiqueta</span>
+                    </button>
+                    {editingTag && (
+                      <button
+                        onClick={() => {
+                          setEditingTag(null);
+                          setTagFormData({ name: '', color: TAG_COLORS[0] });
+                        }}
+                        className="px-6 py-2.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-all"
+                      >
+                        Cancelar
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Tags List */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                  <i className="fas fa-list text-blue-600 mr-2"></i>
+                  Etiquetas Existentes
+                  <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
+                    ({tags.length})
+                  </span>
+                </h3>
+
+                {tags.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {tags.map((tag) => (
+                      <div
+                        key={tag.id}
+                        className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:shadow-md transition-all"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3 flex-1">
+                            <div
+                              className="w-6 h-6 rounded-full"
+                              style={{ backgroundColor: tag.color }}
+                            />
+                            <span className="font-medium text-gray-900 dark:text-gray-100">
+                              {tag.name}
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => handleEditTag(tag)}
+                              className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                              title="Editar"
+                            >
+                              <i className="fas fa-edit"></i>
+                            </button>
+                            <button
+                              onClick={() => handleDeleteTag(tag.id)}
+                              className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                              title="Eliminar"
+                            >
+                              <i className="fas fa-trash"></i>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    <i className="fas fa-tags text-gray-400 dark:text-gray-500 text-5xl mb-3"></i>
+                    <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">
+                      No hay etiquetas creadas
+                    </h4>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Crea tu primera etiqueta usando el formulario de arriba
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-100 dark:border-gray-700 flex justify-end">
+              <button
+                onClick={() => {
+                  setShowTagManagerModal(false);
+                  setEditingTag(null);
+                  setTagFormData({ name: '', color: TAG_COLORS[0] });
+                }}
+                className="px-6 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mass Tag Assignment Modal */}
+      {showMassTagModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-colors duration-300">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full transition-colors duration-300">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
+                    <i className="fas fa-tags text-purple-600 mr-3"></i>
+                    Asignar Etiquetas Masivamente
+                  </h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                    {selectedContacts.size} contacto{selectedContacts.size !== 1 ? 's' : ''} seleccionado{selectedContacts.size !== 1 ? 's' : ''}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowMassTagModal(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+                >
+                  <i className="fas fa-times text-2xl"></i>
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              {tags.length > 0 ? (
+                <>
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
+                      <i className="fas fa-plus-circle text-green-600 mr-2"></i>
+                      Agregar Etiquetas
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                      Selecciona las etiquetas que deseas agregar a los contactos seleccionados:
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {tags.map(tag => (
+                        <button
+                          key={tag.id}
+                          onClick={() => handleMassTagAssignment([tag.id], 'add')}
+                          className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium text-white transition-all hover:scale-105 hover:shadow-lg"
+                          style={{ backgroundColor: tag.color }}
+                        >
+                          <i className="fas fa-plus mr-2"></i>
+                          {tag.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
+                      <i className="fas fa-minus-circle text-red-600 mr-2"></i>
+                      Eliminar Etiquetas
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                      Selecciona las etiquetas que deseas eliminar de los contactos seleccionados:
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {tags.map(tag => (
+                        <button
+                          key={tag.id}
+                          onClick={() => handleMassTagAssignment([tag.id], 'remove')}
+                          className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium text-white transition-all hover:scale-105 hover:shadow-lg opacity-75 hover:opacity-100"
+                          style={{ backgroundColor: tag.color }}
+                        >
+                          <i className="fas fa-minus mr-2"></i>
+                          {tag.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-12">
+                  <i className="fas fa-tags text-gray-400 dark:text-gray-500 text-5xl mb-3"></i>
+                  <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">
+                    No hay etiquetas disponibles
+                  </h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    Crea etiquetas primero para poder asignarlas a contactos
+                  </p>
+                  <button
+                    onClick={() => {
+                      setShowMassTagModal(false);
+                      handleOpenTagManager();
+                    }}
+                    className="px-6 py-2.5 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-all"
+                  >
+                    Crear Etiquetas
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-gray-100 dark:border-gray-700 flex justify-end">
+              <button
+                onClick={() => setShowMassTagModal(false)}
                 className="px-6 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
               >
                 Cerrar
