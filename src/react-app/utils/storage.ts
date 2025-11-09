@@ -1355,3 +1355,436 @@ export function getDashboardAnalytics(config: CRMConfig): DashboardAnalytics {
     topContacts
   };
 }
+
+// ==========================================
+// FASE 9: Exportación de Reportes
+// ==========================================
+
+/**
+ * Export analytics data to Excel format
+ */
+export function exportAnalyticsToExcel(analytics: DashboardAnalytics, config: CRMConfig): void {
+  // Dynamic import to avoid bundling XLSX if not used
+  import('xlsx').then(XLSX => {
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+
+    // Sheet 1: KPIs Summary
+    const kpisData = [
+      ['REPORTE DE ANALÍTICAS - CHATFLOW PRO'],
+      ['Fecha de generación:', new Date().toLocaleString('es-ES')],
+      [],
+      ['INDICADORES CLAVE (KPIs)'],
+      ['Total Contactos', analytics.kpis.totalContacts],
+      ['Crecimiento vs. 30 días anteriores', `${analytics.kpis.contactsGrowth.toFixed(1)}%`],
+      ['Mensajes Enviados Hoy', analytics.kpis.messagesSentToday],
+      ['Mensajes Enviados (7 días)', analytics.kpis.messagesSentWeek],
+      ['Mensajes Enviados (30 días)', analytics.kpis.messagesSentMonth],
+      ['Contactos Activos', analytics.kpis.activeContacts],
+      ['Contactos Inactivos', analytics.kpis.inactiveContacts],
+      ['Tasa de Respuesta', `${analytics.kpis.averageResponseRate.toFixed(1)}%`]
+    ];
+    const wsKPIs = XLSX.utils.aoa_to_sheet(kpisData);
+    XLSX.utils.book_append_sheet(wb, wsKPIs, 'KPIs');
+
+    // Sheet 2: Contact Growth
+    const contactGrowthData = [
+      ['CRECIMIENTO DE CONTACTOS (30 DÍAS)'],
+      ['Fecha', 'Cantidad de Contactos'],
+      ...analytics.contactGrowth.map(item => [
+        new Date(item.date).toLocaleDateString('es-ES'),
+        item.count
+      ])
+    ];
+    const wsContactGrowth = XLSX.utils.aoa_to_sheet(contactGrowthData);
+    XLSX.utils.book_append_sheet(wb, wsContactGrowth, 'Crecimiento Contactos');
+
+    // Sheet 3: Messages by Day
+    const messagesByDayData = [
+      ['MENSAJES POR DÍA (14 DÍAS)'],
+      ['Fecha', 'Enviados', 'Entregados', 'Fallidos'],
+      ...analytics.messagesByDay.map(item => [
+        new Date(item.date).toLocaleDateString('es-ES'),
+        item.sent,
+        item.delivered,
+        item.failed
+      ])
+    ];
+    const wsMessagesByDay = XLSX.utils.aoa_to_sheet(messagesByDayData);
+    XLSX.utils.book_append_sheet(wb, wsMessagesByDay, 'Mensajes por Día');
+
+    // Sheet 4: Status Distribution
+    const statusData = [
+      ['DISTRIBUCIÓN POR ESTADO'],
+      ['Estado', 'Cantidad', 'Porcentaje'],
+      ...analytics.statusDistribution.map(item => {
+        const total = analytics.statusDistribution.reduce((sum, s) => sum + s.value, 0);
+        const percentage = total > 0 ? ((item.value / total) * 100).toFixed(1) : '0';
+        return [item.name, item.value, `${percentage}%`];
+      })
+    ];
+    const wsStatus = XLSX.utils.aoa_to_sheet(statusData);
+    XLSX.utils.book_append_sheet(wb, wsStatus, 'Distribución Estados');
+
+    // Sheet 5: Template Performance
+    const templateData = [
+      ['RENDIMIENTO DE PLANTILLAS (TOP 10)'],
+      ['Plantilla', 'Enviados', 'Entregados', 'Leídos', 'Fallidos', 'Tasa de Éxito'],
+      ...analytics.templatePerformance.map(item => {
+        const successRate = item.sent > 0 ? ((item.delivered / item.sent) * 100).toFixed(1) : '0';
+        return [
+          item.name,
+          item.sent,
+          item.delivered,
+          item.read,
+          item.failed,
+          `${successRate}%`
+        ];
+      })
+    ];
+    const wsTemplate = XLSX.utils.aoa_to_sheet(templateData);
+    XLSX.utils.book_append_sheet(wb, wsTemplate, 'Rendimiento Plantillas');
+
+    // Sheet 6: Best Hours
+    const hoursData = [
+      ['MEJORES HORARIOS DE ENVÍO'],
+      ['Hora', 'Cantidad de Mensajes'],
+      ...analytics.bestHours.map(item => [
+        `${item.hour}:00`,
+        item.count
+      ])
+    ];
+    const wsHours = XLSX.utils.aoa_to_sheet(hoursData);
+    XLSX.utils.book_append_sheet(wb, wsHours, 'Mejores Horarios');
+
+    // Sheet 7: Best Days
+    const daysData = [
+      ['MEJORES DÍAS DE LA SEMANA'],
+      ['Día', 'Cantidad de Mensajes'],
+      ...analytics.bestDays.map(item => [item.day, item.count])
+    ];
+    const wsDays = XLSX.utils.aoa_to_sheet(daysData);
+    XLSX.utils.book_append_sheet(wb, wsDays, 'Mejores Días');
+
+    // Sheet 8: Top Contacts
+    const contactsData = [
+      ['TOP CONTACTOS (TOP 10)'],
+      ['Nombre', 'ID', 'Cantidad de Mensajes'],
+      ...analytics.topContacts.map(item => [
+        item.name,
+        item.id,
+        item.messageCount
+      ])
+    ];
+    const wsContacts = XLSX.utils.aoa_to_sheet(contactsData);
+    XLSX.utils.book_append_sheet(wb, wsContacts, 'Top Contactos');
+
+    // Generate Excel file
+    const fileName = `analytics_report_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  }).catch(error => {
+    console.error('Error exporting to Excel:', error);
+    throw new Error('Error al exportar a Excel');
+  });
+}
+
+/**
+ * Export complete backup of all data
+ */
+export function exportCompleteBackup(): void {
+  try {
+    const backup = {
+      exportDate: new Date().toISOString(),
+      version: '1.0',
+      data: {
+        config: loadConfig(),
+        crmConfig: loadCRMConfig(),
+        contacts: loadCRMData(),
+        messageHistory: loadMessageHistory(),
+        contactLists: JSON.parse(localStorage.getItem('chatflow_contact_lists') || '[]'),
+        templates: JSON.parse(localStorage.getItem('chatflow_cached_templates') || '[]'),
+        calendarEvents: JSON.parse(localStorage.getItem('chatflow_calendar_events') || '[]')
+      }
+    };
+
+    const dataStr = JSON.stringify(backup, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `chatflow_backup_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Error creating backup:', error);
+    throw new Error('Error al crear backup');
+  }
+}
+
+/**
+ * Import backup data
+ */
+export function importBackup(file: File): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      try {
+        const backup = JSON.parse(e.target?.result as string);
+
+        if (!backup.data) {
+          throw new Error('Formato de backup inválido');
+        }
+
+        // Restore all data
+        if (backup.data.config) {
+          saveConfig(backup.data.config);
+        }
+        if (backup.data.crmConfig) {
+          saveCRMConfig(backup.data.crmConfig);
+        }
+        if (backup.data.contacts) {
+          saveCRMData(backup.data.contacts);
+        }
+        if (backup.data.messageHistory) {
+          saveMessageHistory(backup.data.messageHistory);
+        }
+        if (backup.data.contactLists) {
+          localStorage.setItem('chatflow_contact_lists', JSON.stringify(backup.data.contactLists));
+        }
+        if (backup.data.templates) {
+          localStorage.setItem('chatflow_cached_templates', JSON.stringify(backup.data.templates));
+        }
+        if (backup.data.calendarEvents) {
+          localStorage.setItem('chatflow_calendar_events', JSON.stringify(backup.data.calendarEvents));
+        }
+
+        resolve();
+      } catch (error) {
+        reject(error);
+      }
+    };
+
+    reader.onerror = () => reject(new Error('Error al leer archivo'));
+    reader.readAsText(file);
+  });
+}
+
+/**
+ * Get analytics for custom date range
+ */
+export function getAnalyticsForDateRange(
+  config: CRMConfig,
+  startDate: Date,
+  endDate: Date
+): DashboardAnalytics {
+  const contacts = loadCRMData();
+  const allMessages = loadMessageHistory();
+
+  // Filter messages by date range
+  const messages = allMessages.filter(msg => {
+    const msgDate = new Date(msg.sentAt);
+    return msgDate >= startDate && msgDate <= endDate;
+  });
+
+  // Filter contacts by date range
+  const filteredContacts = contacts.filter(c => {
+    if (!c.createdAt) return false;
+    const contactDate = new Date(c.createdAt);
+    return contactDate >= startDate && contactDate <= endDate;
+  });
+
+  const now = endDate;
+  const totalContacts = filteredContacts.length;
+
+  // Calculate date range duration in days
+  const rangeDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+
+  // For growth comparison, use same duration before start date
+  const previousStart = new Date(startDate);
+  previousStart.setDate(previousStart.getDate() - rangeDays);
+
+  const previousPeriodContacts = contacts.filter(c => {
+    if (!c.createdAt) return false;
+    const contactDate = new Date(c.createdAt);
+    return contactDate >= previousStart && contactDate < startDate;
+  }).length;
+
+  const contactsGrowth = previousPeriodContacts > 0
+    ? ((totalContacts - previousPeriodContacts) / previousPeriodContacts) * 100
+    : 0;
+
+  // Messages counts
+  const messagesSentToday = messages.filter(m => {
+    const sentDate = new Date(m.sentAt);
+    return sentDate.toDateString() === now.toDateString();
+  }).length;
+
+  const last7Days = new Date(now);
+  last7Days.setDate(last7Days.getDate() - 7);
+  const messagesSentWeek = messages.filter(m => new Date(m.sentAt) >= last7Days).length;
+
+  const last30Days = new Date(now);
+  last30Days.setDate(last30Days.getDate() - 30);
+  const messagesSentMonth = messages.filter(m => new Date(m.sentAt) >= last30Days).length;
+
+  // Active contacts in range
+  const contactMessagesMap = new Map<string, Date>();
+  messages.forEach(msg => {
+    const existing = contactMessagesMap.get(msg.contactId);
+    const msgDate = new Date(msg.sentAt);
+    if (!existing || msgDate > existing) {
+      contactMessagesMap.set(msg.contactId, msgDate);
+    }
+  });
+
+  const activeContacts = contactMessagesMap.size;
+  const inactiveContacts = Math.max(0, totalContacts - activeContacts);
+
+  // Response rate
+  const totalSent = messages.length;
+  const totalRead = messages.filter(m => m.status === 'read').length;
+  const averageResponseRate = totalSent > 0 ? (totalRead / totalSent) * 100 : 0;
+
+  // Contact growth chart (daily for range)
+  const contactGrowth: Array<{ date: string; count: number }> = [];
+  for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+    const dateStr = d.toISOString().split('T')[0];
+    const count = contacts.filter(c => {
+      if (!c.createdAt) return false;
+      const contactDate = new Date(c.createdAt);
+      return contactDate <= d;
+    }).length;
+    contactGrowth.push({ date: dateStr, count });
+  }
+
+  // Messages by day
+  const messagesByDay: Array<{ date: string; sent: number; delivered: number; failed: number }> = [];
+  for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+    const dateStr = d.toISOString().split('T')[0];
+    const dayMessages = messages.filter(m => {
+      const msgDate = new Date(m.sentAt);
+      return msgDate.toISOString().split('T')[0] === dateStr;
+    });
+
+    messagesByDay.push({
+      date: dateStr,
+      sent: dayMessages.length,
+      delivered: dayMessages.filter(m => m.status === 'delivered' || m.status === 'read').length,
+      failed: dayMessages.filter(m => m.status === 'failed').length
+    });
+  }
+
+  // Status distribution
+  const statusCounts: Record<string, number> = {};
+  filteredContacts.forEach(contact => {
+    const status = contact.status || 'unknown';
+    statusCounts[status] = (statusCounts[status] || 0) + 1;
+  });
+
+  const statusConfig = config.statuses.reduce((acc, s) => {
+    acc[s.name] = { label: s.label, color: s.color };
+    return acc;
+  }, {} as Record<string, { label: string; color: string }>);
+
+  const colorMap: Record<string, string> = {
+    green: '#10b981',
+    blue: '#3b82f6',
+    yellow: '#f59e0b',
+    red: '#ef4444',
+    purple: '#7c3aed',
+    orange: '#f97316',
+    pink: '#ec4899',
+    gray: '#6b7280'
+  };
+
+  const statusDistribution = Object.entries(statusCounts).map(([status, count]) => ({
+    name: statusConfig[status]?.label || status,
+    value: count,
+    color: colorMap[statusConfig[status]?.color] || '#6b7280'
+  }));
+
+  // Template performance
+  const templateCounts = new Map<string, { sent: number; delivered: number; read: number; failed: number }>();
+  messages.forEach(msg => {
+    const template = msg.templateName || 'unknown';
+    const current = templateCounts.get(template) || { sent: 0, delivered: 0, read: 0, failed: 0 };
+
+    current.sent++;
+    if (msg.status === 'delivered' || msg.status === 'read') current.delivered++;
+    if (msg.status === 'read') current.read++;
+    if (msg.status === 'failed') current.failed++;
+
+    templateCounts.set(template, current);
+  });
+
+  const templatePerformance = Array.from(templateCounts.entries())
+    .map(([name, stats]) => ({ name, ...stats }))
+    .sort((a, b) => b.sent - a.sent)
+    .slice(0, 10);
+
+  // Best hours
+  const hourCounts = new Array(24).fill(0);
+  messages.forEach(msg => {
+    const hour = new Date(msg.sentAt).getHours();
+    hourCounts[hour]++;
+  });
+  const bestHours = hourCounts
+    .map((count, hour) => ({ hour, count }))
+    .filter(h => h.count > 0)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8);
+
+  // Best days
+  const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+  const dayCounts = new Array(7).fill(0);
+  messages.forEach(msg => {
+    const day = new Date(msg.sentAt).getDay();
+    dayCounts[day]++;
+  });
+  const bestDays = dayCounts
+    .map((count, day) => ({ day: dayNames[day], count }))
+    .sort((a, b) => b.count - a.count);
+
+  // Top contacts
+  const contactMessageCounts = new Map<string, number>();
+  messages.forEach(msg => {
+    const count = contactMessageCounts.get(msg.contactId) || 0;
+    contactMessageCounts.set(msg.contactId, count + 1);
+  });
+
+  const topContacts = Array.from(contactMessageCounts.entries())
+    .map(([id, messageCount]) => {
+      const contact = contacts.find(c => c.id === id);
+      const nameField = config.fields.find(f =>
+        f.name.toLowerCase().includes('nombre') ||
+        f.name.toLowerCase().includes('name')
+      );
+      const name = contact && nameField ? contact[nameField.name] : 'Desconocido';
+      return { id, name, messageCount };
+    })
+    .sort((a, b) => b.messageCount - a.messageCount)
+    .slice(0, 10);
+
+  return {
+    kpis: {
+      totalContacts,
+      contactsGrowth,
+      messagesSentToday,
+      messagesSentWeek,
+      messagesSentMonth,
+      activeContacts,
+      inactiveContacts,
+      averageResponseRate
+    },
+    contactGrowth,
+    messagesByDay,
+    statusDistribution,
+    templatePerformance,
+    bestHours,
+    bestDays,
+    topContacts
+  };
+}

@@ -1,5 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
-import { loadConfig, loadCRMData, loadCRMConfig, getDashboardAnalytics, DashboardAnalytics } from '@/react-app/utils/storage';
+import {
+  loadConfig,
+  loadCRMData,
+  loadCRMConfig,
+  getDashboardAnalytics,
+  DashboardAnalytics,
+  exportAnalyticsToExcel,
+  exportCompleteBackup,
+  importBackup,
+  getAnalyticsForDateRange
+} from '@/react-app/utils/storage';
 import { useToast } from '@/react-app/components/Toast';
 import { format, isToday, isBefore, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -46,6 +56,11 @@ export default function Dashboard() {
   const [todayEvents, setTodayEvents] = useState<any[]>([]);
   const [templates, setTemplates] = useState<any[]>([]);
   const [analytics, setAnalytics] = useState<DashboardAnalytics | null>(null);
+  const [analyticsDateStart, setAnalyticsDateStart] = useState('');
+  const [analyticsDateEnd, setAnalyticsDateEnd] = useState('');
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [showBackupModal, setShowBackupModal] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const chartRef = useRef<HTMLCanvasElement>(null);
   const donutChartRef = useRef<HTMLCanvasElement>(null);
   // CRM Chart refs
@@ -150,11 +165,81 @@ export default function Dashboard() {
 
   const loadAnalytics = () => {
     try {
-      const analyticsData = getDashboardAnalytics(crmConfig);
+      let analyticsData;
+
+      if (analyticsDateStart && analyticsDateEnd) {
+        const startDate = new Date(analyticsDateStart);
+        const endDate = new Date(analyticsDateEnd);
+
+        if (startDate > endDate) {
+          showError('La fecha de inicio debe ser anterior a la fecha de fin');
+          return;
+        }
+
+        analyticsData = getAnalyticsForDateRange(crmConfig, startDate, endDate);
+      } else {
+        analyticsData = getDashboardAnalytics(crmConfig);
+      }
+
       setAnalytics(analyticsData);
     } catch (error) {
       console.error('Error loading analytics:', error);
+      showError('Error al cargar analíticas');
     }
+  };
+
+  const handleExportExcel = () => {
+    if (!analytics) {
+      showWarning('No hay datos de analíticas para exportar');
+      return;
+    }
+
+    try {
+      exportAnalyticsToExcel(analytics, crmConfig);
+      showSuccess('Reporte exportado correctamente a Excel');
+      setShowExportModal(false);
+    } catch (error) {
+      console.error('Error exporting to Excel:', error);
+      showError('Error al exportar a Excel');
+    }
+  };
+
+  const handleExportBackup = () => {
+    try {
+      exportCompleteBackup();
+      showSuccess('Backup exportado correctamente');
+      setShowBackupModal(false);
+    } catch (error) {
+      console.error('Error exporting backup:', error);
+      showError('Error al exportar backup');
+    }
+  };
+
+  const handleImportBackup = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    importBackup(file)
+      .then(() => {
+        showSuccess('Backup importado correctamente. Recargando...');
+        setTimeout(() => window.location.reload(), 1500);
+      })
+      .catch((error) => {
+        console.error('Error importing backup:', error);
+        showError('Error al importar backup: ' + error.message);
+      });
+  };
+
+  const handleDateFilterApply = () => {
+    loadAnalytics();
+    showInfo('Analíticas actualizadas con filtro de fecha');
+  };
+
+  const handleDateFilterClear = () => {
+    setAnalyticsDateStart('');
+    setAnalyticsDateEnd('');
+    loadAnalytics();
+    showInfo('Filtros de fecha eliminados');
   };
 
   const loadMetaAnalytics = async () => {
@@ -895,10 +980,85 @@ export default function Dashboard() {
       {/* Advanced Analytics Section */}
       {analytics && (
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
-            <i className="fas fa-chart-line text-indigo-600 dark:text-indigo-400 mr-3"></i>
-            Analíticas Avanzadas
-          </h2>
+          {/* Analytics Header with Export Buttons */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg mb-6">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
+                  <i className="fas fa-chart-line text-indigo-600 dark:text-indigo-400 mr-3"></i>
+                  Analíticas Avanzadas
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                  Análisis completo de rendimiento y métricas
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={() => setShowExportModal(true)}
+                  className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg font-medium hover:from-green-600 hover:to-green-700 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
+                >
+                  <i className="fas fa-file-excel"></i>
+                  <span>Exportar Excel</span>
+                </button>
+
+                <button
+                  onClick={() => setShowBackupModal(true)}
+                  className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
+                >
+                  <i className="fas fa-database"></i>
+                  <span>Backup</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Date Filters */}
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+              <div className="flex flex-wrap items-end gap-4">
+                <div className="flex-1 min-w-[200px]">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Fecha Inicio
+                  </label>
+                  <input
+                    type="date"
+                    value={analyticsDateStart}
+                    onChange={(e) => setAnalyticsDateStart(e.target.value)}
+                    className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-600 transition-colors"
+                  />
+                </div>
+
+                <div className="flex-1 min-w-[200px]">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Fecha Fin
+                  </label>
+                  <input
+                    type="date"
+                    value={analyticsDateEnd}
+                    onChange={(e) => setAnalyticsDateEnd(e.target.value)}
+                    className="w-full px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-600 transition-colors"
+                  />
+                </div>
+
+                <button
+                  onClick={handleDateFilterApply}
+                  disabled={!analyticsDateStart || !analyticsDateEnd}
+                  className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center space-x-2"
+                >
+                  <i className="fas fa-filter"></i>
+                  <span>Aplicar</span>
+                </button>
+
+                {(analyticsDateStart || analyticsDateEnd) && (
+                  <button
+                    onClick={handleDateFilterClear}
+                    className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-all"
+                  >
+                    <i className="fas fa-times"></i>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
 
           {/* KPIs Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -1477,6 +1637,158 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Export Excel Modal */}
+      {showExportModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
+                <i className="fas fa-file-excel text-green-500 mr-3"></i>
+                Exportar Analíticas a Excel
+              </h3>
+              <button
+                onClick={() => setShowExportModal(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                <i className="fas fa-times text-xl"></i>
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
+                Se generará un archivo Excel (.xlsx) con las siguientes hojas:
+              </p>
+              <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
+                <li className="flex items-start">
+                  <i className="fas fa-check text-green-500 mr-2 mt-1"></i>
+                  <span>KPIs principales y métricas clave</span>
+                </li>
+                <li className="flex items-start">
+                  <i className="fas fa-check text-green-500 mr-2 mt-1"></i>
+                  <span>Crecimiento de contactos (30 días)</span>
+                </li>
+                <li className="flex items-start">
+                  <i className="fas fa-check text-green-500 mr-2 mt-1"></i>
+                  <span>Mensajes por día con estados</span>
+                </li>
+                <li className="flex items-start">
+                  <i className="fas fa-check text-green-500 mr-2 mt-1"></i>
+                  <span>Distribución por estado</span>
+                </li>
+                <li className="flex items-start">
+                  <i className="fas fa-check text-green-500 mr-2 mt-1"></i>
+                  <span>Rendimiento de plantillas</span>
+                </li>
+                <li className="flex items-start">
+                  <i className="fas fa-check text-green-500 mr-2 mt-1"></i>
+                  <span>Mejores horarios y días</span>
+                </li>
+                <li className="flex items-start">
+                  <i className="fas fa-check text-green-500 mr-2 mt-1"></i>
+                  <span>Top contactos más activos</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowExportModal(false)}
+                className="flex-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleExportExcel}
+                className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg font-medium hover:from-green-600 hover:to-green-700 transition-all shadow-lg flex items-center justify-center space-x-2"
+              >
+                <i className="fas fa-download"></i>
+                <span>Exportar</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Backup/Restore Modal */}
+      {showBackupModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
+                <i className="fas fa-database text-blue-500 mr-3"></i>
+                Backup y Restauración
+              </h3>
+              <button
+                onClick={() => setShowBackupModal(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                <i className="fas fa-times text-xl"></i>
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
+                Gestiona tus datos del sistema:
+              </p>
+
+              <div className="space-y-4">
+                {/* Export Backup */}
+                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center">
+                    <i className="fas fa-cloud-download-alt text-blue-500 mr-2"></i>
+                    Exportar Backup
+                  </h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                    Descarga un archivo JSON con todos tus datos: contactos, mensajes, configuración, plantillas y eventos.
+                  </p>
+                  <button
+                    onClick={handleExportBackup}
+                    className="w-full bg-blue-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-600 transition-all flex items-center justify-center space-x-2"
+                  >
+                    <i className="fas fa-download"></i>
+                    <span>Descargar Backup</span>
+                  </button>
+                </div>
+
+                {/* Import Backup */}
+                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center">
+                    <i className="fas fa-cloud-upload-alt text-green-500 mr-2"></i>
+                    Restaurar Backup
+                  </h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                    Importa un archivo de backup previo. ⚠️ Esto sobrescribirá todos los datos actuales.
+                  </p>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".json"
+                    onChange={handleImportBackup}
+                    className="hidden"
+                  />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full bg-green-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-600 transition-all flex items-center justify-center space-x-2"
+                  >
+                    <i className="fas fa-upload"></i>
+                    <span>Seleccionar Archivo</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowBackupModal(false)}
+                className="flex-1 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-all"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
