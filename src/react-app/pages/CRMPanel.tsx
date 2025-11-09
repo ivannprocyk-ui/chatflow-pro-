@@ -239,31 +239,40 @@ export default function CRMPanel() {
   };
 
   const handleApplyAutoCleaning = () => {
+    alert('🧹 Iniciando limpieza automática...');
     console.log('=== INICIANDO LIMPIEZA AUTOMÁTICA ===');
     console.log('Total contactos:', contacts.length);
     console.log('Configuración campos:', config.fields.map(f => `${f.name} (${f.type})`));
 
-    const { cleaned, changes } = applyDataCleaning(contacts, config);
+    try {
+      const { cleaned, changes } = applyDataCleaning(contacts, config);
 
-    console.log('=== RESULTADO LIMPIEZA ===');
-    console.log('Cambios aplicados:', changes);
+      console.log('=== RESULTADO LIMPIEZA ===');
+      console.log('Cambios aplicados:', changes);
 
-    if (changes === 0) {
-      showSuccess('✓ No se encontraron problemas de formato para limpiar. Tus datos están limpios.');
-    } else {
-      setContacts(cleaned);
-      saveCRMData(cleaned);
-      showSuccess(`✓ Se limpiaron ${changes} problema${changes > 1 ? 's' : ''} de formato (revisa la consola para detalles)`);
+      if (changes === 0) {
+        alert('✓ No se encontraron problemas de formato. Tus datos están limpios.');
+        showSuccess('✓ No se encontraron problemas de formato para limpiar. Tus datos están limpios.');
+      } else {
+        setContacts(cleaned);
+        saveCRMData(cleaned);
+        alert(`✓ Se limpiaron ${changes} problemas de formato. Revisa la consola para detalles.`);
+        showSuccess(`✓ Se limpiaron ${changes} problema${changes > 1 ? 's' : ''} de formato (revisa la consola para detalles)`);
+      }
+
+      // Re-analyze after cleaning
+      const validationResults = validateContactData(cleaned, config);
+      const duplicateResults = findDuplicateContacts(cleaned, config);
+      setValidationIssues([...validationResults, ...duplicateResults]);
+
+      console.log('=== NUEVO ANÁLISIS ===');
+      console.log('Issues de validación:', validationResults.length);
+      console.log('Issues de duplicados:', duplicateResults.length);
+    } catch (error) {
+      console.error('Error en limpieza:', error);
+      alert('❌ Error al aplicar limpieza: ' + error);
+      showError('Error al aplicar limpieza automática');
     }
-
-    // Re-analyze after cleaning
-    const validationResults = validateContactData(cleaned, config);
-    const duplicateResults = findDuplicateContacts(cleaned, config);
-    setValidationIssues([...validationResults, ...duplicateResults]);
-
-    console.log('=== NUEVO ANÁLISIS ===');
-    console.log('Issues de validación:', validationResults.length);
-    console.log('Issues de duplicados:', duplicateResults.length);
   };
 
   const handleMergeContacts = (keepContactId: string, mergeContactId: string) => {
@@ -288,6 +297,32 @@ export default function CRMPanel() {
     const validationResults = validateContactData(updatedContacts, config);
     const duplicateResults = findDuplicateContacts(updatedContacts, config);
     setValidationIssues([...validationResults, ...duplicateResults]);
+  };
+
+  const handleDeleteDuplicate = (contactId: string) => {
+    const contact = contacts.find(c => c.id === contactId);
+    if (!contact) {
+      showError('No se encontró el contacto para eliminar');
+      return;
+    }
+
+    const nameField = config.fields.find(f =>
+      f.name.toLowerCase().includes('nombre') ||
+      f.name.toLowerCase().includes('name')
+    );
+    const contactName = nameField ? contact[nameField.name] : 'este contacto';
+
+    if (confirm(`¿Estás seguro de eliminar "${contactName}"? Esta acción no se puede deshacer.`)) {
+      const updatedContacts = contacts.filter(c => c.id !== contactId);
+      setContacts(updatedContacts);
+      saveCRMData(updatedContacts);
+      showSuccess(`Contacto "${contactName}" eliminado exitosamente`);
+
+      // Re-analyze after delete
+      const validationResults = validateContactData(updatedContacts, config);
+      const duplicateResults = findDuplicateContacts(updatedContacts, config);
+      setValidationIssues([...validationResults, ...duplicateResults]);
+    }
   };
 
   const handleAddToList = () => {
@@ -2482,15 +2517,24 @@ export default function CRMPanel() {
                                             )}
                                           </div>
                                         </div>
-                                        {idx === 0 && duplicateContacts.length > 1 && (
+                                        <div className="ml-4 flex flex-col gap-2">
+                                          {idx === 0 && duplicateContacts.length > 1 && (
+                                            <button
+                                              onClick={() => handleMergeContacts(contact.id, duplicateContacts[1].id)}
+                                              className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-all flex items-center"
+                                            >
+                                              <i className="fas fa-compress-arrows-alt mr-2"></i>
+                                              Fusionar
+                                            </button>
+                                          )}
                                           <button
-                                            onClick={() => handleMergeContacts(contact.id, duplicateContacts[1].id)}
-                                            className="ml-4 px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-all"
+                                            onClick={() => handleDeleteDuplicate(contact.id)}
+                                            className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-all flex items-center"
                                           >
-                                            <i className="fas fa-compress-arrows-alt mr-2"></i>
-                                            Fusionar
+                                            <i className="fas fa-trash mr-2"></i>
+                                            Eliminar
                                           </button>
-                                        )}
+                                        </div>
                                       </div>
                                     );
                                   })}
