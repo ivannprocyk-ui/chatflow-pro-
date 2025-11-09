@@ -461,6 +461,15 @@ export default function CRMPanel() {
     return colors[hash % colors.length];
   };
 
+  // Helper function to get contact display name
+  const getContactName = (contact: any) => {
+    const nameField = config.fields.find(f =>
+      f.name.toLowerCase().includes('nombre') ||
+      f.name.toLowerCase().includes('name')
+    );
+    return nameField ? contact[nameField.name] || 'Sin nombre' : 'Sin nombre';
+  };
+
   return (
     <div className="p-6 w-full transition-colors duration-300">
       {/* Header */}
@@ -831,11 +840,9 @@ export default function CRMPanel() {
                         {getContactInitials(contact)}
                       </div>
                       {/* Name */}
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
-                          {config.fields.find(f => f.name.toLowerCase().includes('nombre') || f.name.toLowerCase().includes('name'))
-                            ? contact[config.fields.find(f => f.name.toLowerCase().includes('nombre') || f.name.toLowerCase().includes('name'))!.name]
-                            : 'Sin nombre'}
+                          {getContactName(contact)}
                         </h4>
                         <div className="mt-1">
                           {getStatusBadge(contact.status)}
@@ -947,10 +954,8 @@ export default function CRMPanel() {
                 <div className="flex-1 ml-4 grid grid-cols-1 md:grid-cols-5 gap-3 items-center">
                   {/* Name + Status */}
                   <div className="md:col-span-2">
-                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                      {config.fields.find(f => f.name.toLowerCase().includes('nombre') || f.name.toLowerCase().includes('name'))
-                        ? contact[config.fields.find(f => f.name.toLowerCase().includes('nombre') || f.name.toLowerCase().includes('name'))!.name]
-                        : 'Sin nombre'}
+                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                      {getContactName(contact)}
                     </h4>
                     <div className="mt-1">
                       {getStatusBadge(contact.status)}
@@ -1046,21 +1051,19 @@ export default function CRMPanel() {
                         >
                           {/* Card Header */}
                           <div className="flex items-start justify-between mb-2">
-                            <div className="flex items-center space-x-2">
-                              <div className={`w-8 h-8 rounded-full ${getAvatarColor(contact)} flex items-center justify-center text-white font-bold text-xs`}>
+                            <div className="flex items-center space-x-2 flex-1 min-w-0">
+                              <div className={`w-8 h-8 flex-shrink-0 rounded-full ${getAvatarColor(contact)} flex items-center justify-center text-white font-bold text-xs`}>
                                 {getContactInitials(contact)}
                               </div>
                               <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
-                                {config.fields.find(f => f.name.toLowerCase().includes('nombre') || f.name.toLowerCase().includes('name'))
-                                  ? contact[config.fields.find(f => f.name.toLowerCase().includes('nombre') || f.name.toLowerCase().includes('name'))!.name]
-                                  : 'Sin nombre'}
+                                {getContactName(contact)}
                               </h4>
                             </div>
                             <input
                               type="checkbox"
                               checked={selectedContacts.has(contact.id)}
                               onChange={(e) => handleSelectContact(contact.id, e.target.checked)}
-                              className="h-3.5 w-3.5 rounded border-gray-300 dark:border-gray-600 text-blue-600"
+                              className="h-3.5 w-3.5 flex-shrink-0 rounded border-gray-300 dark:border-gray-600 text-blue-600"
                             />
                           </div>
 

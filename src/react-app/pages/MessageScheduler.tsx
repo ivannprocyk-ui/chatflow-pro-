@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
-import { loadScheduledMessages, saveScheduledMessages, loadContactLists, loadConfig } from '@/react-app/utils/storage';
+import { loadScheduledMessages, saveScheduledMessages, loadContactLists, loadConfig, loadCRMData } from '@/react-app/utils/storage';
 import { useToast } from '@/react-app/components/Toast';
+import ContactSelector from '@/react-app/components/ContactSelector';
 
 interface ScheduledMessage {
   id: string;
   campaignName: string;
   scheduledDate: string;
   scheduledTime: string;
-  contactListId: string;
-  contactListName: string;
+  contactListId?: string; // Para retrocompatibilidad con listas
+  contactListName?: string;
+  contactIds?: string[]; // Para selección directa de contactos
   contactCount: number;
   template: string;
   status: 'pending' | 'sent' | 'cancelled';
@@ -32,8 +34,11 @@ export default function MessageScheduler() {
     scheduledDate: '',
     scheduledTime: '',
     contactListId: '',
+    contactIds: [] as string[],
+    selectionMode: 'list' as 'list' | 'contacts', // Modo de selección
     template: ''
   });
+  const [showContactSelector, setShowContactSelector] = useState(false);
   const config = loadConfig();
   const { showSuccess, showError } = useToast();
 
@@ -54,21 +59,49 @@ export default function MessageScheduler() {
   }, []);
 
   const handleScheduleMessage = () => {
-    if (!newSchedule.campaignName || !newSchedule.scheduledDate || !newSchedule.scheduledTime || !newSchedule.contactListId || !newSchedule.template) {
+    if (!newSchedule.campaignName || !newSchedule.scheduledDate || !newSchedule.scheduledTime || !newSchedule.template) {
       showError('Por favor completa todos los campos');
       return;
     }
 
-    const selectedList = contactLists.find(list => list.id === newSchedule.contactListId);
+    // Validar que haya contactos seleccionados (ya sea por lista o selección directa)
+    const hasContactsSelected =
+      (newSchedule.selectionMode === 'list' && newSchedule.contactListId) ||
+      (newSchedule.selectionMode === 'contacts' && newSchedule.contactIds.length > 0);
+
+    if (!hasContactsSelected) {
+      showError('Por favor selecciona al menos un contacto o una lista');
+      return;
+    }
+
+    let contactCount = 0;
+    let contactListName = '';
+
+    if (newSchedule.selectionMode === 'list') {
+      const selectedList = contactLists.find(list => list.id === newSchedule.contactListId);
+      contactCount = selectedList?.contacts?.length || 0;
+      contactListName = selectedList?.name || 'Lista desconocida';
+    } else {
+      contactCount = newSchedule.contactIds.length;
+      contactListName = 'Selección personalizada';
+    }
 
     const scheduledMessage: ScheduledMessage = {
       id: Date.now().toString(),
       campaignName: newSchedule.campaignName,
       scheduledDate: newSchedule.scheduledDate,
       scheduledTime: newSchedule.scheduledTime,
-      contactListId: newSchedule.contactListId,
-      contactListName: selectedList?.name || 'Lista desconocida',
-      contactCount: selectedList?.contacts?.length || 0,
+      ...(newSchedule.selectionMode === 'list'
+        ? {
+            contactListId: newSchedule.contactListId,
+            contactListName: contactListName
+          }
+        : {
+            contactIds: newSchedule.contactIds,
+            contactListName: contactListName
+          }
+      ),
+      contactCount: contactCount,
       template: newSchedule.template,
       status: 'pending',
       createdAt: new Date().toISOString()
@@ -78,7 +111,7 @@ export default function MessageScheduler() {
     setScheduledMessages(updatedMessages);
     saveScheduledMessages(updatedMessages);
 
-    showSuccess(`Campaña "${newSchedule.campaignName}" programada exitosamente`);
+    showSuccess(`Campaña "${newSchedule.campaignName}" programada exitosamente con ${contactCount} contactos`);
 
     setShowModal(false);
     setNewSchedule({
@@ -86,7 +119,17 @@ export default function MessageScheduler() {
       scheduledDate: '',
       scheduledTime: '',
       contactListId: '',
+      contactIds: [],
+      selectionMode: 'list',
       template: ''
+    });
+  };
+
+  const handleContactSelectionConfirm = (selectedIds: string[]) => {
+    setNewSchedule({
+      ...newSchedule,
+      contactIds: selectedIds,
+      selectionMode: 'contacts'
     });
   };
 
@@ -346,22 +389,95 @@ export default function MessageScheduler() {
                 </div>
               </div>
 
+              {/* Contact Selection Section */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Lista de Contactos <span className="text-red-500 dark:text-red-400">*</span>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  Destinatarios <span className="text-red-500 dark:text-red-400">*</span>
                 </label>
-                <select
-                  value={newSchedule.contactListId}
-                  onChange={(e) => setNewSchedule({ ...newSchedule, contactListId: e.target.value })}
-                  className="w-full p-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-colors duration-300"
-                >
-                  <option value="">Selecciona una lista</option>
-                  {contactLists.map((list) => (
-                    <option key={list.id} value={list.id}>
-                      {list.name} ({list.contacts?.length || 0} contactos)
-                    </option>
-                  ))}
-                </select>
+
+                {/* Selection Mode Tabs */}
+                <div className="flex space-x-2 mb-4">
+                  <button
+                    type="button"
+                    onClick={() => setNewSchedule({ ...newSchedule, selectionMode: 'list', contactIds: [] })}
+                    className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+                      newSchedule.selectionMode === 'list'
+                        ? 'bg-blue-600 text-white shadow-md'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    }`}
+                  >
+                    <i className="fas fa-list mr-2"></i>
+                    Lista Existente
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewSchedule({ ...newSchedule, selectionMode: 'contacts', contactListId: '' })}
+                    className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+                      newSchedule.selectionMode === 'contacts'
+                        ? 'bg-blue-600 text-white shadow-md'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    }`}
+                  >
+                    <i className="fas fa-user-friends mr-2"></i>
+                    Selección Avanzada
+                  </button>
+                </div>
+
+                {/* List Selection Mode */}
+                {newSchedule.selectionMode === 'list' && (
+                  <select
+                    value={newSchedule.contactListId}
+                    onChange={(e) => setNewSchedule({ ...newSchedule, contactListId: e.target.value })}
+                    className="w-full p-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-colors duration-300"
+                  >
+                    <option value="">Selecciona una lista</option>
+                    {contactLists.map((list) => (
+                      <option key={list.id} value={list.id}>
+                        {list.name} ({list.contacts?.length || 0} contactos)
+                      </option>
+                    ))}
+                  </select>
+                )}
+
+                {/* Advanced Contact Selection Mode */}
+                {newSchedule.selectionMode === 'contacts' && (
+                  <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-700/50">
+                    {newSchedule.contactIds.length > 0 ? (
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            <i className="fas fa-check-circle text-green-600 mr-2"></i>
+                            {newSchedule.contactIds.length} contacto(s) seleccionado(s)
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setShowContactSelector(true)}
+                            className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                          >
+                            Modificar selección
+                          </button>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setNewSchedule({ ...newSchedule, contactIds: [] })}
+                          className="text-sm text-red-600 dark:text-red-400 hover:underline"
+                        >
+                          <i className="fas fa-times mr-1"></i>
+                          Limpiar selección
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setShowContactSelector(true)}
+                        className="w-full py-3 px-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 transition-all flex items-center justify-center space-x-2"
+                      >
+                        <i className="fas fa-users"></i>
+                        <span>Seleccionar Contactos</span>
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div>
@@ -406,6 +522,17 @@ export default function MessageScheduler() {
           </div>
         </div>
       )}
+
+      {/* Contact Selector Modal */}
+      <ContactSelector
+        isOpen={showContactSelector}
+        onClose={() => setShowContactSelector(false)}
+        onConfirm={handleContactSelectionConfirm}
+        initialSelectedIds={newSchedule.contactIds}
+        title="Seleccionar Contactos para Campaña"
+        confirmText="Confirmar Selección"
+        multiSelect={true}
+      />
     </div>
   );
 }
