@@ -10,7 +10,6 @@ export default function Login() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
   // 3D Tilt effect
   useEffect(() => {
@@ -23,11 +22,10 @@ export default function Login() {
       const y = e.clientY - rect.top;
       const centerX = rect.width / 2;
       const centerY = rect.height / 2;
-      const rotateX = ((y - centerY) / centerY) * -10;
-      const rotateY = ((x - centerX) / centerX) * 10;
+      const rotateX = ((y - centerY) / centerY) * -5;
+      const rotateY = ((x - centerX) / centerX) * 5;
 
-      setMousePosition({ x, y });
-      card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+      card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.01, 1.01, 1.01)`;
     };
 
     const handleMouseLeave = () => {
@@ -52,7 +50,8 @@ export default function Login() {
       await login(email, password);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'Error al iniciar sesión');
+      console.error('Login error:', err);
+      setError(err.message || 'Credenciales inválidas. Por favor registra una nueva cuenta.');
     } finally {
       setIsLoading(false);
     }
@@ -60,55 +59,53 @@ export default function Login() {
 
   return (
     <div className="min-h-screen relative overflow-hidden flex items-center justify-center px-4">
-      {/* Animated Gradient Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-500 animate-gradient-xy"></div>
+      {/* Simple Gradient Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-blue-600 to-cyan-500"></div>
 
-      {/* Animated Mesh Pattern */}
-      <div className="absolute inset-0 opacity-30">
-        <div className="absolute top-0 -left-4 w-96 h-96 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
-        <div className="absolute top-0 -right-4 w-96 h-96 bg-cyan-400 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
-        <div className="absolute -bottom-8 left-20 w-96 h-96 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
+      {/* Decorative Circles (Static) */}
+      <div className="absolute top-20 left-10 w-72 h-72 bg-purple-400/20 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-20 right-10 w-96 h-96 bg-cyan-400/20 rounded-full blur-3xl"></div>
+
+      {/* Beautiful WhatsApp/Chat Illustration */}
+      <div className="absolute top-10 right-10 hidden lg:block opacity-20">
+        <svg width="300" height="300" viewBox="0 0 200 200" fill="none">
+          <circle cx="100" cy="100" r="80" fill="white" opacity="0.1"/>
+          <path d="M100 40c33.137 0 60 26.863 60 60s-26.863 60-60 60-60-26.863-60-60 26.863-60 60-60z" fill="white" opacity="0.15"/>
+          <path d="M70 90h60M70 110h40" stroke="white" strokeWidth="4" strokeLinecap="round" opacity="0.3"/>
+        </svg>
       </div>
 
-      {/* Floating Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(6)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute text-white/10 animate-float"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${i * 0.5}s`,
-              fontSize: `${Math.random() * 40 + 20}px`,
-            }}
-          >
-            {['💬', '🚀', '⚡', '✨', '🎯', '💡'][i]}
-          </div>
-        ))}
+      {/* Left side illustration */}
+      <div className="absolute bottom-10 left-10 hidden lg:block opacity-15">
+        <svg width="250" height="250" viewBox="0 0 100 100" fill="none">
+          <rect x="20" y="30" width="60" height="50" rx="10" fill="white" opacity="0.3"/>
+          <circle cx="35" cy="45" r="5" fill="white" opacity="0.5"/>
+          <circle cx="50" cy="45" r="5" fill="white" opacity="0.5"/>
+          <circle cx="65" cy="45" r="5" fill="white" opacity="0.5"/>
+        </svg>
       </div>
 
       {/* Login Card with 3D Effect */}
       <div className="relative z-10 w-full max-w-md">
         <div
           ref={cardRef}
-          className="relative bg-white/10 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white/20 transition-all duration-300 ease-out"
+          className="relative bg-white/10 backdrop-blur-2xl rounded-3xl shadow-2xl p-8 border border-white/20"
           style={{
             transformStyle: 'preserve-3d',
             transition: 'transform 0.1s ease-out',
           }}
         >
           {/* Glow Effect */}
-          <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-purple-400/20 via-blue-400/20 to-cyan-400/20 blur-xl"></div>
+          <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-purple-400/10 via-blue-400/10 to-cyan-400/10 blur-xl"></div>
 
           {/* Content */}
-          <div className="relative" style={{ transform: 'translateZ(50px)' }}>
+          <div className="relative">
             {/* Logo & Title */}
             <div className="text-center mb-8">
-              <div className="inline-block mb-4 animate-bounce-slow">
-                <div className="text-6xl filter drop-shadow-2xl">🚀</div>
+              <div className="inline-block mb-4">
+                <div className="text-6xl">💬</div>
               </div>
-              <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-lg">
+              <h1 className="text-4xl font-bold text-white mb-2">
                 ChatFlow Pro
               </h1>
               <p className="text-white/80 text-lg">
@@ -116,7 +113,7 @@ export default function Login() {
               </p>
               <div className="mt-4 flex items-center justify-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
-                <span className="text-white/60 text-sm">Powered by AI</span>
+                <span className="text-white/60 text-sm">Sistema Inteligente</span>
               </div>
             </div>
 
@@ -130,7 +127,7 @@ export default function Login() {
             {/* Login Form */}
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="group">
-                <label className="block text-sm font-medium text-white/90 mb-2 group-hover:text-white transition-colors">
+                <label className="block text-sm font-medium text-white/90 mb-2">
                   Email
                 </label>
                 <div className="relative">
@@ -139,7 +136,7 @@ export default function Login() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="w-full px-4 py-3 bg-white/10 backdrop-blur-sm border border-white/30 rounded-xl text-white placeholder-white/50 focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all duration-300 outline-none hover:bg-white/20"
+                    className="w-full px-4 py-3 bg-white/10 backdrop-blur-sm border border-white/30 rounded-xl text-white placeholder-white/50 focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all duration-300 outline-none"
                     placeholder="tu@email.com"
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40">
@@ -151,7 +148,7 @@ export default function Login() {
               </div>
 
               <div className="group">
-                <label className="block text-sm font-medium text-white/90 mb-2 group-hover:text-white transition-colors">
+                <label className="block text-sm font-medium text-white/90 mb-2">
                   Contraseña
                 </label>
                 <div className="relative">
@@ -160,7 +157,7 @@ export default function Login() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="w-full px-4 py-3 bg-white/10 backdrop-blur-sm border border-white/30 rounded-xl text-white placeholder-white/50 focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all duration-300 outline-none hover:bg-white/20"
+                    className="w-full px-4 py-3 bg-white/10 backdrop-blur-sm border border-white/30 rounded-xl text-white placeholder-white/50 focus:ring-2 focus:ring-cyan-400 focus:border-transparent transition-all duration-300 outline-none"
                     placeholder="••••••••"
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40">
@@ -176,9 +173,6 @@ export default function Login() {
                 disabled={isLoading}
                 className="relative w-full bg-gradient-to-r from-purple-500 via-blue-500 to-cyan-500 text-white py-4 rounded-xl font-bold text-lg overflow-hidden group hover:shadow-2xl hover:shadow-cyan-500/50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed mt-6"
               >
-                {/* Shimmer Effect */}
-                <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
-
                 <span className="relative flex items-center justify-center gap-2">
                   {isLoading ? (
                     <>
@@ -186,7 +180,7 @@ export default function Login() {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                       </svg>
-                      Iniciando sesión...
+                      Iniciando...
                     </>
                   ) : (
                     <>
@@ -200,7 +194,7 @@ export default function Login() {
               </button>
             </form>
 
-            {/* Demo Credentials */}
+            {/* Info Box */}
             <div className="mt-6 p-4 bg-blue-500/20 backdrop-blur-sm rounded-xl border border-blue-400/30">
               <div className="flex items-start gap-2">
                 <div className="text-blue-300 mt-0.5">
@@ -210,11 +204,10 @@ export default function Login() {
                 </div>
                 <div>
                   <p className="text-sm text-blue-200 font-medium mb-1">
-                    Cuenta Demo:
+                    ¿Primera vez aquí?
                   </p>
-                  <p className="text-xs text-blue-100/80 font-mono">
-                    📧 demo@pizzeria.com<br />
-                    🔒 demo123
+                  <p className="text-xs text-blue-100/80">
+                    Crea tu cuenta gratis para empezar a usar WhatsApp con IA
                   </p>
                 </div>
               </div>
@@ -228,7 +221,7 @@ export default function Login() {
                   to="/register"
                   className="text-cyan-300 font-semibold hover:text-cyan-200 transition-colors underline-offset-4 hover:underline"
                 >
-                  Regístrate aquí
+                  Regístrate gratis
                 </Link>
               </p>
             </div>
@@ -236,81 +229,15 @@ export default function Login() {
         </div>
 
         {/* Bottom Glow */}
-        <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-64 h-64 bg-cyan-500/30 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-64 h-32 bg-cyan-500/20 rounded-full blur-3xl"></div>
       </div>
 
-      {/* Custom CSS for animations */}
+      {/* Custom CSS */}
       <style>{`
-        @keyframes gradient-xy {
-          0%, 100% {
-            background-position: 0% 50%;
-          }
-          50% {
-            background-position: 100% 50%;
-          }
-        }
-
-        @keyframes blob {
-          0%, 100% {
-            transform: translate(0, 0) scale(1);
-          }
-          33% {
-            transform: translate(30px, -50px) scale(1.1);
-          }
-          66% {
-            transform: translate(-20px, 20px) scale(0.9);
-          }
-        }
-
-        @keyframes float {
-          0%, 100% {
-            transform: translateY(0px) rotate(0deg);
-            opacity: 0.3;
-          }
-          50% {
-            transform: translateY(-20px) rotate(180deg);
-            opacity: 0.6;
-          }
-        }
-
-        @keyframes bounce-slow {
-          0%, 100% {
-            transform: translateY(0);
-          }
-          50% {
-            transform: translateY(-10px);
-          }
-        }
-
         @keyframes shake {
           0%, 100% { transform: translateX(0); }
           10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
           20%, 40%, 60%, 80% { transform: translateX(5px); }
-        }
-
-        .animate-gradient-xy {
-          background-size: 200% 200%;
-          animation: gradient-xy 15s ease infinite;
-        }
-
-        .animate-blob {
-          animation: blob 7s infinite;
-        }
-
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-
-        .animation-delay-4000 {
-          animation-delay: 4s;
-        }
-
-        .animate-float {
-          animation: float 6s ease-in-out infinite;
-        }
-
-        .animate-bounce-slow {
-          animation: bounce-slow 3s ease-in-out infinite;
         }
 
         .animate-shake {
