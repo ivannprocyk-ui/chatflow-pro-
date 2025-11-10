@@ -53,7 +53,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string) => {
     try {
+      console.log('[AuthContext] Attempting login with:', { email });
+      console.log('[AuthContext] API URL:', import.meta.env.VITE_API_URL || 'http://localhost:3001/api');
+
       const response = await authAPI.login({ email, password });
+      console.log('[AuthContext] Login response received:', response.status);
+
       const { user, organization, accessToken } = response.data;
 
       localStorage.setItem('accessToken', accessToken);
@@ -62,14 +67,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setUser(user);
       setOrganization(organization);
+
+      console.log('[AuthContext] Login successful');
     } catch (error: any) {
+      console.error('[AuthContext] Login error:', error);
+      console.error('[AuthContext] Error response:', error.response?.data);
+      console.error('[AuthContext] Error status:', error.response?.status);
       throw new Error(error.response?.data?.message || 'Login failed');
     }
   };
 
   const register = async (email: string, password: string, organizationName: string) => {
     try {
+      console.log('[AuthContext] Attempting register with:', { email, organizationName });
+      console.log('[AuthContext] API URL:', import.meta.env.VITE_API_URL || 'http://localhost:3001/api');
+
       const response = await authAPI.register({ email, password, organizationName });
+      console.log('[AuthContext] Register response received:', response.status);
+
       const { user, organization, accessToken } = response.data;
 
       localStorage.setItem('accessToken', accessToken);
@@ -78,7 +93,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setUser(user);
       setOrganization(organization);
+
+      console.log('[AuthContext] Registration successful');
     } catch (error: any) {
+      console.error('[AuthContext] Register error:', error);
+      console.error('[AuthContext] Error response:', error.response?.data);
+      console.error('[AuthContext] Error status:', error.response?.status);
       throw new Error(error.response?.data?.message || 'Registration failed');
     }
   };
