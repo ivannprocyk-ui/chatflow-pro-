@@ -13,7 +13,7 @@ export class AuthService {
       id: '1',
       organizationId: '1',
       email: 'demo@pizzeria.com',
-      passwordHash: '$2b$10$YQ7qvPxLGvJYxBZ3d.Kg3OfqY.VQ6vPYxBZ3d.Kg3OfqY.VQ6vPYxB', // password: demo123
+      passwordHash: '$2b$10$8V8BlIVzRjqh5h3QXj.v2eHlUG4/qN7fpNtNeW5Be2wEupXfYfOiu', // password: demo123
       role: 'admin',
       isActive: true,
       createdAt: new Date('2024-01-01'),
