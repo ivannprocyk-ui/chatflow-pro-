@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { ToastContainer } from './components/Toast';
+import { ToastContainer, useToast } from './components/Toast';
 import { useEffect } from 'react';
 
 // Auth pages
@@ -45,6 +45,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 // Main App Layout
 function AppLayout({ children }: { children: React.ReactNode }) {
+  const { toasts, removeToast } = useToast();
+
   useEffect(() => {
     // Apply dark mode from localStorage
     const darkMode = localStorage.getItem('dark_mode') === 'true';
@@ -59,7 +61,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
       <main className="flex-1 overflow-auto">
         {children}
       </main>
-      <ToastContainer />
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
     </div>
   );
 }
