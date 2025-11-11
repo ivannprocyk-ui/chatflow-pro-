@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ErrorBoundary } from './ErrorBoundary';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from '../Dashboard';
@@ -34,6 +35,9 @@ function ProtectedLayout() {
   const [config, setConfig] = useState(loadConfig());
   const { toasts, removeToast } = useToast();
 
+  console.log('[ProtectedLayout] Rendering, user:', user);
+  console.log('[ProtectedLayout] Current section:', currentSection);
+
   useEffect(() => {
     // Apply custom colors to CSS variables
     const root = document.documentElement;
@@ -54,10 +58,12 @@ function ProtectedLayout() {
   }
 
   if (!user) {
+    console.log('[ProtectedLayout] No user, redirecting to login');
     return <Navigate to="/login" replace />;
   }
 
   const renderCurrentSection = () => {
+    console.log('[ProtectedLayout] Rendering section:', currentSection);
     switch (currentSection) {
       case 'dashboard':
         return <Dashboard />;
@@ -83,33 +89,38 @@ function ProtectedLayout() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
-      <Sidebar
-        currentSection={currentSection}
-        onSectionChange={setCurrentSection}
-        isOpen={sidebarOpen}
-        onToggle={() => setSidebarOpen(!sidebarOpen)}
-        config={config}
-      />
-      <main className="flex-1 overflow-auto">
-        {renderCurrentSection()}
-      </main>
-      <ToastContainer toasts={toasts} removeToast={removeToast} />
-    </div>
+    <ErrorBoundary>
+      <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+        <Sidebar
+          currentSection={currentSection}
+          onSectionChange={setCurrentSection}
+          isOpen={sidebarOpen}
+          onToggle={() => setSidebarOpen(!sidebarOpen)}
+          config={config}
+        />
+        <main className="flex-1 overflow-auto">
+          {renderCurrentSection()}
+        </main>
+        <ToastContainer toasts={toasts} removeToast={removeToast} />
+      </div>
+    </ErrorBoundary>
   );
 }
 
 export default function AppNew() {
+  console.log('[AppNew] Rendering');
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/dashboard" element={<ProtectedLayout />} />
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </AuthProvider>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <AuthProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/dashboard" element={<ProtectedLayout />} />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </AuthProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
