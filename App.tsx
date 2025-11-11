@@ -10,6 +10,7 @@ import MessageScheduler from "@/react-app/pages/MessageScheduler";
 import Templates from "@/react-app/pages/Templates";
 import Configuration from "@/react-app/pages/Configuration";
 import { loadConfig } from "@/react-app/utils/storage";
+import { useToast, ToastContainer } from "@/react-app/components/Toast";
 
 export type AppSection = 
   | 'dashboard' 
@@ -26,6 +27,7 @@ export default function App() {
   const [currentSection, setCurrentSection] = useState<AppSection>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [config, setConfig] = useState(loadConfig());
+  const { toasts, removeToast } = useToast();
 
   useEffect(() => {
     // Apply custom colors to CSS variables
@@ -62,7 +64,9 @@ export default function App() {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar 
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
+
+      <Sidebar
         isOpen={sidebarOpen}
         currentSection={currentSection}
         onSectionChange={setCurrentSection}
