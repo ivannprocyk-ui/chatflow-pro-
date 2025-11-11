@@ -25,6 +25,24 @@ const contactLists: any[] = [];
 const contacts: any[] = [];
 const campaigns: any[] = [];
 
+// Mock users for authentication (replace with real database later)
+const users: any[] = [
+  {
+    id: '1',
+    email: 'demo@pizzeria.com',
+    password: 'demo123', // In production, this would be hashed
+    organizationId: '1',
+    role: 'admin',
+  },
+];
+
+const organizations: any[] = [
+  {
+    id: '1',
+    name: 'Pizzeria Demo',
+  },
+];
+
 let nextId = 1;
 
 const app = new Hono();
@@ -34,6 +52,81 @@ app.use('*', cors());
 // Health check
 app.get('/api/health', (c) => {
   return c.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Authentication API
+app.post('/api/auth/login', zValidator('json', z.object({
+  email: z.string().email(),
+  password: z.string(),
+})), async (c) => {
+  const { email, password } = c.req.valid('json');
+
+  const user = users.find(u => u.email === email && u.password === password);
+
+  if (!user) {
+    return c.json({ message: 'Invalid credentials' }, 401);
+  }
+
+  const organization = organizations.find(o => o.id === user.organizationId);
+
+  // Simple JWT-like token (in production, use proper JWT library)
+  const accessToken = `token_${user.id}_${Date.now()}`;
+
+  return c.json({
+    user: {
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      organizationId: user.organizationId,
+    },
+    organization,
+    accessToken,
+  });
+});
+
+app.post('/api/auth/register', zValidator('json', z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+  organizationName: z.string().min(1),
+})), async (c) => {
+  const { email, password, organizationName } = c.req.valid('json');
+
+  // Check if user already exists
+  const existingUser = users.find(u => u.email === email);
+  if (existingUser) {
+    return c.json({ message: 'User already exists' }, 400);
+  }
+
+  // Create new organization
+  const newOrg = {
+    id: String(nextId++),
+    name: organizationName,
+  };
+  organizations.push(newOrg);
+
+  // Create new user
+  const newUser = {
+    id: String(nextId++),
+    email,
+    password, // In production, hash this
+    organizationId: newOrg.id,
+    role: 'admin',
+  };
+  users.push(newUser);
+
+  // Simple JWT-like token
+  const accessToken = `token_${newUser.id}_${Date.now()}`;
+
+  return c.json({
+    user: {
+      id: newUser.id,
+      email: newUser.email,
+      role: newUser.role,
+      organizationId: newUser.organizationId,
+    },
+    organization: newOrg,
+    accessToken,
+  }, 201);
 });
 
 // Conversations API
