@@ -15,7 +15,7 @@ import Configuration from '../Configuration';
 import Sidebar from '../Sidebar';
 import { useToast, ToastContainer } from '../Toast';
 import { useState, useEffect } from 'react';
-import { loadConfig } from '../storage';
+import { loadConfig, AppConfig } from '../storage';
 
 type AppSection =
   | 'dashboard'
@@ -28,22 +28,50 @@ type AppSection =
   | 'templates'
   | 'configuration';
 
+const defaultConfig: AppConfig = {
+  api: {
+    phoneNumberId: '',
+    wabaId: '',
+    accessToken: '',
+    apiVersion: 'v21.0'
+  },
+  branding: {
+    appName: 'ChatFlow Pro',
+    logoUrl: '',
+    primaryColor: '#25D366',
+    secondaryColor: '#128C7E',
+    accentColor: '#8B5CF6'
+  }
+};
+
 function ProtectedLayout() {
   const { user, isLoading } = useAuth();
   const [currentSection, setCurrentSection] = useState<AppSection>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [config, setConfig] = useState(loadConfig());
+  const [config, setConfig] = useState<AppConfig>(() => {
+    try {
+      return loadConfig();
+    } catch (error) {
+      console.error('[ProtectedLayout] Error loading config, using defaults:', error);
+      return defaultConfig;
+    }
+  });
   const { toasts, removeToast } = useToast();
 
   console.log('[ProtectedLayout] Rendering, user:', user);
   console.log('[ProtectedLayout] Current section:', currentSection);
+  console.log('[ProtectedLayout] Config:', config);
 
   useEffect(() => {
     // Apply custom colors to CSS variables
-    const root = document.documentElement;
-    root.style.setProperty('--primary-color', config.branding.primaryColor);
-    root.style.setProperty('--secondary-color', config.branding.secondaryColor);
-    root.style.setProperty('--accent-color', config.branding.accentColor);
+    try {
+      const root = document.documentElement;
+      root.style.setProperty('--primary-color', config?.branding?.primaryColor || '#25D366');
+      root.style.setProperty('--secondary-color', config?.branding?.secondaryColor || '#128C7E');
+      root.style.setProperty('--accent-color', config?.branding?.accentColor || '#8B5CF6');
+    } catch (error) {
+      console.error('[ProtectedLayout] Error applying CSS variables:', error);
+    }
   }, [config]);
 
   if (isLoading) {
@@ -64,27 +92,37 @@ function ProtectedLayout() {
 
   const renderCurrentSection = () => {
     console.log('[ProtectedLayout] Rendering section:', currentSection);
-    switch (currentSection) {
-      case 'dashboard':
-        return <Dashboard />;
-      case 'chat':
-        return <Chat />;
-      case 'bulk-messaging':
-        return <BulkMessaging />;
-      case 'contact-lists':
-        return <ContactLists />;
-      case 'crm-panel':
-        return <CRMPanel />;
-      case 'campaign-history':
-        return <CampaignHistory />;
-      case 'message-scheduler':
-        return <MessageScheduler />;
-      case 'templates':
-        return <Templates />;
-      case 'configuration':
-        return <Configuration config={config} onConfigUpdate={setConfig} />;
-      default:
-        return <Dashboard />;
+    try {
+      switch (currentSection) {
+        case 'dashboard':
+          return <Dashboard />;
+        case 'chat':
+          return <Chat />;
+        case 'bulk-messaging':
+          return <BulkMessaging />;
+        case 'contact-lists':
+          return <ContactLists />;
+        case 'crm-panel':
+          return <CRMPanel />;
+        case 'campaign-history':
+          return <CampaignHistory />;
+        case 'message-scheduler':
+          return <MessageScheduler />;
+        case 'templates':
+          return <Templates />;
+        case 'configuration':
+          return <Configuration config={config} onConfigUpdate={setConfig} />;
+        default:
+          return <Dashboard />;
+      }
+    } catch (error) {
+      console.error('[ProtectedLayout] Error rendering section:', error);
+      return (
+        <div className="p-8">
+          <h2 className="text-xl font-bold text-red-600 mb-4">Error al cargar la sección</h2>
+          <p className="text-gray-600">{String(error)}</p>
+        </div>
+      );
     }
   };
 
