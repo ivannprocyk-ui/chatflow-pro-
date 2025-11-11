@@ -43,14 +43,21 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('[Login] Form submitted with:', { email });
     setError('');
     setIsLoading(true);
 
     try {
+      console.log('[Login] Calling login function...');
       await login(email, password);
+      console.log('[Login] Login successful, navigating to dashboard');
       navigate('/dashboard');
     } catch (error: any) {
-      setError(error.response?.data?.message || 'Email o contraseña incorrectos');
+      console.error('[Login] Login error:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Email o contraseña incorrectos';
+      console.log('[Login] Setting error message:', errorMessage);
+      setError(errorMessage);
+      alert('Error: ' + errorMessage); // Temporary alert for debugging
     } finally {
       setIsLoading(false);
     }

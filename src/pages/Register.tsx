@@ -44,14 +44,21 @@ export default function Register() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('[Register] Form submitted with:', { email, organizationName });
     setError('');
     setIsLoading(true);
 
     try {
+      console.log('[Register] Calling register function...');
       await register(email, password, organizationName);
+      console.log('[Register] Registration successful, navigating to dashboard');
       navigate('/dashboard');
     } catch (error: any) {
-      setError(error.response?.data?.message || 'Error al registrar. Intenta nuevamente.');
+      console.error('[Register] Registration error:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Error al registrar. Intenta nuevamente.';
+      console.log('[Register] Setting error message:', errorMessage);
+      setError(errorMessage);
+      alert('Error: ' + errorMessage); // Temporary alert for debugging
     } finally {
       setIsLoading(false);
     }
