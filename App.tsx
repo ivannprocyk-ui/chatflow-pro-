@@ -1,16 +1,16 @@
 import { useState, useEffect } from "react";
-import Sidebar from "@/react-app/components/Sidebar";
-import Dashboard from "@/react-app/pages/Dashboard";
-import Chat from "@/react-app/pages/Chat";
-import BulkMessaging from "@/react-app/pages/BulkMessaging";
-import ContactLists from "@/react-app/pages/ContactLists";
-import CRMPanel from "@/react-app/pages/CRMPanel";
-import CampaignHistory from "@/react-app/pages/CampaignHistory";
-import MessageScheduler from "@/react-app/pages/MessageScheduler";
-import Templates from "@/react-app/pages/Templates";
-import Configuration from "@/react-app/pages/Configuration";
-import { loadConfig } from "@/react-app/utils/storage";
-import { useToast, ToastContainer } from "@/react-app/components/Toast";
+import Sidebar from "./Sidebar";
+import Dashboard from "./Dashboard";
+import Chat from "./Chat";
+import BulkMessaging from "./BulkMessaging";
+import ContactLists from "./ContactLists";
+import CRMPanel from "./CRMPanel";
+import CampaignHistory from "./CampaignHistory";
+import MessageScheduler from "./MessageScheduler";
+import Templates from "./Templates";
+import Configuration from "./Configuration";
+import { loadConfig } from "./storage";
+import { useToast, ToastContainer } from "./Toast";
 
 export type AppSection = 
   | 'dashboard' 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { loadContactLists, loadConfig, loadTemplates, saveTemplates, saveCampaigns, loadCampaigns, validatePhone, cleanPhone, appendToSendLog } from '@/react-app/utils/storage';
-import { useToast } from '@/react-app/components/Toast';
+import { loadContactLists, loadConfig, loadTemplates, saveTemplates, saveCampaigns, loadCampaigns, validatePhone, cleanPhone, appendToSendLog } from './storage';
+import { useToast } from './Toast';
 
 interface SendResult {
   phone: string;
