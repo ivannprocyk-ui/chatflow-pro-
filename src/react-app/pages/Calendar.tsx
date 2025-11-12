@@ -478,11 +478,28 @@ export default function Calendar() {
   };
 
   const getUpcomingEvents = () => {
-    const now = startOfDay(new Date());
-    const next7Days = addDays(now, 7);
-    return events.filter(e =>
-      e.start >= now && e.start <= next7Days
-    ).sort((a, b) => a.start.getTime() - b.start.getTime());
+    const now = new Date();
+    const startOfToday = startOfDay(now);
+    const next7Days = addDays(startOfToday, 7);
+
+    // Incluir eventos de hoy (sin importar la hora) hasta siguiente 7 días
+    const upcomingEvents = events.filter(e => {
+      const eventStartDay = startOfDay(e.start);
+      return eventStartDay >= startOfToday && eventStartDay <= next7Days;
+    }).sort((a, b) => a.start.getTime() - b.start.getTime());
+
+    // Debug logging
+    console.log('[Calendar Debug] Total events:', events.length);
+    console.log('[Calendar Debug] Today events:', events.filter(e => isToday(e.start)).length);
+    console.log('[Calendar Debug] Upcoming events (7 days):', upcomingEvents.length);
+    console.log('[Calendar Debug] Today events details:', events.filter(e => isToday(e.start)).map(e => ({
+      id: e.id,
+      title: e.title,
+      start: e.start,
+      parentEventId: e.parentEventId
+    })));
+
+    return upcomingEvents;
   };
 
   const handleSelectSlot = ({ start }: { start: Date }) => {
@@ -652,8 +669,13 @@ export default function Calendar() {
       }
     }
 
+    // Generar ID único garantizado
+    const generateUniqueId = () => {
+      return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    };
+
     const eventData: CalendarEventData = {
-      id: selectedEvent?.id || Date.now().toString(),
+      id: selectedEvent?.id || generateUniqueId(),
       title: newEvent.title,
       start: startDateTime,
       end: endDateTime,
@@ -669,21 +691,36 @@ export default function Calendar() {
       scheduledMessageId: scheduledMessageId
     };
 
+    console.log('[Calendar Debug] Saving event:', {
+      id: eventData.id,
+      title: eventData.title,
+      isEdit: !!selectedEvent,
+      hasRecurrence: !!eventData.recurrence
+    });
+
     let updatedEvents;
     if (selectedEvent) {
       // Remove old instances if updating a recurring event
       updatedEvents = events.filter(e => e.parentEventId !== selectedEvent.id && e.id !== selectedEvent.id);
       const newInstances = generateRecurringEvents(eventData);
       updatedEvents = [...updatedEvents, ...newInstances];
+      console.log('[Calendar Debug] Updating event - New instances:', newInstances.length);
       showSuccess('Evento actualizado exitosamente');
     } else {
       // Generate recurring instances for new event
       const newInstances = generateRecurringEvents(eventData);
       updatedEvents = [...events, ...newInstances];
+      console.log('[Calendar Debug] Creating event - New instances:', newInstances.length);
+      console.log('[Calendar Debug] Total events after creation:', updatedEvents.length);
       showSuccess(newInstances.length > 1
         ? `Evento creado con ${newInstances.length} ocurrencias`
         : 'Evento creado exitosamente');
     }
+
+    console.log('[Calendar Debug] Saving to localStorage:', {
+      totalEvents: updatedEvents.length,
+      todayEvents: updatedEvents.filter(e => isToday(e.start)).length
+    });
 
     saveEvents(updatedEvents);
     setShowModal(false);

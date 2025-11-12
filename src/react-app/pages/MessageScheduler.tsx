@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { loadScheduledMessages, saveScheduledMessages, loadContactLists, loadConfig, loadCRMData } from '@/react-app/utils/storage';
+import { useState, useEffect, useRef } from 'react';
+import { loadScheduledMessages, saveScheduledMessages, loadContactLists, loadConfig, loadCRMData, saveCampaigns, loadCampaigns, addMessageToHistory } from '@/react-app/utils/storage';
 import { useToast } from '@/react-app/components/Toast';
 import ContactSelector from '@/react-app/components/ContactSelector';
 
@@ -39,8 +39,11 @@ export default function MessageScheduler() {
     template: ''
   });
   const [showContactSelector, setShowContactSelector] = useState(false);
+  const [editingMessage, setEditingMessage] = useState<ScheduledMessage | null>(null);
+  const [isExecuting, setIsExecuting] = useState(false);
+  const executionCheckRef = useRef<NodeJS.Timeout | null>(null);
   const config = loadConfig();
-  const { showSuccess, showError } = useToast();
+  const { showSuccess, showError, showInfo } = useToast();
 
   useEffect(() => {
     // Load scheduled messages (no demo data)
@@ -57,6 +60,201 @@ export default function MessageScheduler() {
       setTemplates(parsedTemplates.filter((t: WhatsAppTemplate) => t.status === 'APPROVED'));
     }
   }, []);
+
+  // Sistema de ejecución automática de mensajes programados
+  useEffect(() => {
+    // Revisar mensajes programados cada minuto
+    executionCheckRef.current = setInterval(() => {
+      checkAndExecuteScheduledMessages();
+    }, 60000); // Check every 60 seconds
+
+    // Check immediately on mount
+    checkAndExecuteScheduledMessages();
+
+    return () => {
+      if (executionCheckRef.current) {
+        clearInterval(executionCheckRef.current);
+      }
+    };
+  }, [scheduledMessages, config]);
+
+  // Función para verificar y ejecutar mensajes programados
+  const checkAndExecuteScheduledMessages = async () => {
+    if (isExecuting) return; // Evitar ejecuciones simultáneas
+
+    const now = new Date();
+    const pendingMessages = scheduledMessages.filter(msg => msg.status === 'pending');
+
+    for (const message of pendingMessages) {
+      const scheduledDateTime = new Date(`${message.scheduledDate}T${message.scheduledTime}`);
+
+      // Si la hora programada ya pasó (con margen de 2 minutos)
+      if (now >= scheduledDateTime && (now.getTime() - scheduledDateTime.getTime()) < 120000) {
+        await executeScheduledMessage(message);
+      }
+    }
+  };
+
+  // Función para ejecutar un mensaje programado
+  const executeScheduledMessage = async (message: ScheduledMessage) => {
+    if (isExecuting) return;
+
+    setIsExecuting(true);
+    showInfo(`Ejecutando campaña "${message.campaignName}"...`);
+
+    try {
+      // 1. Obtener contactos
+      const contacts = getContactsForMessage(message);
+
+      if (!contacts || contacts.length === 0) {
+        throw new Error('No se encontraron contactos para enviar');
+      }
+
+      // 2. Enviar mensajes
+      const results = {
+        total: contacts.length,
+        sent: 0,
+        failed: 0,
+        errors: [] as string[]
+      };
+
+      for (const contact of contacts) {
+        try {
+          await sendMessageToAPI(contact, message.template);
+          results.sent++;
+
+          // Agregar al historial del contacto
+          if (contact.id) {
+            addMessageToHistory(contact.id, {
+              template: message.template,
+              status: 'sent',
+              timestamp: new Date().toISOString(),
+              campaignName: message.campaignName
+            });
+          }
+
+          // Delay entre mensajes (2 segundos)
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        } catch (error: any) {
+          results.failed++;
+          results.errors.push(`${contact.phone || contact.telefono || 'Unknown'}: ${error.message}`);
+        }
+      }
+
+      // 3. Actualizar estado del mensaje programado
+      const updatedMessages = scheduledMessages.map(msg =>
+        msg.id === message.id
+          ? { ...msg, status: 'sent' as const, executedAt: new Date().toISOString() }
+          : msg
+      );
+      setScheduledMessages(updatedMessages);
+      saveScheduledMessages(updatedMessages);
+
+      // 4. Guardar en historial de campañas
+      const campaign = {
+        id: Date.now().toString(),
+        name: message.campaignName,
+        template: message.template,
+        date: new Date().toISOString(),
+        total: results.total,
+        sent: results.sent,
+        failed: results.failed,
+        errors: results.errors,
+        type: 'scheduled',
+        source: 'message_scheduler'
+      };
+
+      const campaigns = loadCampaigns();
+      saveCampaigns([...campaigns, campaign]);
+
+      if (results.sent > 0) {
+        showSuccess(`Campaña "${message.campaignName}" ejecutada: ${results.sent}/${results.total} enviados`);
+      } else {
+        showError(`Campaña "${message.campaignName}" falló: 0 mensajes enviados`);
+      }
+    } catch (error: any) {
+      // Marcar mensaje como pendiente (no error) para reintentar
+      console.error('Error executing scheduled message:', error);
+      showError(`Error en campaña "${message.campaignName}": ${error.message}`);
+    } finally {
+      setIsExecuting(false);
+    }
+  };
+
+  // Función para obtener contactos de un mensaje
+  const getContactsForMessage = (message: ScheduledMessage) => {
+    if (message.contactIds && message.contactIds.length > 0) {
+      // Selección directa de contactos CRM
+      const crmContacts = loadCRMData();
+      return message.contactIds.map(id => crmContacts.find(c => c.id === id)).filter(Boolean);
+    } else if (message.contactListId) {
+      // Lista de contactos
+      const list = contactLists.find(l => l.id === message.contactListId);
+      return list?.contacts || [];
+    }
+    return [];
+  };
+
+  // Función para enviar mensaje a la API de Meta
+  const sendMessageToAPI = async (contact: any, templateName: string) => {
+    if (!config.api.accessToken || !config.api.phoneNumberId) {
+      throw new Error('API no configurada');
+    }
+
+    const phone = contact.phone || contact.telefono || contact.whatsapp;
+    if (!phone) {
+      throw new Error('Contacto sin número de teléfono');
+    }
+
+    const template = templates.find(t => t.name === templateName);
+    if (!template) {
+      throw new Error(`Plantilla "${templateName}" no encontrada`);
+    }
+
+    const response = await fetch(
+      `https://graph.facebook.com/${config.api.apiVersion}/${config.api.phoneNumberId}/messages`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${config.api.accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          messaging_product: 'whatsapp',
+          to: phone,
+          type: 'template',
+          template: {
+            name: templateName,
+            language: {
+              code: template.language
+            }
+          }
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error?.message || 'Error al enviar mensaje');
+    }
+
+    return await response.json();
+  };
+
+  // Función para editar un mensaje programado
+  const handleEditMessage = (message: ScheduledMessage) => {
+    setEditingMessage(message);
+    setNewSchedule({
+      campaignName: message.campaignName,
+      scheduledDate: message.scheduledDate,
+      scheduledTime: message.scheduledTime,
+      contactListId: message.contactListId || '',
+      contactIds: message.contactIds || [],
+      selectionMode: message.contactIds && message.contactIds.length > 0 ? 'contacts' : 'list',
+      template: message.template
+    });
+    setShowModal(true);
+  };
 
   const handleScheduleMessage = () => {
     if (!newSchedule.campaignName || !newSchedule.scheduledDate || !newSchedule.scheduledTime || !newSchedule.template) {
@@ -86,34 +284,68 @@ export default function MessageScheduler() {
       contactListName = 'Selección personalizada';
     }
 
-    const scheduledMessage: ScheduledMessage = {
-      id: Date.now().toString(),
-      campaignName: newSchedule.campaignName,
-      scheduledDate: newSchedule.scheduledDate,
-      scheduledTime: newSchedule.scheduledTime,
-      ...(newSchedule.selectionMode === 'list'
-        ? {
-            contactListId: newSchedule.contactListId,
-            contactListName: contactListName
-          }
-        : {
-            contactIds: newSchedule.contactIds,
-            contactListName: contactListName
-          }
-      ),
-      contactCount: contactCount,
-      template: newSchedule.template,
-      status: 'pending',
-      createdAt: new Date().toISOString()
-    };
+    if (editingMessage) {
+      // EDITAR mensaje existente
+      const updatedMessages = scheduledMessages.map(msg =>
+        msg.id === editingMessage.id
+          ? {
+              ...msg,
+              campaignName: newSchedule.campaignName,
+              scheduledDate: newSchedule.scheduledDate,
+              scheduledTime: newSchedule.scheduledTime,
+              ...(newSchedule.selectionMode === 'list'
+                ? {
+                    contactListId: newSchedule.contactListId,
+                    contactListName: contactListName,
+                    contactIds: undefined
+                  }
+                : {
+                    contactIds: newSchedule.contactIds,
+                    contactListName: contactListName,
+                    contactListId: undefined
+                  }
+              ),
+              contactCount: contactCount,
+              template: newSchedule.template
+            }
+          : msg
+      );
 
-    const updatedMessages = [...scheduledMessages, scheduledMessage];
-    setScheduledMessages(updatedMessages);
-    saveScheduledMessages(updatedMessages);
+      setScheduledMessages(updatedMessages);
+      saveScheduledMessages(updatedMessages);
+      showSuccess(`Campaña "${newSchedule.campaignName}" actualizada exitosamente`);
+    } else {
+      // CREAR nuevo mensaje
+      const scheduledMessage: ScheduledMessage = {
+        id: Date.now().toString(),
+        campaignName: newSchedule.campaignName,
+        scheduledDate: newSchedule.scheduledDate,
+        scheduledTime: newSchedule.scheduledTime,
+        ...(newSchedule.selectionMode === 'list'
+          ? {
+              contactListId: newSchedule.contactListId,
+              contactListName: contactListName
+            }
+          : {
+              contactIds: newSchedule.contactIds,
+              contactListName: contactListName
+            }
+        ),
+        contactCount: contactCount,
+        template: newSchedule.template,
+        status: 'pending',
+        createdAt: new Date().toISOString()
+      };
 
-    showSuccess(`Campaña "${newSchedule.campaignName}" programada exitosamente con ${contactCount} contactos`);
+      const updatedMessages = [...scheduledMessages, scheduledMessage];
+      setScheduledMessages(updatedMessages);
+      saveScheduledMessages(updatedMessages);
+      showSuccess(`Campaña "${newSchedule.campaignName}" programada exitosamente con ${contactCount} contactos`);
+    }
 
+    // Reset form
     setShowModal(false);
+    setEditingMessage(null);
     setNewSchedule({
       campaignName: '',
       scheduledDate: '',
@@ -300,13 +532,22 @@ export default function MessageScheduler() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
                       {message.status === 'pending' && !isDateTimePassed(message.scheduledDate, message.scheduledTime) && (
-                        <button
-                          onClick={() => handleCancelMessage(message.id)}
-                          className="text-yellow-600 dark:text-yellow-400 hover:text-yellow-900 dark:hover:text-yellow-300 p-1 rounded"
-                          title="Cancelar"
-                        >
-                          <i className="fas fa-ban"></i>
-                        </button>
+                        <>
+                          <button
+                            onClick={() => handleEditMessage(message)}
+                            className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 p-1 rounded"
+                            title="Editar"
+                          >
+                            <i className="fas fa-edit"></i>
+                          </button>
+                          <button
+                            onClick={() => handleCancelMessage(message.id)}
+                            className="text-yellow-600 dark:text-yellow-400 hover:text-yellow-900 dark:hover:text-yellow-300 p-1 rounded"
+                            title="Cancelar"
+                          >
+                            <i className="fas fa-ban"></i>
+                          </button>
+                        </>
                       )}
                       <button
                         onClick={() => handleDeleteMessage(message.id)}
@@ -345,7 +586,9 @@ export default function MessageScheduler() {
         <div className="fixed inset-0 bg-black bg-opacity-50 dark:bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto transition-colors duration-300">
             <div className="p-6 border-b border-gray-100 dark:border-gray-700">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Programar Envío de Mensaje</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                {editingMessage ? 'Editar Mensaje Programado' : 'Programar Envío de Mensaje'}
+              </h2>
             </div>
 
             <div className="p-6 space-y-6">
@@ -507,7 +750,19 @@ export default function MessageScheduler() {
 
             <div className="p-6 border-t border-gray-100 dark:border-gray-700 flex space-x-4">
               <button
-                onClick={() => setShowModal(false)}
+                onClick={() => {
+                  setShowModal(false);
+                  setEditingMessage(null);
+                  setNewSchedule({
+                    campaignName: '',
+                    scheduledDate: '',
+                    scheduledTime: '',
+                    contactListId: '',
+                    contactIds: [],
+                    selectionMode: 'list',
+                    template: ''
+                  });
+                }}
                 className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 px-6 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
               >
                 Cancelar
@@ -516,7 +771,7 @@ export default function MessageScheduler() {
                 onClick={handleScheduleMessage}
                 className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 transition-all"
               >
-                Programar Mensaje
+                {editingMessage ? 'Guardar Cambios' : 'Programar Mensaje'}
               </button>
             </div>
           </div>
