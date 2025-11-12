@@ -1,7 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastContainer, useToast } from './components/Toast';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { loadConfig, AppConfig } from './utils/storage';
 
 // Auth pages
 import Login from './pages/Login';
@@ -20,6 +21,19 @@ import Configuration from './pages/Configuration';
 import CRMSettings from './pages/CRMSettings';
 import Calendar from './pages/Calendar';
 import AISettings from './pages/AISettings';
+
+export type AppSection =
+  | 'dashboard'
+  | 'bulk-messaging'
+  | 'contact-lists'
+  | 'crm-panel'
+  | 'crm-settings'
+  | 'campaign-history'
+  | 'message-scheduler'
+  | 'templates'
+  | 'calendar'
+  | 'configuration'
+  | 'ai-settings';
 
 // Protected Route Component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -46,6 +60,23 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 // Main App Layout
 function AppLayout({ children }: { children: React.ReactNode }) {
   const { toasts, removeToast } = useToast();
+  const [currentSection, setCurrentSection] = useState<AppSection>('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    const saved = localStorage.getItem('sidebar_collapsed');
+    return saved === 'true';
+  });
+  const [config, setConfig] = useState<AppConfig>(() => {
+    try {
+      return loadConfig();
+    } catch (error) {
+      console.error('Error loading config:', error);
+      return {
+        api: { phoneNumberId: '', wabaId: '', accessToken: '', apiVersion: 'v21.0' },
+        branding: { appName: 'ChatFlow Pro', logoUrl: '', primaryColor: '#25D366', secondaryColor: '#128C7E', accentColor: '#8B5CF6' }
+      };
+    }
+  });
 
   useEffect(() => {
     // Apply dark mode from localStorage
@@ -53,11 +84,29 @@ function AppLayout({ children }: { children: React.ReactNode }) {
     if (darkMode) {
       document.documentElement.classList.add('dark');
     }
-  }, []);
+
+    // Apply custom colors to CSS variables
+    try {
+      const root = document.documentElement;
+      root.style.setProperty('--primary-color', config?.branding?.primaryColor || '#25D366');
+      root.style.setProperty('--secondary-color', config?.branding?.secondaryColor || '#128C7E');
+      root.style.setProperty('--accent-color', config?.branding?.accentColor || '#8B5CF6');
+    } catch (error) {
+      console.error('Error applying CSS variables:', error);
+    }
+  }, [config]);
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
-      <Sidebar />
+      <Sidebar
+        isOpen={sidebarOpen}
+        isCollapsed={sidebarCollapsed}
+        currentSection={currentSection}
+        onSectionChange={setCurrentSection}
+        onToggle={() => setSidebarOpen(!sidebarOpen)}
+        onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+        config={config}
+      />
       <main className="flex-1 overflow-auto">
         {children}
       </main>
