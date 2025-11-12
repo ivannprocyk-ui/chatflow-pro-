@@ -36,7 +36,7 @@ export default function BulkMessaging() {
 
   const syncTemplates = async () => {
     const config = loadConfig();
-
+    
     if (!config.api.accessToken || !config.api.wabaId) {
       showError('Configura primero tu API de Meta en Configuración');
       return;
@@ -78,7 +78,7 @@ export default function BulkMessaging() {
     }
 
     setCsvFile(file);
-
+    
     try {
       const text = await file.text();
       const lines = text.split('\n');
@@ -86,7 +86,7 @@ export default function BulkMessaging() {
         .map(line => line.split(',')[0]?.trim())
         .filter(num => num && num.length > 0)
         .slice(0, 10); // Preview first 10
-
+      
       setCsvPreview(numbers);
       showSuccess(`Archivo cargado: ${lines.length} números detectados`);
     } catch (error) {
@@ -101,8 +101,8 @@ export default function BulkMessaging() {
   const templateRequiresImage = () => {
     const template = getSelectedTemplate();
     if (!template) return false;
-
-    return template.components?.some((c: any) =>
+    
+    return template.components?.some((c: any) => 
       c.type === 'HEADER' && c.format === 'IMAGE'
     );
   };
@@ -141,7 +141,7 @@ export default function BulkMessaging() {
     }
 
     const url = `https://graph.facebook.com/${config.api.apiVersion}/${config.api.phoneNumberId}/messages`;
-
+    
     const payload: any = {
       messaging_product: 'whatsapp',
       to: cleanPhone(phone),
@@ -275,7 +275,7 @@ export default function BulkMessaging() {
 
     for (let i = 0; i < validPhones.length; i++) {
       const phone = validPhones[i];
-
+      
       const result = await sendMessage(phone, selectedTemplate, config);
       sendResults.push(result);
 
@@ -345,7 +345,7 @@ export default function BulkMessaging() {
       ])
     ];
 
-    const csvString = csvContent.map(row =>
+    const csvString = csvContent.map(row => 
       row.map(cell => `"${cell}"`).join(',')
     ).join('\n');
 
@@ -362,7 +362,7 @@ export default function BulkMessaging() {
 
   const loadListContacts = () => {
     if (!selectedList) return;
-
+    
     const list = contactLists.find(l => l.id === selectedList);
     if (list) {
       showInfo(`Lista "${list.name}" cargada con ${list.contacts.length} contactos`);
@@ -589,7 +589,7 @@ export default function BulkMessaging() {
       {showProgress && (
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
           <h3 className="text-xl font-semibold text-gray-900 mb-4">Progreso del Envío</h3>
-
+          
           <div className="mb-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700">Progreso</span>
