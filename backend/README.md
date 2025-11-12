@@ -1,120 +1,265 @@
-# ChatFlow Pro Backend
+# ChatFlow Pro Backend API
 
-Node.js backend API for ChatFlow Pro using Hono framework.
+Backend NestJS con soporte para **mock data** (sin DB) o **PostgreSQL** (producción).
 
-## Features
+## 🚀 Quick Start
 
-- 🚀 WhatsApp Business API integration
-- 💬 Conversations and messaging
-- 📱 Bulk messaging with templates
-- 📋 Contact list management
-- 🔄 In-memory storage (upgrade to database later)
-- ✅ Health check endpoint
-
-## Local Development
+### 1. Instalar dependencias
 
 ```bash
-# Install dependencies
+cd backend
 npm install
-
-# Run in development mode
-npm run dev
-
-# Build for production
-npm run build
-
-# Run production server
-npm start
 ```
 
-## Environment Variables
+### 2. Configurar variables de entorno
 
-Copy `.env.example` to `.env` and configure:
-
-```env
-PORT=3001
-NODE_ENV=production
-
-# WhatsApp Business API credentials
-WHATSAPP_ACCESS_TOKEN=your_access_token_here
-WHATSAPP_PHONE_NUMBER_ID=your_phone_number_id_here
-WHATSAPP_WABA_ID=your_waba_id_here
+```bash
+cp .env.example .env
+# Editar .env con tus valores
 ```
 
-## Deploy to Render
+### 3. Iniciar en modo desarrollo
 
-### Option 1: Using Render Dashboard
+```bash
+npm run start:dev
+```
 
-1. Go to [Render Dashboard](https://dashboard.render.com/)
-2. Click "New +" → "Web Service"
-3. Connect your GitHub repository
-4. Configure:
-   - **Name**: chatflow-backend
-   - **Root Directory**: `backend`
-   - **Environment**: Node
-   - **Build Command**: `npm install && npm run build`
-   - **Start Command**: `npm start`
-   - **Health Check Path**: `/api/health`
-5. Add environment variables in Render dashboard
-6. Click "Create Web Service"
+El servidor inicia en `http://localhost:3001`
 
-### Option 2: Using render.yaml
+## 📡 API Endpoints
 
-The `render.yaml` file is already configured. Just:
+### Authentication
 
-1. Push this code to GitHub
-2. In Render Dashboard, create a new "Blueprint"
-3. Connect to your repository
-4. Select the `backend/render.yaml` file
-5. Add environment variables
-6. Deploy!
+- `POST /api/auth/register` - Registrar nueva organización + usuario
+- `POST /api/auth/login` - Login
+- `GET /api/auth/me` - Obtener perfil actual (requiere JWT)
 
-## API Endpoints
+### Organizations
 
-### Health Check
-- `GET /api/health` - Server health status
+- `GET /api/organizations/me` - Obtener mi organización
+- `PUT /api/organizations/me` - Actualizar configuración de IA, WhatsApp, etc.
 
-### Conversations
-- `GET /api/conversations` - List all conversations
-- `POST /api/conversations` - Create new conversation
-- `GET /api/conversations/:id/messages` - Get messages
-- `POST /api/conversations/:id/messages` - Send message
+### Contacts
+
+- `GET /api/contacts` - Listar contactos (con filtros opcionales)
+- `GET /api/contacts/stats` - Estadísticas de contactos
+- `GET /api/contacts/:id` - Obtener un contacto
+- `POST /api/contacts` - Crear contacto
+- `PUT /api/contacts/:id` - Actualizar contacto
+- `DELETE /api/contacts/:id` - Eliminar contacto
 
 ### Messages
-- `POST /api/messages/react` - Add/remove reaction
+
+- `GET /api/messages` - Listar mensajes
+- `GET /api/messages/stats` - Estadísticas de mensajes
+- `POST /api/messages/send` - Enviar mensaje
+- `GET /api/messages/conversation/:contactId` - Historial de conversación
+
+### AI
+
+- `POST /api/ai/generate-response` - Generar respuesta con Flowise
 
 ### WhatsApp
-- `GET /api/whatsapp/templates` - Sync templates from Meta
-- `POST /api/whatsapp/bulk-send` - Send bulk messages
 
-### Contact Lists
-- `GET /api/contact-lists` - List contact lists
-- `POST /api/contact-lists` - Create contact list
-- `POST /api/contact-lists/:listId/contacts` - Add contacts
+- `POST /api/whatsapp/connect` - Iniciar conexión (QR)
+- `GET /api/whatsapp/qr` - Obtener QR code
+- `GET /api/whatsapp/status` - Estado de conexión
+- `POST /api/whatsapp/send` - Enviar mensaje
 
-## After Deployment
+### Webhooks
 
-1. Get your Render backend URL (e.g., `https://chatflow-backend.onrender.com`)
-2. Update frontend environment variable in Vercel:
-   - Go to Vercel → Your Project → Settings → Environment Variables
-   - Set `VITE_API_URL` = `https://chatflow-backend.onrender.com/api`
-3. Redeploy frontend in Vercel
-4. Test the connection!
+- `POST /api/webhooks/evolution` - Recibir mensajes de Evolution API
 
-## Tech Stack
+### Health
 
-- **Framework**: Hono (lightweight web framework)
-- **Runtime**: Node.js 18+
-- **Language**: TypeScript
-- **Validation**: Zod
-- **Deployment**: Render
+- `GET /api/health` - Health check
 
-## Notes
+## 🗄️ Mock Data vs PostgreSQL
 
-- Currently using in-memory storage
-- Data will reset when server restarts
-- For production, consider adding:
-  - PostgreSQL/MySQL database
-  - Redis for caching
-  - Proper authentication
-  - Rate limiting
+### Modo Mock Data (Default)
+
+**Archivo:** `.env`
+```bash
+USE_DATABASE=false
+```
+
+**Ventajas:**
+- ✅ No necesitas PostgreSQL instalado
+- ✅ Funciona de inmediato
+- ✅ Perfecto para desarrollo y testing
+- ✅ Mismo código que producción
+
+**Desventajas:**
+- ❌ Datos se pierden al reiniciar servidor
+- ❌ No comparte datos entre instancias
+
+### Modo PostgreSQL
+
+**Archivo:** `.env`
+```bash
+USE_DATABASE=true
+DATABASE_URL=postgresql://chatflow_user:password@localhost:5432/chatflow_prod
+```
+
+**Ventajas:**
+- ✅ Datos persistentes
+- ✅ Multi-instancia
+- ✅ Backups automáticos
+- ✅ Escalable
+
+## 🧪 Testing
+
+### Test de registro
+
+```bash
+curl -X POST http://localhost:3001/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "test@pizzeria.com",
+    "password": "test123",
+    "organizationName": "Mi Pizzería"
+  }'
+```
+
+**Respuesta esperada:**
+```json
+{
+  "user": {
+    "id": "...",
+    "email": "test@pizzeria.com",
+    "organizationId": "...",
+    "role": "admin"
+  },
+  "organization": {
+    "id": "...",
+    "name": "Mi Pizzería",
+    "plan": "starter",
+    "aiEnabled": true
+  },
+  "accessToken": "eyJhbGc...",
+  "expiresIn": "1h"
+}
+```
+
+### Test de login
+
+```bash
+curl -X POST http://localhost:3001/api/auth/login \
+  -H "Content-Type": application/json" \
+  -d '{
+    "email": "test@pizzeria.com",
+    "password": "test123"
+  }'
+```
+
+### Test de endpoints protegidos
+
+```bash
+# Guardar el token de la respuesta anterior
+TOKEN="eyJhbGc..."
+
+# Obtener contactos
+curl http://localhost:3001/api/contacts \
+  -H "Authorization: Bearer $TOKEN"
+
+# Obtener mi organización
+curl http://localhost:3001/api/organizations/me \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+## 🤖 Configurar Flowise
+
+1. **Obtener URL de Flowise:**
+   - Tu instancia: `https://flowise.tudominio.com`
+
+2. **Generar API Key:**
+   - Flowise → Settings → API Keys → Create
+
+3. **Crear Chatflow:**
+   - Flowise → New Chatflow
+   - Agregar: ChatOpenAI + Conversation Chain + Buffer Memory
+   - Guardar y copiar el Flow ID
+
+4. **Configurar .env:**
+   ```bash
+   FLOWISE_API_URL=https://flowise.tudominio.com/api/v1
+   FLOWISE_API_KEY=sk-flowise-xxxxx
+   FLOWISE_FLOW_ID=abc123-def456
+   ```
+
+## 📦 Estructura del Proyecto
+
+```
+backend/
+├── src/
+│   ├── auth/              # Autenticación (JWT, register, login)
+│   ├── organizations/     # Gestión de organizaciones
+│   ├── contacts/          # CRUD de contactos
+│   ├── messages/          # CRUD de mensajes
+│   ├── ai/                # Integración Flowise
+│   ├── whatsapp/          # Evolution API / Meta API
+│   ├── webhooks/          # Recibir mensajes entrantes
+│   ├── common/            # Tipos y utilidades compartidas
+│   ├── app.module.ts      # Módulo principal
+│   └── main.ts            # Entry point
+├── .env.example           # Template de variables
+├── package.json
+└── README.md
+```
+
+## 🔄 Migrar a PostgreSQL
+
+Cuando estés listo para usar PostgreSQL:
+
+1. **Ejecutar schema SQL:**
+   ```bash
+   psql postgresql://user:pass@host:5432/chatflow_prod < ../database/schema.sql
+   ```
+
+2. **Cambiar .env:**
+   ```bash
+   USE_DATABASE=true
+   DATABASE_URL=postgresql://chatflow_user:password@localhost:5432/chatflow_prod
+   ```
+
+3. **Instalar Prisma (opcional):**
+   ```bash
+   npm install @prisma/client
+   npx prisma generate
+   ```
+
+4. **Reiniciar servidor:**
+   ```bash
+   npm run start:dev
+   ```
+
+Los servicios automáticamente detectarán `USE_DATABASE=true` y usarán PostgreSQL.
+
+## 🐛 Troubleshooting
+
+### Error: "Cannot find module"
+
+```bash
+rm -rf node_modules package-lock.json
+npm install
+```
+
+### Error: "Port 3001 already in use"
+
+```bash
+# Cambiar puerto en .env
+PORT=3002
+```
+
+### Error: Flowise no responde
+
+1. Verificar que FLOWISE_API_URL es correcta
+2. Verificar que FLOWISE_API_KEY es válida
+3. Verificar que FLOWISE_FLOW_ID existe
+4. Ver logs del backend para más detalles
+
+## 📚 Más Información
+
+- [NestJS Docs](https://docs.nestjs.com/)
+- [JWT Authentication](https://docs.nestjs.com/security/authentication)
+- [Flowise API](https://docs.flowiseai.com/)
