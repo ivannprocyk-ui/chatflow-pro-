@@ -6,22 +6,29 @@ export default function Dashboard() {
   const donutChartRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    // Load Chart.js and create charts
-    const loadCharts = async () => {
-      const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js';
-      script.onload = () => {
-        createCharts();
-      };
-      document.head.appendChild(script);
-    };
+    let lineChartInstance: any = null;
+    let donutChartInstance: any = null;
 
     const createCharts = () => {
       // @ts-ignore
       const Chart = window.Chart;
 
-      if (chartRef.current && Chart) {
-        new Chart(chartRef.current, {
+      if (!Chart) {
+        console.log('Chart.js not loaded yet, retrying...');
+        setTimeout(createCharts, 100);
+        return;
+      }
+
+      // Destroy existing charts if they exist
+      if (lineChartInstance) {
+        lineChartInstance.destroy();
+      }
+      if (donutChartInstance) {
+        donutChartInstance.destroy();
+      }
+
+      if (chartRef.current) {
+        lineChartInstance = new Chart(chartRef.current, {
           type: 'line',
           data: {
             labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
@@ -36,6 +43,7 @@ export default function Dashboard() {
           },
           options: {
             responsive: true,
+            maintainAspectRatio: true,
             plugins: {
               legend: {
                 display: false
@@ -58,8 +66,8 @@ export default function Dashboard() {
         });
       }
 
-      if (donutChartRef.current && Chart) {
-        new Chart(donutChartRef.current, {
+      if (donutChartRef.current) {
+        donutChartInstance = new Chart(donutChartRef.current, {
           type: 'doughnut',
           data: {
             labels: ['Enviado', 'Entregado', 'Leído', 'Error'],
@@ -76,6 +84,7 @@ export default function Dashboard() {
           },
           options: {
             responsive: true,
+            maintainAspectRatio: true,
             plugins: {
               legend: {
                 position: 'bottom'
@@ -86,7 +95,33 @@ export default function Dashboard() {
       }
     };
 
-    loadCharts();
+    // Load Chart.js if not already loaded
+    // @ts-ignore
+    if (window.Chart) {
+      createCharts();
+    } else {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js';
+      script.async = true;
+      script.onload = () => {
+        console.log('Chart.js loaded successfully');
+        createCharts();
+      };
+      script.onerror = () => {
+        console.error('Failed to load Chart.js');
+      };
+      document.head.appendChild(script);
+    }
+
+    // Cleanup function
+    return () => {
+      if (lineChartInstance) {
+        lineChartInstance.destroy();
+      }
+      if (donutChartInstance) {
+        donutChartInstance.destroy();
+      }
+    };
   }, []);
 
   const stats = [
