@@ -63,20 +63,6 @@ export default function App() {
     setDarkMode(!darkMode);
   };
 
-  // Listen for theme change events from child components
-  useEffect(() => {
-    const handleThemeChange = (e: any) => {
-      if (e.detail && e.detail.darkMode !== undefined) {
-        setDarkMode(e.detail.darkMode);
-      }
-    };
-
-    window.addEventListener('theme-change', handleThemeChange as EventListener);
-    return () => {
-      window.removeEventListener('theme-change', handleThemeChange as EventListener);
-    };
-  }, []);
-
   useEffect(() => {
     // Initialize demo data on first load
     initializeDemoData();
@@ -121,7 +107,7 @@ export default function App() {
       case 'calendar':
         return <Calendar />;
       case 'configuration':
-        return <Configuration onConfigUpdate={setConfig} />;
+        return <Configuration onConfigUpdate={setConfig} darkMode={darkMode} onDarkModeToggle={toggleDarkMode} />;
       case 'ai-settings':
         return <AISettings />;
       default:
@@ -139,6 +125,8 @@ export default function App() {
         onToggle={() => setSidebarOpen(!sidebarOpen)}
         onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
         config={config}
+        darkMode={darkMode}
+        onDarkModeToggle={toggleDarkMode}
       />
 
       {/* Mobile overlay */}

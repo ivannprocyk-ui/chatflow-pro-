@@ -1,6 +1,5 @@
 import { AppSection } from "@/react-app/App";
 import { AppConfig } from "@/react-app/utils/storage";
-import { useState, useEffect } from "react";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -10,6 +9,8 @@ interface SidebarProps {
   onToggle: () => void;
   onToggleCollapse?: () => void;
   config: AppConfig;
+  darkMode?: boolean;
+  onDarkModeToggle?: () => void;
 }
 
 const menuItems = [
@@ -25,21 +26,11 @@ const menuItems = [
   { id: 'configuration', icon: 'fas fa-cog', label: 'Configuración' },
 ] as const;
 
-export default function Sidebar({ isOpen, isCollapsed = false, currentSection, onSectionChange, onToggleCollapse, config }: SidebarProps) {
-  const [darkMode, setDarkMode] = useState(() => {
-    const saved = localStorage.getItem('dark_mode');
-    return saved === 'true';
-  });
-
-  const toggleDarkMode = () => {
-    const newDarkMode = !darkMode;
-    setDarkMode(newDarkMode);
-    localStorage.setItem('dark_mode', newDarkMode.toString());
-
-    // Dispatch event to AppNew.tsx
-    window.dispatchEvent(new CustomEvent('theme-change', {
-      detail: { darkMode: newDarkMode }
-    }));
+export default function Sidebar({ isOpen, isCollapsed = false, currentSection, onSectionChange, onToggleCollapse, config, darkMode = false, onDarkModeToggle }: SidebarProps) {
+  const handleDarkModeToggle = () => {
+    if (onDarkModeToggle) {
+      onDarkModeToggle();
+    }
   };
 
   return (
@@ -105,7 +96,7 @@ export default function Sidebar({ isOpen, isCollapsed = false, currentSection, o
       <div className="p-6 border-t border-gray-200 dark:border-gray-700 space-y-3 transition-colors duration-300">
         {/* Dark Mode Toggle */}
         <button
-          onClick={toggleDarkMode}
+          onClick={handleDarkModeToggle}
           className={`
             w-full flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} px-4 py-2 rounded-lg
             bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600

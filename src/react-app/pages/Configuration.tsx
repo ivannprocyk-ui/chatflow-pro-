@@ -3,17 +3,15 @@ import { loadConfig, saveConfig, AppConfig } from '@/react-app/utils/storage';
 
 interface ConfigurationProps {
   onConfigUpdate: (config: AppConfig) => void;
+  darkMode?: boolean;
+  onDarkModeToggle?: () => void;
 }
 
-export default function Configuration({ onConfigUpdate }: ConfigurationProps) {
+export default function Configuration({ onConfigUpdate, darkMode = false, onDarkModeToggle }: ConfigurationProps) {
   const [activeTab, setActiveTab] = useState<'api' | 'branding' | 'advanced'>('api');
   const [config, setConfig] = useState(loadConfig());
   const [apiStatus, setApiStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
   const [isSaving, setIsSaving] = useState(false);
-  const [darkMode, setDarkMode] = useState(() => {
-    const saved = localStorage.getItem('dark_mode');
-    return saved === 'true';
-  });
 
   const handleConfigChange = (section: keyof AppConfig, field: string, value: string) => {
     const newConfig = {
@@ -39,15 +37,10 @@ export default function Configuration({ onConfigUpdate }: ConfigurationProps) {
     }
   };
 
-  const toggleDarkMode = () => {
-    const newDarkMode = !darkMode;
-    setDarkMode(newDarkMode);
-    localStorage.setItem('dark_mode', newDarkMode.toString());
-
-    // Dispatch event to App.tsx
-    window.dispatchEvent(new CustomEvent('theme-change', {
-      detail: { darkMode: newDarkMode }
-    }));
+  const handleDarkModeToggle = () => {
+    if (onDarkModeToggle) {
+      onDarkModeToggle();
+    }
   };
 
   const testApiConnection = async () => {
@@ -303,7 +296,7 @@ export default function Configuration({ onConfigUpdate }: ConfigurationProps) {
                   <input
                     type="checkbox"
                     checked={darkMode}
-                    onChange={toggleDarkMode}
+                    onChange={handleDarkModeToggle}
                     className="sr-only peer"
                     id="dark-mode-toggle"
                   />
