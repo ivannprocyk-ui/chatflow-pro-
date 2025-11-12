@@ -13,6 +13,7 @@ interface ScheduledMessage {
   contactIds?: string[]; // Para selección directa de contactos
   contactCount: number;
   template: string;
+  imageUrl?: string; // URL de imagen para plantillas con header de imagen
   status: 'pending' | 'sent' | 'cancelled';
   createdAt: string;
 }
@@ -36,12 +37,11 @@ export default function MessageScheduler() {
     contactListId: '',
     contactIds: [] as string[],
     selectionMode: 'list' as 'list' | 'contacts', // Modo de selección
-    template: ''
+    template: '',
+    imageUrl: ''
   });
   const [showContactSelector, setShowContactSelector] = useState(false);
   const [editingMessage, setEditingMessage] = useState<ScheduledMessage | null>(null);
-  const [isExecuting, setIsExecuting] = useState(false);
-  const executionCheckRef = useRef<NodeJS.Timeout | null>(null);
   const config = loadConfig();
   const { showSuccess, showError, showInfo } = useToast();
 
@@ -59,187 +59,30 @@ export default function MessageScheduler() {
       const parsedTemplates = JSON.parse(cachedTemplates);
       setTemplates(parsedTemplates.filter((t: WhatsAppTemplate) => t.status === 'APPROVED'));
     }
-  }, []);
 
-  // Sistema de ejecución automática de mensajes programados
-  useEffect(() => {
-    // Revisar mensajes programados cada minuto
-    executionCheckRef.current = setInterval(() => {
-      checkAndExecuteScheduledMessages();
-    }, 60000); // Check every 60 seconds
-
-    // Check immediately on mount
-    checkAndExecuteScheduledMessages();
-
-    return () => {
-      if (executionCheckRef.current) {
-        clearInterval(executionCheckRef.current);
-      }
-    };
-  }, [scheduledMessages, config]);
-
-  // Función para verificar y ejecutar mensajes programados
-  const checkAndExecuteScheduledMessages = async () => {
-    if (isExecuting) return; // Evitar ejecuciones simultáneas
-
-    const now = new Date();
-    const pendingMessages = scheduledMessages.filter(msg => msg.status === 'pending');
-
-    for (const message of pendingMessages) {
-      const scheduledDateTime = new Date(`${message.scheduledDate}T${message.scheduledTime}`);
-
-      // Si la hora programada ya pasó (con margen de 2 minutos)
-      if (now >= scheduledDateTime && (now.getTime() - scheduledDateTime.getTime()) < 120000) {
-        await executeScheduledMessage(message);
-      }
-    }
-  };
-
-  // Función para ejecutar un mensaje programado
-  const executeScheduledMessage = async (message: ScheduledMessage) => {
-    if (isExecuting) return;
-
-    setIsExecuting(true);
-    showInfo(`Ejecutando campaña "${message.campaignName}"...`);
-
-    try {
-      // 1. Obtener contactos
-      const contacts = getContactsForMessage(message);
-
-      if (!contacts || contacts.length === 0) {
-        throw new Error('No se encontraron contactos para enviar');
-      }
-
-      // 2. Enviar mensajes
-      const results = {
-        total: contacts.length,
-        sent: 0,
-        failed: 0,
-        errors: [] as string[]
-      };
-
-      for (const contact of contacts) {
-        try {
-          await sendMessageToAPI(contact, message.template);
-          results.sent++;
-
-          // Agregar al historial del contacto
-          if (contact.id) {
-            addMessageToHistory(contact.id, {
-              template: message.template,
-              status: 'sent',
-              timestamp: new Date().toISOString(),
-              campaignName: message.campaignName
-            });
-          }
-
-          // Delay entre mensajes (2 segundos)
-          await new Promise(resolve => setTimeout(resolve, 2000));
-        } catch (error: any) {
-          results.failed++;
-          results.errors.push(`${contact.phone || contact.telefono || 'Unknown'}: ${error.message}`);
-        }
-      }
-
-      // 3. Actualizar estado del mensaje programado
-      const updatedMessages = scheduledMessages.map(msg =>
-        msg.id === message.id
-          ? { ...msg, status: 'sent' as const, executedAt: new Date().toISOString() }
-          : msg
-      );
+    // Listen for scheduled message executions from AppNew.tsx
+    const handleMessageExecuted = (event: any) => {
+      console.log('[MessageScheduler] Received execution notification:', event.detail);
+      // Reload messages to refresh the UI
+      const updatedMessages = loadScheduledMessages();
       setScheduledMessages(updatedMessages);
-      saveScheduledMessages(updatedMessages);
 
-      // 4. Guardar en historial de campañas
-      const campaign = {
-        id: Date.now().toString(),
-        name: message.campaignName,
-        template: message.template,
-        date: new Date().toISOString(),
-        total: results.total,
-        sent: results.sent,
-        failed: results.failed,
-        errors: results.errors,
-        type: 'scheduled',
-        source: 'message_scheduler'
-      };
-
-      const campaigns = loadCampaigns();
-      saveCampaigns([...campaigns, campaign]);
-
-      if (results.sent > 0) {
+      // Show notification
+      const { messageId, results } = event.detail;
+      const message = updatedMessages.find((m: ScheduledMessage) => m.id === messageId);
+      if (message && results.sent > 0) {
         showSuccess(`Campaña "${message.campaignName}" ejecutada: ${results.sent}/${results.total} enviados`);
-      } else {
+      } else if (message) {
         showError(`Campaña "${message.campaignName}" falló: 0 mensajes enviados`);
       }
-    } catch (error: any) {
-      // Marcar mensaje como pendiente (no error) para reintentar
-      console.error('Error executing scheduled message:', error);
-      showError(`Error en campaña "${message.campaignName}": ${error.message}`);
-    } finally {
-      setIsExecuting(false);
-    }
-  };
+    };
 
-  // Función para obtener contactos de un mensaje
-  const getContactsForMessage = (message: ScheduledMessage) => {
-    if (message.contactIds && message.contactIds.length > 0) {
-      // Selección directa de contactos CRM
-      const crmContacts = loadCRMData();
-      return message.contactIds.map(id => crmContacts.find(c => c.id === id)).filter(Boolean);
-    } else if (message.contactListId) {
-      // Lista de contactos
-      const list = contactLists.find(l => l.id === message.contactListId);
-      return list?.contacts || [];
-    }
-    return [];
-  };
+    window.addEventListener('scheduled-message-executed', handleMessageExecuted);
 
-  // Función para enviar mensaje a la API de Meta
-  const sendMessageToAPI = async (contact: any, templateName: string) => {
-    if (!config.api.accessToken || !config.api.phoneNumberId) {
-      throw new Error('API no configurada');
-    }
-
-    const phone = contact.phone || contact.telefono || contact.whatsapp;
-    if (!phone) {
-      throw new Error('Contacto sin número de teléfono');
-    }
-
-    const template = templates.find(t => t.name === templateName);
-    if (!template) {
-      throw new Error(`Plantilla "${templateName}" no encontrada`);
-    }
-
-    const response = await fetch(
-      `https://graph.facebook.com/${config.api.apiVersion}/${config.api.phoneNumberId}/messages`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${config.api.accessToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          messaging_product: 'whatsapp',
-          to: phone,
-          type: 'template',
-          template: {
-            name: templateName,
-            language: {
-              code: template.language
-            }
-          }
-        })
-      }
-    );
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error?.message || 'Error al enviar mensaje');
-    }
-
-    return await response.json();
-  };
+    return () => {
+      window.removeEventListener('scheduled-message-executed', handleMessageExecuted);
+    };
+  }, [showSuccess, showError]);
 
   // Función para editar un mensaje programado
   const handleEditMessage = (message: ScheduledMessage) => {
@@ -251,7 +94,8 @@ export default function MessageScheduler() {
       contactListId: message.contactListId || '',
       contactIds: message.contactIds || [],
       selectionMode: message.contactIds && message.contactIds.length > 0 ? 'contacts' : 'list',
-      template: message.template
+      template: message.template,
+      imageUrl: message.imageUrl || ''
     });
     setShowModal(true);
   };
@@ -306,7 +150,8 @@ export default function MessageScheduler() {
                   }
               ),
               contactCount: contactCount,
-              template: newSchedule.template
+              template: newSchedule.template,
+              imageUrl: newSchedule.imageUrl || undefined
             }
           : msg
       );
@@ -333,6 +178,7 @@ export default function MessageScheduler() {
         ),
         contactCount: contactCount,
         template: newSchedule.template,
+        imageUrl: newSchedule.imageUrl || undefined,
         status: 'pending',
         createdAt: new Date().toISOString()
       };
@@ -353,7 +199,8 @@ export default function MessageScheduler() {
       contactListId: '',
       contactIds: [],
       selectionMode: 'list',
-      template: ''
+      template: '',
+      imageUrl: ''
     });
   };
 
@@ -746,6 +593,27 @@ export default function MessageScheduler() {
                   </p>
                 )}
               </div>
+
+              {/* Image URL field - only show if template has image header */}
+              {newSchedule.template && templates.find(t => t.name === newSchedule.template)?.components?.some((c: any) => c.type === 'HEADER' && c.format === 'IMAGE') && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <i className="fas fa-image mr-1"></i>
+                    URL de Imagen
+                  </label>
+                  <input
+                    type="url"
+                    value={newSchedule.imageUrl}
+                    onChange={(e) => setNewSchedule({ ...newSchedule, imageUrl: e.target.value })}
+                    placeholder="https://ejemplo.com/imagen.jpg"
+                    className="w-full p-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-colors duration-300"
+                  />
+                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                    <i className="fas fa-info-circle mr-1"></i>
+                    La plantilla seleccionada incluye una imagen en el encabezado. Proporciona la URL de la imagen que deseas enviar.
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="p-6 border-t border-gray-100 dark:border-gray-700 flex space-x-4">
@@ -760,7 +628,8 @@ export default function MessageScheduler() {
                     contactListId: '',
                     contactIds: [],
                     selectionMode: 'list',
-                    template: ''
+                    template: '',
+                    imageUrl: ''
                   });
                 }}
                 className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 px-6 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"

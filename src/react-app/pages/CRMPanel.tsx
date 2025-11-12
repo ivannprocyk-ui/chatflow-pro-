@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { loadCRMData, saveCRMData, loadCRMConfig, loadContactLists, saveContactLists, CRMFieldConfig, CRMConfig, loadTags, saveTags, createTag, updateTag, deleteTag, Tag, TAG_COLORS, ValidationIssue, validateContactData, findDuplicateContacts, applyDataCleaning, mergeContacts, exportContacts, ExportOptions, MessageHistory, MessageStats, MessageFilter, getContactMessageHistory, getContactMessageStats, filterMessageHistory } from '@/react-app/utils/storage';
+import { loadCRMData, saveCRMData, loadCRMConfig, loadContactLists, saveContactLists, CRMFieldConfig, CRMConfig, loadTags, saveTags, createTag, updateTag, deleteTag, Tag, TAG_COLORS, ValidationIssue, validateContactData, findDuplicateContacts, applyDataCleaning, mergeContacts, exportContacts, ExportOptions, MessageHistory, MessageStats, MessageFilter, getContactMessageHistory, getContactMessageStats, filterMessageHistory, formatArgentinaPhone } from '@/react-app/utils/storage';
 import { useToast } from '@/react-app/components/Toast';
 import ImportWizard from '@/react-app/components/ImportWizard';
 
@@ -90,17 +90,38 @@ export default function CRMPanel() {
       return;
     }
 
+    // Auto-format phone numbers for Argentina
+    const formattedData = { ...formData };
+
+    // Find phone fields and format them
+    const phoneFields = config.fields.filter(f =>
+      f.type === 'phone' ||
+      ['telefono', 'phone', 'whatsapp', 'celular', 'móvil', 'movil'].includes(f.name.toLowerCase())
+    );
+
+    phoneFields.forEach(field => {
+      if (formattedData[field.name]) {
+        const originalPhone = formattedData[field.name];
+        const formattedPhone = formatArgentinaPhone(originalPhone);
+
+        if (originalPhone !== formattedPhone) {
+          formattedData[field.name] = formattedPhone;
+          console.log(`[CRM] Auto-formatted phone: ${originalPhone} → ${formattedPhone}`);
+        }
+      }
+    });
+
     let updatedContacts;
 
     if (editingContact) {
       // Edit existing
       updatedContacts = contacts.map(c =>
-        c.id === editingContact.id ? { ...formData, id: editingContact.id } : c
+        c.id === editingContact.id ? { ...formattedData, id: editingContact.id } : c
       );
     } else {
       // Add new
       const newContact = {
-        ...formData,
+        ...formattedData,
         id: Date.now().toString(),
         messagesSent: 0,
         lastInteraction: new Date().toISOString(),

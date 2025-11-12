@@ -351,6 +351,121 @@ export function appendToSendLog(entry: any): void {
   }
 }
 
+// ============================================================================
+// PHONE NUMBER UTILITIES (Argentina)
+// ============================================================================
+
+/**
+ * Formatea automáticamente números de teléfono argentinos al formato WhatsApp
+ * Formato final: 549 + código de área + número (sin 15)
+ *
+ * Ejemplos:
+ * - Input: "11xxxxxxxx" → Output: "5491xxxxxxxx"
+ * - Input: "5411xxxxxxxx" → Output: "5491xxxxxxxx"
+ * - Input: "1xxxxxxxx" → Output: "5491xxxxxxxx"
+ * - Input: "54911xxxxxxxx" → Output: "5491xxxxxxxx"
+ * - Input: "15xxxxxxxx" → Output: "5491xxxxxxxx"
+ */
+export function formatArgentinaPhone(phone: string): string {
+  if (!phone) return phone;
+
+  // Remover espacios, guiones y paréntesis
+  let cleaned = phone.replace(/[\s\-\(\)]/g, '');
+
+  // Remover el + si existe
+  if (cleaned.startsWith('+')) {
+    cleaned = cleaned.substring(1);
+  }
+
+  // Caso 1: Ya tiene formato correcto 549 + area + número
+  if (cleaned.match(/^549\d{10}$/)) {
+    return cleaned;
+  }
+
+  // Caso 2: Tiene 54911... (formato incorrecto con 15)
+  // Debe ser 549 + area + número (sin el 15)
+  if (cleaned.match(/^54911\d{8}$/)) {
+    // Remover el "15" después del código de país
+    return '549' + cleaned.substring(5);
+  }
+
+  // Caso 3: Tiene 5491... pero el área code puede estar mal
+  if (cleaned.startsWith('549')) {
+    // Si tiene 54 + 9 + area de 2 dígitos + 15 + número
+    if (cleaned.match(/^549\d{2}15\d{6,8}$/)) {
+      const area = cleaned.substring(3, 5);
+      const number = cleaned.substring(7);
+      return `549${area}${number}`;
+    }
+    // Si ya tiene formato 549 + area + número (sin 15)
+    if (cleaned.match(/^549\d{8,10}$/)) {
+      return cleaned;
+    }
+  }
+
+  // Caso 4: Empieza con 54 pero sin el 9
+  if (cleaned.match(/^5411\d{8}$/)) {
+    // 5411xxxxxxxx → 5491xxxxxxxx
+    return '549' + cleaned.substring(3);
+  }
+
+  if (cleaned.startsWith('54') && !cleaned.startsWith('549')) {
+    // Detectar si tiene area code
+    if (cleaned.length >= 12) {
+      // Probablemente 54 + area de 2 dígitos + número
+      const withoutCountry = cleaned.substring(2);
+      // Agregar el 9 después del 54
+      return '549' + withoutCountry.replace(/^15/, '');
+    }
+  }
+
+  // Caso 5: Comienza con 11 (CABA/GBA)
+  if (cleaned.match(/^11\d{8}$/)) {
+    return '5491' + cleaned.substring(2);
+  }
+
+  // Caso 6: Comienza con 15 seguido de área code
+  if (cleaned.match(/^15\d{8,10}$/)) {
+    // Remover el 15 inicial y procesar
+    const withoutPrefix = cleaned.substring(2);
+    return formatArgentinaPhone(withoutPrefix);
+  }
+
+  // Caso 7: Área de 3 dígitos (interior del país)
+  // Ejemplos: 221, 351, 341, etc.
+  if (cleaned.match(/^\d{3}\d{7}$/)) {
+    // Es área + número → 549 + área + número
+    return '549' + cleaned;
+  }
+
+  // Caso 8: Solo 8 dígitos (asumimos CABA/GBA sin código de área)
+  if (cleaned.match(/^\d{8}$/)) {
+    return '5491' + cleaned;
+  }
+
+  // Caso 9: Tiene 10 dígitos y no matcheó ningún caso anterior
+  if (cleaned.match(/^\d{10}$/)) {
+    // Asumimos que es área + número
+    return '549' + cleaned;
+  }
+
+  // Si no matchea ningún patrón conocido, retornar sin modificar
+  console.warn(`[Phone Format] Formato no reconocido: ${phone}`);
+  return cleaned;
+}
+
+/**
+ * Valida si un número de teléfono argentino es válido
+ */
+export function isValidArgentinaPhone(phone: string): boolean {
+  if (!phone) return false;
+
+  const formatted = formatArgentinaPhone(phone);
+
+  // Debe tener 549 seguido de 8-10 dígitos
+  return /^549\d{8,10}$/.test(formatted);
+}
+
 // Tags
 export function loadTags(): Tag[] {
   try {
