@@ -63,6 +63,20 @@ export default function App() {
     setDarkMode(!darkMode);
   };
 
+  // Listen for theme change events from child components
+  useEffect(() => {
+    const handleThemeChange = (e: any) => {
+      if (e.detail && e.detail.darkMode !== undefined) {
+        setDarkMode(e.detail.darkMode);
+      }
+    };
+
+    window.addEventListener('theme-change', handleThemeChange as EventListener);
+    return () => {
+      window.removeEventListener('theme-change', handleThemeChange as EventListener);
+    };
+  }, []);
+
   useEffect(() => {
     // Initialize demo data on first load
     initializeDemoData();
@@ -80,18 +94,9 @@ export default function App() {
       }
     };
 
-    // Listen for theme change events
-    const handleThemeChange = (e: any) => {
-      if (e.detail && e.detail.darkMode !== undefined) {
-        setDarkMode(e.detail.darkMode);
-      }
-    };
-
     window.addEventListener('navigate-to', handleNavigate as EventListener);
-    window.addEventListener('theme-change', handleThemeChange as EventListener);
     return () => {
       window.removeEventListener('navigate-to', handleNavigate as EventListener);
-      window.removeEventListener('theme-change', handleThemeChange as EventListener);
     };
   }, [config]);
 
