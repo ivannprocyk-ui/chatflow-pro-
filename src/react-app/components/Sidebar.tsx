@@ -1,5 +1,6 @@
 import { AppSection } from "@/react-app/App";
 import { AppConfig } from "@/react-app/utils/storage";
+import { useState, useEffect } from "react";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -25,6 +26,22 @@ const menuItems = [
 ] as const;
 
 export default function Sidebar({ isOpen, isCollapsed = false, currentSection, onSectionChange, onToggleCollapse, config }: SidebarProps) {
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('dark_mode');
+    return saved === 'true';
+  });
+
+  const toggleDarkMode = () => {
+    const newDarkMode = !darkMode;
+    setDarkMode(newDarkMode);
+    localStorage.setItem('dark_mode', newDarkMode.toString());
+
+    // Dispatch event to AppNew.tsx
+    window.dispatchEvent(new CustomEvent('theme-change', {
+      detail: { darkMode: newDarkMode }
+    }));
+  };
+
   return (
     <div
       className={`
@@ -86,6 +103,26 @@ export default function Sidebar({ isOpen, isCollapsed = false, currentSection, o
 
       {/* Footer */}
       <div className="p-6 border-t border-gray-200 dark:border-gray-700 space-y-3 transition-colors duration-300">
+        {/* Dark Mode Toggle */}
+        <button
+          onClick={toggleDarkMode}
+          className={`
+            w-full flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} px-4 py-2 rounded-lg
+            bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600
+            transition-all duration-300 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100
+          `}
+          title={darkMode ? 'Modo claro' : 'Modo oscuro'}
+        >
+          {!isCollapsed && <span className="text-sm font-medium">{darkMode ? '🌙 Modo Oscuro' : '☀️ Modo Claro'}</span>}
+          {isCollapsed && <i className={`fas ${darkMode ? 'fa-moon' : 'fa-sun'} text-lg`}></i>}
+          {!isCollapsed && (
+            <div className="relative inline-block w-10 h-5">
+              <div className={`block w-10 h-5 rounded-full ${darkMode ? 'bg-blue-600' : 'bg-gray-300'} transition-colors`}></div>
+              <div className={`absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition-transform ${darkMode ? 'translate-x-5' : 'translate-x-0'}`}></div>
+            </div>
+          )}
+        </button>
+
         {/* Collapse Button - Hidden on mobile */}
         {onToggleCollapse && (
           <button
