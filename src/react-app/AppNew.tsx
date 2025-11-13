@@ -28,7 +28,11 @@ export type AppSection =
   | 'ai-settings';
 
 export default function App() {
-  const [currentSection, setCurrentSection] = useState<AppSection>('dashboard');
+  const [currentSection, setCurrentSection] = useState<AppSection>(() => {
+    // Load current section from localStorage
+    const saved = localStorage.getItem('current_section');
+    return (saved as AppSection) || 'dashboard';
+  });
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     // Load collapsed state from localStorage
@@ -42,6 +46,11 @@ export default function App() {
   });
   const [config, setConfig] = useState(loadConfig());
   const { toasts, removeToast } = useToast();
+
+  // Save current section to localStorage
+  useEffect(() => {
+    localStorage.setItem('current_section', currentSection);
+  }, [currentSection]);
 
   // Save collapsed state to localStorage
   useEffect(() => {

@@ -1332,119 +1332,147 @@ export default function CRMPanel() {
           </div>
         )}
 
-        {/* List View */}
+        {/* List View - Modern Calendar-Style Design */}
         {viewMode === 'list' && (
-          <div className="divide-y divide-gray-200 dark:divide-gray-700 animate-fadeIn">
-            {filteredContacts.map((contact, index) => (
-              <div
-                key={contact.id}
-                className={`flex items-center p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200 ${
-                  selectedContacts.has(contact.id) ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-                } ${index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/50 dark:bg-gray-800/50'}`}
-              >
-                {/* Checkbox */}
-                <div className="flex-shrink-0 mr-4">
-                  <input
-                    type="checkbox"
-                    checked={selectedContacts.has(contact.id)}
-                    onChange={(e) => handleSelectContact(contact.id, e.target.checked)}
-                    className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-600"
-                  />
-                </div>
+          <div className="space-y-3 p-4 animate-fadeIn">
+            {filteredContacts.map((contact) => {
+              // Status color mapping
+              const statusColors: any = {
+                lead: '#eab308',
+                contacted: '#3b82f6',
+                qualified: '#8b5cf6',
+                proposal: '#f97316',
+                negotiation: '#ec4899',
+                won: '#10b981',
+                lost: '#ef4444'
+              };
+              const borderColor = statusColors[contact.status] || '#6b7280';
 
-                {/* Avatar */}
-                <div className={`flex-shrink-0 w-10 h-10 rounded-full ${getAvatarColor(contact)} flex items-center justify-center text-white font-bold text-sm shadow-md`}>
-                  {getContactInitials(contact)}
-                </div>
+              return (
+                <div
+                  key={contact.id}
+                  className={`border-l-4 pl-4 pr-4 py-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-r-xl transition-all hover:shadow-lg transform hover:-translate-y-1 bg-white dark:bg-gray-800 ${
+                    selectedContacts.has(contact.id) ? 'ring-2 ring-blue-500 bg-blue-50/50 dark:bg-blue-900/20' : ''
+                  }`}
+                  style={{ borderColor }}
+                  onClick={() => handleViewContact(contact)}
+                >
+                  <div className="flex items-start justify-between">
+                    {/* Left: Checkbox + Avatar + Info */}
+                    <div className="flex items-start space-x-4 flex-1 min-w-0">
+                      {/* Checkbox */}
+                      <div className="flex-shrink-0 pt-1">
+                        <input
+                          type="checkbox"
+                          checked={selectedContacts.has(contact.id)}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            handleSelectContact(contact.id, e.target.checked);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="h-5 w-5 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-600 cursor-pointer"
+                        />
+                      </div>
 
-                {/* Main Content */}
-                <div className="flex-1 ml-4">
-                  {/* Name + Status */}
-                  <div className="mb-2">
-                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
-                      {getContactName(contact)}
-                    </h4>
-                    <div className="mt-1 flex flex-wrap gap-1 items-center">
-                      {getStatusBadge(contact.status)}
-                      {renderTagBadges(contact, 2)}
-                      {duplicateContactIds.has(contact.id) && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">
-                          <i className="fas fa-exclamation-triangle mr-1"></i>
-                          Duplicado
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                      {/* Avatar */}
+                      <div className={`flex-shrink-0 w-14 h-14 rounded-full ${getAvatarColor(contact)} flex items-center justify-center text-white font-bold text-lg shadow-lg ring-2 ring-white dark:ring-gray-800`}>
+                        {getContactInitials(contact)}
+                      </div>
 
-                  {/* Contact Info Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
-                    {config.fields
-                      .filter(f => f.visible && f.name.toLowerCase() !== 'nombre' && f.name.toLowerCase() !== 'name')
-                      .sort((a, b) => a.order - b.order)
-                      .slice(0, 4)
-                      .map((field) => (
-                        <div key={field.name} className="flex items-center text-xs">
-                          <i className={`fas ${
-                            field.type === 'tel' ? 'fa-phone' :
-                            field.type === 'email' ? 'fa-envelope' :
-                            field.type === 'currency' ? 'fa-dollar-sign' :
-                            field.type === 'date' ? 'fa-calendar' :
-                            'fa-info-circle'
-                          } text-gray-400 dark:text-gray-500 mr-2 flex-shrink-0`}></i>
-                          <div className="flex-1 min-w-0">
-                            <span className="text-gray-500 dark:text-gray-400 text-[10px] block">{field.label}</span>
-                            <span className="text-gray-900 dark:text-gray-100 font-medium truncate block">
-                              {field.type === 'currency' && contact[field.name] ? (
-                                `$${contact[field.name]?.toLocaleString()}`
-                              ) : field.type === 'date' && contact[field.name] ? (
-                                new Date(contact[field.name]).toLocaleDateString()
-                              ) : (
-                                contact[field.name] || '-'
-                              )}
+                      {/* Contact Info */}
+                      <div className="flex-1 min-w-0 space-y-2">
+                        {/* Name + Status + Tags */}
+                        <div className="flex items-center space-x-2 flex-wrap">
+                          <h4 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                            {getContactName(contact)}
+                          </h4>
+                          {getStatusBadge(contact.status)}
+                          {duplicateContactIds.has(contact.id) && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">
+                              <i className="fas fa-exclamation-triangle mr-1"></i>
+                              Duplicado
                             </span>
-                          </div>
+                          )}
+                          {renderTagBadges(contact, 3)}
                         </div>
-                      ))}
 
-                    {/* Last Interaction */}
-                    <div className="flex items-center text-xs">
-                      <i className="fas fa-clock text-gray-400 dark:text-gray-500 mr-2 flex-shrink-0"></i>
-                      <div className="flex-1 min-w-0">
-                        <span className="text-gray-500 dark:text-gray-400 text-[10px] block">Última interacción</span>
-                        <span className="text-gray-900 dark:text-gray-100 font-medium truncate block">
-                          {contact.lastInteraction ? new Date(contact.lastInteraction).toLocaleDateString() : '-'}
-                        </span>
+                        {/* Contact Details Grid */}
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                          {config.fields
+                            .filter(f => f.visible && f.name.toLowerCase() !== 'nombre' && f.name.toLowerCase() !== 'name')
+                            .sort((a, b) => a.order - b.order)
+                            .slice(0, 4)
+                            .map((field) => (
+                              <div key={field.name} className="flex items-center space-x-2 text-sm">
+                                <i className={`fas ${
+                                  field.type === 'tel' || field.type === 'phone' ? 'fa-phone' :
+                                  field.type === 'email' ? 'fa-envelope' :
+                                  field.type === 'currency' ? 'fa-dollar-sign' :
+                                  field.type === 'date' ? 'fa-calendar' :
+                                  'fa-info-circle'
+                                } text-gray-400 dark:text-gray-500 flex-shrink-0`}></i>
+                                <span className="text-gray-900 dark:text-gray-100 font-medium truncate">
+                                  {field.type === 'currency' && contact[field.name] ? (
+                                    `$${contact[field.name]?.toLocaleString()}`
+                                  ) : field.type === 'date' && contact[field.name] ? (
+                                    new Date(contact[field.name]).toLocaleDateString()
+                                  ) : (
+                                    contact[field.name] || '-'
+                                  )}
+                                </span>
+                              </div>
+                            ))}
+
+                          {/* Last Interaction */}
+                          {contact.lastInteraction && (
+                            <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+                              <i className="fas fa-clock flex-shrink-0"></i>
+                              <span className="truncate">
+                                {new Date(contact.lastInteraction).toLocaleDateString()}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
+
+                    {/* Right: Actions */}
+                    <div className="flex-shrink-0 flex items-center space-x-2 ml-4">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewContact(contact);
+                        }}
+                        className="p-2 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors"
+                        title="Ver detalles"
+                      >
+                        <i className="fas fa-eye"></i>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditContact(contact);
+                        }}
+                        className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                        title="Editar"
+                      >
+                        <i className="fas fa-edit"></i>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteContact(contact.id);
+                        }}
+                        className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                        title="Eliminar"
+                      >
+                        <i className="fas fa-trash"></i>
+                      </button>
+                    </div>
                   </div>
                 </div>
-
-                {/* Actions */}
-                <div className="flex-shrink-0 flex space-x-2 ml-4">
-                  <button
-                    onClick={() => handleViewContact(contact)}
-                    className="p-2 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors"
-                    title="Ver"
-                  >
-                    <i className="fas fa-eye"></i>
-                  </button>
-                  <button
-                    onClick={() => handleEditContact(contact)}
-                    className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                    title="Editar"
-                  >
-                    <i className="fas fa-edit"></i>
-                  </button>
-                  <button
-                    onClick={() => handleDeleteContact(contact.id)}
-                    className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                    title="Eliminar"
-                  >
-                    <i className="fas fa-trash"></i>
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
