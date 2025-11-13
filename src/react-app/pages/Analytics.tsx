@@ -255,7 +255,7 @@ export default function Analytics() {
 
       {/* Additional Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-2xl p-6 border border-green-200 dark:border-green-800">
+        <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-2xl p-6 border border-green-200 dark:border-green-800 min-h-[180px] flex flex-col">
           <div className="flex items-center space-x-3 mb-4">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white">
               <i className="fas fa-check-circle text-xl"></i>
@@ -264,11 +264,11 @@ export default function Analytics() {
           </div>
           <p className="text-4xl font-bold text-green-600 dark:text-green-400">{stats.successRate}%</p>
           <p className="text-sm text-green-700 dark:text-green-300 mt-2">
-            {stats.totalSent - stats.totalFailed} mensajes exitosos
+            {(stats.totalSent - stats.totalFailed).toLocaleString()} mensajes exitosos
           </p>
         </div>
 
-        <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-2xl p-6 border border-red-200 dark:border-red-800">
+        <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-2xl p-6 border border-red-200 dark:border-red-800 min-h-[180px] flex flex-col">
           <div className="flex items-center space-x-3 mb-4">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white">
               <i className="fas fa-times-circle text-xl"></i>
@@ -277,11 +277,11 @@ export default function Analytics() {
           </div>
           <p className="text-4xl font-bold text-red-600 dark:text-red-400">{stats.totalFailed}</p>
           <p className="text-sm text-red-700 dark:text-red-300 mt-2">
-            {((stats.totalFailed / stats.totalSent) * 100).toFixed(1)}% del total
+            {stats.totalSent > 0 ? ((stats.totalFailed / stats.totalSent) * 100).toFixed(1) : '0'}% del total
           </p>
         </div>
 
-        <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-2xl p-6 border border-blue-200 dark:border-blue-800">
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-2xl p-6 border border-blue-200 dark:border-blue-800 min-h-[180px] flex flex-col">
           <div className="flex items-center space-x-3 mb-4">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white">
               <i className="fas fa-users text-xl"></i>
