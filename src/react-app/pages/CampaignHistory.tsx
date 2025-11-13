@@ -76,14 +76,14 @@ export default function CampaignHistory() {
   }, []);
 
   const getStatusBadge = (status: Campaign['status']) => {
-    const statusConfig = {
+    const statusConfig: any = {
       completed: { color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400', label: 'Completada', icon: 'fas fa-check-circle' },
       'in-progress': { color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400', label: 'En Progreso', icon: 'fas fa-spinner' },
       scheduled: { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400', label: 'Programada', icon: 'fas fa-clock' },
       cancelled: { color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400', label: 'Cancelada', icon: 'fas fa-times-circle' }
     };
 
-    const config = statusConfig[status];
+    const config = statusConfig[status] || { color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400', label: 'Desconocido', icon: 'fas fa-question-circle' };
     return (
       <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${config.color}`}>
         <i className={`${config.icon} mr-1`}></i>
@@ -130,8 +130,8 @@ export default function CampaignHistory() {
 
   const totalCampaigns = campaigns.length;
   const completedCampaigns = campaigns.filter(c => c.status === 'completed').length;
-  const totalContacts = campaigns.reduce((sum, c) => sum + c.contacts, 0);
-  const totalSent = campaigns.reduce((sum, c) => sum + c.sent, 0);
+  const totalContacts = campaigns.reduce((sum, c) => sum + (c.contacts || 0), 0);
+  const totalSent = campaigns.reduce((sum, c) => sum + (c.sent || 0), 0);
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -269,36 +269,36 @@ export default function CampaignHistory() {
                 <tr key={campaign.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
-                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{campaign.name}</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">{campaign.template}</div>
+                      <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{campaign.name || 'Sin nombre'}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">{campaign.template || 'Sin plantilla'}</div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {new Date(campaign.date).toLocaleDateString('es-ES', {
+                    {campaign.date ? new Date(campaign.date).toLocaleDateString('es-ES', {
                       year: 'numeric',
                       month: 'short',
                       day: 'numeric'
-                    })}
+                    }) : '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    {campaign.contacts.toLocaleString()}
+                    {(campaign.contacts || 0).toLocaleString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    <span className="text-green-600 dark:text-green-400 font-medium">{campaign.sent.toLocaleString()}</span>
+                    <span className="text-green-600 dark:text-green-400 font-medium">{(campaign.sent || 0).toLocaleString()}</span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                    <span className="text-red-600 dark:text-red-400 font-medium">{campaign.errors.toLocaleString()}</span>
+                    <span className="text-red-600 dark:text-red-400 font-medium">{(campaign.errors || 0).toLocaleString()}</span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
                     <div className="flex items-center">
                       <div className="w-16 bg-gray-200 dark:bg-gray-700 rounded-full h-2 mr-2">
                         <div
                           className="bg-green-500 dark:bg-green-400 h-2 rounded-full"
-                          style={{ width: `${getSuccessRate(campaign.sent, campaign.contacts)}%` }}
+                          style={{ width: `${getSuccessRate(campaign.sent || 0, campaign.contacts || 0)}%` }}
                         ></div>
                       </div>
                       <span className="text-sm font-medium">
-                        {getSuccessRate(campaign.sent, campaign.contacts)}%
+                        {getSuccessRate(campaign.sent || 0, campaign.contacts || 0)}%
                       </span>
                     </div>
                   </td>
