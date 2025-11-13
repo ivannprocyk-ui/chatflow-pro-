@@ -1234,7 +1234,7 @@ export default function CRMPanel() {
             {filteredContacts.map((contact, index) => (
               <div
                 key={contact.id}
-                className="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden border border-gray-200 dark:border-gray-700"
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden border border-gray-200 dark:border-gray-700 flex flex-col min-h-[320px] h-full"
                 style={{ animationDelay: `${index * 30}ms` }}
               >
                 {/* Card Header */}
@@ -1272,7 +1272,7 @@ export default function CRMPanel() {
                 </div>
 
                 {/* Card Body */}
-                <div className="p-4 space-y-2">
+                <div className="p-4 space-y-2 flex-1 flex flex-col justify-between">
                   {config.fields
                     .filter(f => f.visible && !f.name.toLowerCase().includes('nombre') && !f.name.toLowerCase().includes('name'))
                     .sort((a, b) => a.order - b.order)
@@ -1370,9 +1370,9 @@ export default function CRMPanel() {
                 </div>
 
                 {/* Main Content */}
-                <div className="flex-1 ml-4 grid grid-cols-1 md:grid-cols-5 gap-3 items-center">
+                <div className="flex-1 ml-4">
                   {/* Name + Status */}
-                  <div className="md:col-span-2">
+                  <div className="mb-2">
                     <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
                       {getContactName(contact)}
                     </h4>
@@ -1388,23 +1388,46 @@ export default function CRMPanel() {
                     </div>
                   </div>
 
-                  {/* Contact Info */}
-                  {config.fields
-                    .filter(f => f.visible && (f.type === 'tel' || f.type === 'email'))
-                    .slice(0, 2)
-                    .map((field, idx) => (
-                      <div key={field.name} className={idx === 0 ? 'md:col-span-2' : ''}>
-                        <div className="flex items-center text-xs">
-                          <i className={`fas ${field.type === 'tel' ? 'fa-phone' : 'fa-envelope'} text-gray-400 dark:text-gray-500 mr-2`}></i>
-                          <span className="text-gray-900 dark:text-gray-100">{contact[field.name] || '-'}</span>
+                  {/* Contact Info Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+                    {config.fields
+                      .filter(f => f.visible && f.name.toLowerCase() !== 'nombre' && f.name.toLowerCase() !== 'name')
+                      .sort((a, b) => a.order - b.order)
+                      .slice(0, 4)
+                      .map((field) => (
+                        <div key={field.name} className="flex items-center text-xs">
+                          <i className={`fas ${
+                            field.type === 'tel' ? 'fa-phone' :
+                            field.type === 'email' ? 'fa-envelope' :
+                            field.type === 'currency' ? 'fa-dollar-sign' :
+                            field.type === 'date' ? 'fa-calendar' :
+                            'fa-info-circle'
+                          } text-gray-400 dark:text-gray-500 mr-2 flex-shrink-0`}></i>
+                          <div className="flex-1 min-w-0">
+                            <span className="text-gray-500 dark:text-gray-400 text-[10px] block">{field.label}</span>
+                            <span className="text-gray-900 dark:text-gray-100 font-medium truncate block">
+                              {field.type === 'currency' && contact[field.name] ? (
+                                `$${contact[field.name]?.toLocaleString()}`
+                              ) : field.type === 'date' && contact[field.name] ? (
+                                new Date(contact[field.name]).toLocaleDateString()
+                              ) : (
+                                contact[field.name] || '-'
+                              )}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
 
-                  {/* Last Interaction */}
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                    <i className="fas fa-clock mr-1"></i>
-                    {contact.lastInteraction ? new Date(contact.lastInteraction).toLocaleDateString() : '-'}
+                    {/* Last Interaction */}
+                    <div className="flex items-center text-xs">
+                      <i className="fas fa-clock text-gray-400 dark:text-gray-500 mr-2 flex-shrink-0"></i>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-gray-500 dark:text-gray-400 text-[10px] block">Última interacción</span>
+                        <span className="text-gray-900 dark:text-gray-100 font-medium truncate block">
+                          {contact.lastInteraction ? new Date(contact.lastInteraction).toLocaleDateString() : '-'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -1496,12 +1519,30 @@ export default function CRMPanel() {
                           {/* Card Body */}
                           <div className="space-y-1.5 text-xs">
                             {config.fields
-                              .filter(f => f.visible && (f.type === 'tel' || f.type === 'email'))
-                              .slice(0, 2)
+                              .filter(f => f.visible && f.name.toLowerCase() !== 'nombre' && f.name.toLowerCase() !== 'name')
+                              .sort((a, b) => a.order - b.order)
+                              .slice(0, 3)
                               .map(field => (
-                                <div key={field.name} className="flex items-center text-gray-600 dark:text-gray-400">
-                                  <i className={`fas ${field.type === 'tel' ? 'fa-phone' : 'fa-envelope'} mr-2 w-3`}></i>
-                                  <span className="truncate">{contact[field.name] || '-'}</span>
+                                <div key={field.name} className="flex items-start text-gray-600 dark:text-gray-400">
+                                  <i className={`fas ${
+                                    field.type === 'tel' ? 'fa-phone' :
+                                    field.type === 'email' ? 'fa-envelope' :
+                                    field.type === 'currency' ? 'fa-dollar-sign' :
+                                    field.type === 'date' ? 'fa-calendar' :
+                                    'fa-info-circle'
+                                  } mr-2 w-3 mt-0.5 flex-shrink-0`}></i>
+                                  <div className="flex-1 min-w-0">
+                                    <span className="text-gray-400 dark:text-gray-500 text-[10px] block">{field.label}</span>
+                                    <span className="truncate block text-gray-900 dark:text-gray-100 font-medium">
+                                      {field.type === 'currency' && contact[field.name] ? (
+                                        `$${contact[field.name]?.toLocaleString()}`
+                                      ) : field.type === 'date' && contact[field.name] ? (
+                                        new Date(contact[field.name]).toLocaleDateString()
+                                      ) : (
+                                        contact[field.name] || '-'
+                                      )}
+                                    </span>
+                                  </div>
                                 </div>
                               ))}
 

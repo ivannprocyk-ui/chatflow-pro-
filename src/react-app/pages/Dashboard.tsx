@@ -151,13 +151,23 @@ export default function Dashboard() {
       const cachedTemplates = localStorage.getItem('chatflow_cached_templates');
       const allTemplates = cachedTemplates ? JSON.parse(cachedTemplates) : [];
 
-      // Filter approved templates and sort by name
-      const approvedTemplates = allTemplates
-        .filter((t: any) => t.status === 'APPROVED')
-        .sort((a: any, b: any) => a.name.localeCompare(b.name))
-        .slice(0, 6); // Show max 6 templates
+      // Show ALL templates sorted by status (APPROVED first) and name
+      const sortedTemplates = allTemplates
+        .sort((a: any, b: any) => {
+          // First sort by status priority: APPROVED > PENDING > REJECTED
+          const statusPriority: any = { APPROVED: 0, PENDING: 1, REJECTED: 2 };
+          const aPriority = statusPriority[a.status] || 3;
+          const bPriority = statusPriority[b.status] || 3;
 
-      setTemplates(approvedTemplates);
+          if (aPriority !== bPriority) {
+            return aPriority - bPriority;
+          }
+
+          // Then sort by name
+          return a.name.localeCompare(b.name);
+        });
+
+      setTemplates(sortedTemplates);
     } catch (error) {
       console.error('Error loading templates:', error);
     }
@@ -913,52 +923,85 @@ export default function Dashboard() {
 
           {templates.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {templates.map((template, index) => (
-                <div
-                  key={template.id || index}
-                  className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-md hover:shadow-lg transition-all hover:-translate-y-1 cursor-pointer"
-                  onClick={() => window.dispatchEvent(new CustomEvent('navigate-to', { detail: 'templates' }))}
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center space-x-2 flex-1 min-w-0">
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white flex-shrink-0">
-                        <i className="fas fa-file-alt text-lg"></i>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate">{template.name}</h3>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">{template.language || 'es'}</p>
-                      </div>
-                    </div>
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
-                      {template.category || 'UTILITY'}
-                    </span>
-                  </div>
+              {templates.map((template, index) => {
+                // Status badge configuration
+                const statusConfig: any = {
+                  APPROVED: {
+                    bg: 'bg-emerald-100 dark:bg-emerald-900/30',
+                    text: 'text-emerald-800 dark:text-emerald-400',
+                    icon: 'fa-check-circle',
+                    label: 'Aprobada'
+                  },
+                  PENDING: {
+                    bg: 'bg-amber-100 dark:bg-amber-900/30',
+                    text: 'text-amber-800 dark:text-amber-400',
+                    icon: 'fa-clock',
+                    label: 'Pendiente'
+                  },
+                  REJECTED: {
+                    bg: 'bg-red-100 dark:bg-red-900/30',
+                    text: 'text-red-800 dark:text-red-400',
+                    icon: 'fa-times-circle',
+                    label: 'Rechazada'
+                  }
+                };
 
-                  {template.components && template.components.find((c: any) => c.type === 'BODY') && (
-                    <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 mb-3">
-                      {template.components.find((c: any) => c.type === 'BODY').text}
-                    </p>
-                  )}
+                const status = statusConfig[template.status] || statusConfig.PENDING;
 
-                  <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
-                    <div className="flex items-center gap-2">
-                      {template.components?.some((c: any) => c.type === 'HEADER' && c.format === 'IMAGE') && (
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                          <i className="fas fa-image mr-1"></i>
-                          Imagen
-                        </span>
-                      )}
-                      {template.components?.some((c: any) => c.type === 'BUTTONS') && (
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                          <i className="fas fa-hand-pointer mr-1"></i>
-                          Botones
-                        </span>
-                      )}
+                return (
+                  <div
+                    key={template.id || index}
+                    className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-md hover:shadow-lg transition-all hover:-translate-y-1 cursor-pointer"
+                    onClick={() => window.dispatchEvent(new CustomEvent('navigate-to', { detail: 'templates' }))}
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center space-x-2 flex-1 min-w-0">
+                        <div className={`w-10 h-10 rounded-lg ${
+                          template.status === 'APPROVED'
+                            ? 'bg-gradient-to-br from-emerald-500 to-teal-500'
+                            : template.status === 'PENDING'
+                            ? 'bg-gradient-to-br from-amber-500 to-orange-500'
+                            : 'bg-gradient-to-br from-red-500 to-red-600'
+                        } flex items-center justify-center text-white flex-shrink-0`}>
+                          <i className="fas fa-file-alt text-lg"></i>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate">{template.name}</h3>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{template.language || 'es'} • {template.category || 'UTILITY'}</p>
+                        </div>
+                      </div>
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${status.bg} ${status.text}`}>
+                        <i className={`fas ${status.icon} mr-1`}></i>
+                        {status.label}
+                      </span>
                     </div>
-                    <i className="fas fa-chevron-right text-gray-400 dark:text-gray-500"></i>
+
+                    {template.components && template.components.find((c: any) => c.type === 'BODY') && (
+                      <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 mb-3">
+                        {template.components.find((c: any) => c.type === 'BODY').text}
+                      </p>
+                    )}
+
+                    <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
+                      <div className="flex items-center gap-2">
+                        {template.components?.some((c: any) => c.type === 'HEADER' && c.format === 'IMAGE') && (
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            <i className="fas fa-image mr-1"></i>
+                            Imagen
+                          </span>
+                        )}
+                        {template.components?.some((c: any) => c.type === 'BUTTONS') && (
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            <i className="fas fa-hand-pointer mr-1"></i>
+                            Botones
+                          </span>
+                        )}
+                      </div>
+                      <i className="fas fa-chevron-right text-gray-400 dark:text-gray-500"></i>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-8 text-center">
