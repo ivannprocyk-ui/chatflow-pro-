@@ -31,7 +31,15 @@ export default function App() {
   const [currentSection, setCurrentSection] = useState<AppSection>(() => {
     // Load current section from localStorage
     const saved = localStorage.getItem('current_section');
-    return (saved as AppSection) || 'dashboard';
+    // Validate that saved value is a valid AppSection
+    const validSections: AppSection[] = [
+      'dashboard', 'bulk-messaging', 'contact-lists', 'crm-panel',
+      'crm-settings', 'campaign-history', 'message-scheduler',
+      'templates', 'calendar', 'configuration', 'ai-settings'
+    ];
+    return saved && validSections.includes(saved as AppSection)
+      ? (saved as AppSection)
+      : 'dashboard';
   });
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
