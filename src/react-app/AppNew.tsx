@@ -304,10 +304,15 @@ export default function App() {
     for (const message of pendingMessages) {
       const scheduledDateTime = new Date(`${message.scheduledDate}T${message.scheduledTime}`);
 
+      console.log(`[ScheduledExecution] Message "${message.campaignName}": scheduled for ${scheduledDateTime.toLocaleString('es-AR')}, current time: ${now.toLocaleString('es-AR')}, should execute: ${now >= scheduledDateTime}`);
+
       // If scheduled time has passed, execute it
       if (now >= scheduledDateTime) {
-        console.log(`[ScheduledExecution] Time to execute "${message.campaignName}" - scheduled for ${scheduledDateTime.toLocaleString('es-AR')}`);
+        console.log(`[ScheduledExecution] ✓ Time to execute "${message.campaignName}" - scheduled for ${scheduledDateTime.toLocaleString('es-AR')}`);
         await executeScheduledMessage(message);
+      } else {
+        const minutesUntilExecution = Math.round((scheduledDateTime.getTime() - now.getTime()) / 60000);
+        console.log(`[ScheduledExecution] ⏳ Not yet time for "${message.campaignName}" - ${minutesUntilExecution} minutes remaining`);
       }
     }
   };
