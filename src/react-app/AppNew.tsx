@@ -11,6 +11,7 @@ import Configuration from "@/react-app/pages/Configuration";
 import CRMSettings from "@/react-app/pages/CRMSettings";
 import Calendar from "@/react-app/pages/Calendar";
 import AISettings from "@/react-app/pages/AISettings";
+import Analytics from "@/react-app/pages/Analytics";
 import { loadConfig, initializeDemoData, loadScheduledMessages, saveScheduledMessages, loadContactLists, loadCRMData, saveCampaigns, loadCampaigns, addMessageToHistory } from "@/react-app/utils/storage";
 import { ToastContainer, useToast } from "@/react-app/components/Toast";
 
@@ -25,7 +26,8 @@ export type AppSection =
   | 'templates'
   | 'calendar'
   | 'configuration'
-  | 'ai-settings';
+  | 'ai-settings'
+  | 'analytics';
 
 export default function App() {
   const [currentSection, setCurrentSection] = useState<AppSection>(() => {
@@ -35,7 +37,7 @@ export default function App() {
     const validSections: AppSection[] = [
       'dashboard', 'bulk-messaging', 'contact-lists', 'crm-panel',
       'crm-settings', 'campaign-history', 'message-scheduler',
-      'templates', 'calendar', 'configuration', 'ai-settings'
+      'templates', 'calendar', 'configuration', 'ai-settings', 'analytics'
     ];
     return saved && validSections.includes(saved as AppSection)
       ? (saved as AppSection)
@@ -365,6 +367,8 @@ export default function App() {
         return <Configuration onConfigUpdate={setConfig} darkMode={darkMode} onDarkModeToggle={toggleDarkMode} />;
       case 'ai-settings':
         return <AISettings />;
+      case 'analytics':
+        return <Analytics />;
       default:
         return <Dashboard />;
     }

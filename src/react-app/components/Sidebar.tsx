@@ -21,6 +21,7 @@ const menuItems = [
   { id: 'crm-settings', icon: 'fas fa-sliders-h', label: 'Configurar CRM' },
   { id: 'calendar', icon: 'fas fa-calendar-alt', label: 'Agenda' },
   { id: 'campaign-history', icon: 'fas fa-bullhorn', label: 'Historial de Campañas' },
+  { id: 'analytics', icon: 'fas fa-chart-bar', label: 'Analytics' },
   { id: 'message-scheduler', icon: 'fas fa-clock', label: 'Programar Envíos' },
   { id: 'templates', icon: 'fas fa-file-alt', label: 'Plantillas' },
   { id: 'configuration', icon: 'fas fa-cog', label: 'Configuración' },
