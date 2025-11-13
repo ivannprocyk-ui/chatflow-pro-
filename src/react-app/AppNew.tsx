@@ -245,10 +245,11 @@ export default function App() {
         name: message.campaignName,
         template: message.template,
         date: new Date().toISOString(),
-        total: results.total,
+        contacts: results.total,  // CampaignHistory expects 'contacts' not 'total'
         sent: results.sent,
-        failed: results.failed,
-        errors: results.errors,
+        errors: results.failed,   // CampaignHistory expects 'errors' not 'failed'
+        status: 'completed' as const,  // CampaignHistory expects 'status' field
+        createdAt: message.createdAt || new Date().toISOString(),
         type: 'scheduled',
         source: 'auto_execution'
       };
