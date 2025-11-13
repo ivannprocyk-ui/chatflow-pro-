@@ -2195,71 +2195,112 @@ export default function CRMPanel() {
                   </div>
                 )}
 
-                {/* Message Timeline */}
+                {/* Message Chat Interface */}
                 {contactMessages.length > 0 ? (
-                  <div className="space-y-3 max-h-96 overflow-y-auto">
-                    {filterMessageHistory(contactMessages, messageFilter).map((message) => {
-                      const statusConfig = {
-                        sent: { color: 'bg-blue-500', icon: 'fa-check', label: 'Enviado' },
-                        delivered: { color: 'bg-green-500', icon: 'fa-check-double', label: 'Entregado' },
-                        read: { color: 'bg-purple-500', icon: 'fa-eye', label: 'Leído' },
-                        failed: { color: 'bg-red-500', icon: 'fa-times-circle', label: 'Fallido' }
-                      };
+                  <div className="bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 rounded-lg p-4 max-h-[600px] overflow-y-auto" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'30\' height=\'30\' viewBox=\'0 0 30 30\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M15 0C6.716 0 0 6.716 0 15c0 8.284 6.716 15 15 15 8.284 0 15-6.716 15-15 0-8.284-6.716-15-15-15zm0 28C7.82 28 2 22.18 2 15S7.82 2 15 2s13 5.82 13 13-5.82 13-13 13z\' fill=\'%23e5e7eb\' fill-opacity=\'0.05\' fill-rule=\'evenodd\'/%3E%3C/svg%3E")' }}>
+                    <div className="space-y-4">
+                      {filterMessageHistory(contactMessages, messageFilter).map((message, index) => {
+                        const statusConfig = {
+                          sent: { color: '#3b82f6', icon: 'fa-check', label: 'Enviado', bgClass: 'bg-blue-500' },
+                          delivered: { color: '#10b981', icon: 'fa-check-double', label: 'Entregado', bgClass: 'bg-green-500' },
+                          read: { color: '#8b5cf6', icon: 'fa-eye', label: 'Leído', bgClass: 'bg-purple-500' },
+                          failed: { color: '#ef4444', icon: 'fa-times-circle', label: 'Fallido', bgClass: 'bg-red-500' }
+                        };
 
-                      const config = statusConfig[message.status];
+                        const config = statusConfig[message.status];
+                        const isSuccess = message.status === 'delivered' || message.status === 'read';
+                        const prevMessage = index > 0 ? filterMessageHistory(contactMessages, messageFilter)[index - 1] : null;
+                        const showDate = !prevMessage ||
+                          format(new Date(message.sentAt), 'yyyy-MM-dd') !== format(new Date(prevMessage.sentAt), 'yyyy-MM-dd');
 
-                      return (
-                        <div
-                          key={message.id}
-                          className="border-l-4 pl-4 py-3 bg-white dark:bg-gray-700 rounded-r-lg hover:shadow-md transition-all"
-                          style={{ borderColor: config.color.replace('bg-', '#') }}
-                        >
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center space-x-2 mb-1">
-                                <h4 className="font-semibold text-gray-900 dark:text-gray-100">
-                                  {message.templateName}
-                                </h4>
-                                <span className={`px-2 py-0.5 rounded-md text-xs font-medium text-white ${config.color}`}>
-                                  <i className={`fas ${config.icon} mr-1`}></i>
-                                  {config.label}
-                                </span>
-                                {message.campaignName && (
-                                  <span className="px-2 py-0.5 rounded-md text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300">
-                                    <i className="fas fa-bullhorn mr-1"></i>
-                                    {message.campaignName}
-                                  </span>
-                                )}
-                              </div>
-
-                              <div className="flex items-center space-x-4 text-xs text-gray-600 dark:text-gray-400">
-                                <span className="flex items-center">
-                                  <i className="fas fa-calendar text-blue-600 mr-1.5"></i>
+                        return (
+                          <div key={message.id}>
+                            {/* Date Divider */}
+                            {showDate && (
+                              <div className="flex items-center justify-center my-4">
+                                <div className="bg-white dark:bg-gray-700 shadow-md px-4 py-1.5 rounded-full text-xs font-medium text-gray-600 dark:text-gray-300">
                                   {format(new Date(message.sentAt), "dd 'de' MMMM 'de' yyyy", { locale: es })}
-                                </span>
-                                <span className="flex items-center">
-                                  <i className="fas fa-clock text-green-600 mr-1.5"></i>
-                                  {format(new Date(message.sentAt), 'HH:mm', { locale: es })}
-                                </span>
-                                {message.phoneNumber && (
-                                  <span className="flex items-center">
-                                    <i className="fas fa-phone text-purple-600 mr-1.5"></i>
-                                    {message.phoneNumber}
-                                  </span>
-                                )}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Message Bubble */}
+                            <div className="flex items-start space-x-2">
+                              {/* Icon Avatar */}
+                              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white shadow-lg ${config.bgClass}`}>
+                                <i className="fas fa-paper-plane"></i>
                               </div>
 
-                              {message.errorMessage && (
-                                <div className="mt-2 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-2 rounded">
-                                  <i className="fas fa-exclamation-triangle mr-1"></i>
-                                  {message.errorMessage}
+                              {/* Message Content */}
+                              <div className="flex-1 max-w-[85%]">
+                                <div className={`rounded-2xl rounded-tl-sm p-4 shadow-md ${
+                                  isSuccess
+                                    ? 'bg-gradient-to-br from-green-500 to-emerald-600 text-white'
+                                    : message.status === 'failed'
+                                    ? 'bg-gradient-to-br from-red-500 to-red-600 text-white'
+                                    : 'bg-gradient-to-br from-blue-500 to-blue-600 text-white'
+                                }`}>
+                                  {/* Template Name */}
+                                  <div className="flex items-center space-x-2 mb-2">
+                                    <i className="fas fa-file-alt text-sm opacity-90"></i>
+                                    <span className="font-semibold text-sm">{message.templateName}</span>
+                                  </div>
+
+                                  {/* Campaign Badge */}
+                                  {message.campaignName && (
+                                    <div className="inline-flex items-center bg-white/20 backdrop-blur-sm px-2.5 py-1 rounded-full text-xs font-medium mb-2">
+                                      <i className="fas fa-bullhorn mr-1.5"></i>
+                                      {message.campaignName}
+                                    </div>
+                                  )}
+
+                                  {/* Phone Number */}
+                                  {message.phoneNumber && (
+                                    <div className="flex items-center text-xs opacity-90 mt-2">
+                                      <i className="fas fa-phone mr-1.5"></i>
+                                      <span className="font-mono">{message.phoneNumber}</span>
+                                    </div>
+                                  )}
+
+                                  {/* Error Message */}
+                                  {message.errorMessage && (
+                                    <div className="mt-3 bg-white/20 backdrop-blur-sm rounded-lg p-2 text-xs">
+                                      <i className="fas fa-exclamation-triangle mr-1.5"></i>
+                                      {message.errorMessage}
+                                    </div>
+                                  )}
+
+                                  {/* Time and Status */}
+                                  <div className="flex items-center justify-end space-x-2 mt-3 text-xs opacity-90">
+                                    <span>{format(new Date(message.sentAt), 'HH:mm', { locale: es })}</span>
+                                    <i className={`fas ${config.icon} ${
+                                      message.status === 'read' ? 'text-blue-200' : ''
+                                    }`}></i>
+                                  </div>
                                 </div>
-                              )}
+
+                                {/* Status Label Below Bubble */}
+                                <div className="flex items-center space-x-2 mt-1 ml-2">
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                                    {config.label}
+                                  </span>
+                                </div>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
+
+                    {/* Scroll to bottom hint */}
+                    {filterMessageHistory(contactMessages, messageFilter).length > 5 && (
+                      <div className="text-center mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          <i className="fas fa-arrow-down mr-1"></i>
+                          {filterMessageHistory(contactMessages, messageFilter).length} mensajes en total
+                        </span>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="text-center py-12 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
