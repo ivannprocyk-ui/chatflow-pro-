@@ -8,7 +8,7 @@ import {
   Automation,
   getTriggerLabel,
 } from '../utils/automationStorage';
-import { loadContacts } from '../utils/storage';
+import { loadCRMData } from '../utils/storage';
 import { executeAutomationForContacts } from '../utils/flowEngine';
 import AutomationScheduler from '../components/automation/AutomationScheduler';
 import MessageTrackingPanel from '../components/MessageTrackingPanel';
@@ -33,7 +33,7 @@ const Automations: React.FC<AutomationsProps> = ({ onNavigate }) => {
 
   useEffect(() => {
     loadData();
-    setContacts(loadContacts());
+    setContacts(loadCRMData());
   }, []);
 
   const loadData = () => {

@@ -1,7 +1,7 @@
 // Message Tracker - Sistema de seguimiento de mensajes y respuestas
 // Detecta cuando clientes no responden y puede disparar automatizaciones de seguimiento
 
-import { MessageHistory, Contact, loadContacts, saveContacts } from './storage';
+import { MessageHistory, Contact, loadCRMData, saveCRMData } from './storage';
 
 // ============================================================================
 // INTERFACES
@@ -120,11 +120,11 @@ export function trackMessageResponse(contactId: string): void {
   }
 
   // También actualizar el contacto con la fecha de última respuesta
-  const contacts = loadContacts();
+  const contacts = loadCRMData();
   const contactIndex = contacts.findIndex(c => c.id === contactId);
   if (contactIndex >= 0) {
     (contacts[contactIndex] as any).lastResponseAt = new Date().toISOString();
-    saveContacts(contacts);
+    saveCRMData(contacts);
   }
 }
 
@@ -151,7 +151,7 @@ export function getNoResponseContacts(): Array<{
   hoursSinceLastMessage: number;
 }> {
   const trackers = loadConversationTrackers();
-  const contacts = loadContacts();
+  const contacts = loadCRMData();
   const now = Date.now();
   const results: Array<{ tracker: ConversationTracker; contact: Contact; hoursSinceLastMessage: number }> = [];
 

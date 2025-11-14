@@ -11,7 +11,7 @@ import {
   resetContactTracker,
   ConversationTracker,
 } from '../utils/messageTracker';
-import { loadContacts, Contact } from '../utils/storage';
+import { loadCRMData, Contact } from '../utils/storage';
 
 interface MessageTrackingPanelProps {
   onClose?: () => void;
@@ -27,7 +27,7 @@ const MessageTrackingPanel: React.FC<MessageTrackingPanelProps> = ({ onClose }) 
 
   const loadData = () => {
     setTrackers(loadConversationTrackers());
-    setContacts(loadContacts());
+    setContacts(loadCRMData());
     setStats(getMessageResponseStats());
   };
 

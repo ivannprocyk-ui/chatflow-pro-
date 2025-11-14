@@ -14,8 +14,8 @@ import {
   getAutomationById,
 } from './automationStorage';
 import {
-  loadContacts,
-  saveContacts,
+  loadCRMData,
+  saveCRMData,
   Contact,
   loadTags,
   loadConfig,
@@ -419,7 +419,7 @@ export class FlowEngine {
       return { success: false, message: 'No se especificó tag' };
     }
 
-    const contacts = loadContacts();
+    const contacts = loadCRMData();
     const contactIndex = contacts.findIndex(c => c.id === this.contact.id);
 
     if (contactIndex === -1) {
@@ -432,7 +432,7 @@ export class FlowEngine {
 
     if (!contacts[contactIndex].tags!.includes(tagId)) {
       contacts[contactIndex].tags!.push(tagId);
-      saveContacts(contacts);
+      saveCRMData(contacts);
     }
 
     return {
@@ -447,7 +447,7 @@ export class FlowEngine {
       return { success: false, message: 'No se especificó tag' };
     }
 
-    const contacts = loadContacts();
+    const contacts = loadCRMData();
     const contactIndex = contacts.findIndex(c => c.id === this.contact.id);
 
     if (contactIndex === -1) {
@@ -456,7 +456,7 @@ export class FlowEngine {
 
     if (contacts[contactIndex].tags) {
       contacts[contactIndex].tags = contacts[contactIndex].tags!.filter(t => t !== tagId);
-      saveContacts(contacts);
+      saveCRMData(contacts);
     }
 
     return {
@@ -473,7 +473,7 @@ export class FlowEngine {
       return { success: false, message: 'Faltan parámetros para actualizar campo' };
     }
 
-    const contacts = loadContacts();
+    const contacts = loadCRMData();
     const contactIndex = contacts.findIndex(c => c.id === this.contact.id);
 
     if (contactIndex === -1) {
@@ -482,7 +482,7 @@ export class FlowEngine {
 
     // Actualizar el campo
     (contacts[contactIndex] as any)[fieldName] = fieldValue;
-    saveContacts(contacts);
+    saveCRMData(contacts);
 
     return {
       success: true,
@@ -496,7 +496,7 @@ export class FlowEngine {
       return { success: false, message: 'No se especificó nuevo estado' };
     }
 
-    const contacts = loadContacts();
+    const contacts = loadCRMData();
     const contactIndex = contacts.findIndex(c => c.id === this.contact.id);
 
     if (contactIndex === -1) {
@@ -504,7 +504,7 @@ export class FlowEngine {
     }
 
     contacts[contactIndex].status = newStatus;
-    saveContacts(contacts);
+    saveCRMData(contacts);
 
     return {
       success: true,
@@ -646,7 +646,7 @@ export const executeAutomationForContact = async (
     return { success: false, message: 'Automatización no encontrada' };
   }
 
-  const contacts = loadContacts();
+  const contacts = loadCRMData();
   const contact = contacts.find(c => c.id === contactId);
   if (!contact) {
     return { success: false, message: 'Contacto no encontrado' };
