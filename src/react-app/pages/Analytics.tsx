@@ -107,22 +107,6 @@ export default function Analytics() {
         />
       </div>
 
-      {/* Conversion Funnel */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
-              <i className="fas fa-filter text-purple-600 mr-2"></i>
-              Embudo de Conversión
-            </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Seguimiento desde contactos hasta mensajes leídos
-            </p>
-          </div>
-        </div>
-        <FunnelChart data={funnelData} />
-      </div>
-
       {/* Time Series Chart */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
         <div className="flex items-center justify-between mb-6">
@@ -197,6 +181,24 @@ export default function Analytics() {
           </p>
         </div>
         <Heatmap data={heatmapData} />
+      </div>
+
+      {/* Conversion Funnel */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
+              <i className="fas fa-filter text-purple-600 mr-2"></i>
+              Embudo de Conversión
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              Seguimiento del recorrido completo: desde contactos hasta mensajes leídos
+            </p>
+          </div>
+        </div>
+        <div className="mt-4">
+          <FunnelChart data={funnelData} />
+        </div>
       </div>
 
       {/* Top Performing Campaigns */}

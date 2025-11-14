@@ -462,18 +462,29 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ onNavigate, automationId }) =
                     }
                     className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   >
-                    <option value="send_message">Enviar Mensaje</option>
-                    <option value="add_tag">Agregar Tag</option>
-                    <option value="remove_tag">Remover Tag</option>
-                    <option value="update_field">Actualizar Campo</option>
-                    <option value="change_status">Cambiar Estado</option>
-                    <option value="add_to_list">Agregar a Lista</option>
-                    <option value="create_event">Crear Evento</option>
+                    <option value="send_message">📤 Enviar Mensaje - Envía un mensaje de WhatsApp al contacto</option>
+                    <option value="add_tag">🏷️ Agregar Tag - Agrega una etiqueta al contacto</option>
+                    <option value="remove_tag">🗑️ Remover Tag - Quita una etiqueta del contacto</option>
+                    <option value="update_field">✏️ Actualizar Campo - Modifica un campo del contacto (nombre, email, etc)</option>
+                    <option value="change_status">🔄 Cambiar Estado - Cambia el estado del contacto (lead, cliente, etc)</option>
+                    <option value="add_to_list">📋 Agregar a Lista - Añade el contacto a una lista específica</option>
+                    <option value="create_event">📅 Crear Evento - Crea un evento en el calendario para este contacto</option>
                   </select>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    💡 Selecciona qué acción quieres que se ejecute cuando el flujo llegue a este nodo
+                  </p>
                 </div>
 
                 {selectedNode.data.actionType === 'send_message' && (
                   <div className="space-y-4">
+                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <p className="text-sm text-blue-800 dark:text-blue-300">
+                        <i className="fas fa-info-circle mr-1"></i>
+                        <strong>Enviar Mensaje de WhatsApp</strong><br/>
+                        Esta acción enviará un mensaje usando una plantilla aprobada de WhatsApp Business.
+                      </p>
+                    </div>
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Plantilla de WhatsApp
@@ -495,8 +506,20 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ onNavigate, automationId }) =
                         ))}
                       </select>
                       {templates.length === 0 && (
+                        <div className="mt-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                          <p className="text-xs text-yellow-800 dark:text-yellow-300">
+                            ⚠️ <strong>No hay plantillas sincronizadas.</strong><br/>
+                            Para enviar mensajes de WhatsApp necesitas:
+                            <br/>1. Ir a la sección "Plantillas"
+                            <br/>2. Configurar tu API de WhatsApp Business
+                            <br/>3. Sincronizar tus plantillas aprobadas
+                            <br/>4. Volver aquí y seleccionar la plantilla
+                          </p>
+                        </div>
+                      )}
+                      {templates.length > 0 && templates.filter(t => t.status === 'APPROVED').length === 0 && (
                         <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
-                          ⚠️ No hay plantillas. Sincroniza en la sección "Plantillas"
+                          ⚠️ Tienes plantillas pero ninguna está aprobada. Solo puedes usar plantillas con estado "APPROVED".
                         </p>
                       )}
                     </div>
