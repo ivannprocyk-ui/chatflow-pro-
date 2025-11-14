@@ -21,27 +21,31 @@ export default function FunnelChart({ data }: FunnelChartProps) {
   ];
 
   return (
-    <div className="w-full h-[350px] flex flex-col justify-center items-center space-y-4 p-6">
+    <div className="w-full flex flex-col justify-center items-center space-y-6 py-4">
       {data.map((stage, index) => {
         const width = (stage.value / maxValue) * 100;
         const dropoff = index > 0 ? data[index - 1].value - stage.value : 0;
         const dropoffRate = index > 0 ? Math.round((dropoff / data[index - 1].value) * 100) : 0;
 
         return (
-          <div key={index} className="w-full flex flex-col items-center">
+          <div key={index} className="w-full flex flex-col items-center space-y-2">
             <div
-              className={`bg-gradient-to-r ${colors[index % colors.length]} rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer`}
-              style={{ width: `${width}%`, minWidth: '200px' }}
+              className={`bg-gradient-to-r ${colors[index % colors.length]} rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] cursor-pointer`}
+              style={{
+                width: `${Math.max(width, 40)}%`,
+                minWidth: '280px',
+                maxWidth: '100%'
+              }}
             >
-              <div className="p-4 text-white">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-semibold text-sm">{stage.name}</h4>
-                    <p className="text-2xl font-bold">{stage.value.toLocaleString()}</p>
+              <div className="p-5 text-white">
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold text-sm mb-1 truncate">{stage.name}</h4>
+                    <p className="text-3xl font-bold">{stage.value.toLocaleString()}</p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs opacity-90">del total</p>
-                    <p className="text-lg font-bold">{stage.percentage}%</p>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-xs opacity-90 mb-1">del total</p>
+                    <p className="text-2xl font-bold">{stage.percentage}%</p>
                   </div>
                 </div>
               </div>
@@ -49,9 +53,9 @@ export default function FunnelChart({ data }: FunnelChartProps) {
 
             {/* Dropoff indicator */}
             {index > 0 && dropoff > 0 && (
-              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center space-x-2">
+              <div className="text-sm text-gray-600 dark:text-gray-400 flex items-center space-x-2 bg-red-50 dark:bg-red-900/20 px-4 py-2 rounded-lg border border-red-200 dark:border-red-800">
                 <i className="fas fa-arrow-down text-red-500"></i>
-                <span>-{dropoff.toLocaleString()} ({dropoffRate}% de abandono)</span>
+                <span className="font-medium">-{dropoff.toLocaleString()} <span className="text-xs">({dropoffRate}% de abandono)</span></span>
               </div>
             )}
           </div>

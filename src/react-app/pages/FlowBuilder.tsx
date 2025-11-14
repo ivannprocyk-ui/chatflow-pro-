@@ -384,6 +384,14 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ onNavigate, automationId }) =
 
             {selectedNode.type === 'trigger' && (
               <div className="space-y-4">
+                <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800 mb-4">
+                  <p className="text-sm text-green-800 dark:text-green-300">
+                    <i className="fas fa-info-circle mr-1"></i>
+                    <strong>Nodo Trigger (Disparador)</strong><br/>
+                    Define CUÁNDO se ejecuta esta automatización. Sin un trigger, el flujo no puede iniciar.
+                  </p>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Tipo de Trigger
@@ -395,19 +403,25 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ onNavigate, automationId }) =
                     }
                     className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   >
-                    <option value="new_contact">Nuevo Contacto</option>
-                    <option value="contact_birthday">Cumpleaños</option>
-                    <option value="contact_inactive">Contacto Inactivo</option>
-                    <option value="contact_status_change">Cambio de Estado</option>
-                    <option value="specific_date">Fecha Específica</option>
-                    <option value="tag_added">Tag Agregado</option>
-                    <option value="message_no_response">Sin Respuesta a Mensaje</option>
-                    <option value="manual">Manual</option>
+                    <option value="new_contact">👤 Nuevo Contacto - Se dispara al agregar un contacto</option>
+                    <option value="contact_birthday">🎂 Cumpleaños - En el cumpleaños del contacto</option>
+                    <option value="contact_inactive">💤 Contacto Inactivo - Tras X días sin actividad</option>
+                    <option value="contact_status_change">🔄 Cambio de Estado - Al cambiar el estado</option>
+                    <option value="specific_date">📅 Fecha Específica - En una fecha/hora exacta</option>
+                    <option value="tag_added">🏷️ Tag Agregado - Al agregar un tag específico</option>
+                    <option value="message_no_response">⏰ Sin Respuesta a Mensaje - Cliente no respondió</option>
+                    <option value="manual">✋ Manual - Lo ejecutas tú manualmente</option>
                   </select>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    💡 El trigger determina el momento exacto en que se ejecutará todo el flujo
+                  </p>
                 </div>
 
                 {selectedNode.data.triggerType === 'contact_inactive' && (
-                  <div>
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <p className="text-xs text-blue-800 dark:text-blue-300 mb-3">
+                      <strong>Contacto Inactivo:</strong> Se dispara cuando pasa el tiempo especificado sin que el contacto tenga actividad (mensajes, cambios, etc).
+                    </p>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Días de Inactividad
                     </label>
@@ -420,12 +434,20 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ onNavigate, automationId }) =
                         })
                       }
                       className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      min="1"
+                      max="365"
                     />
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      ⏱️ Ejemplo: Si pones 7, el flujo se ejecuta a los 7 días sin actividad
+                    </p>
                   </div>
                 )}
 
                 {selectedNode.data.triggerType === 'message_no_response' && (
-                  <div>
+                  <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                    <p className="text-xs text-orange-800 dark:text-orange-300 mb-3">
+                      <strong>Sin Respuesta:</strong> Se dispara automáticamente cuando un cliente no responde a un mensaje en el tiempo especificado. Perfecto para follow-ups automáticos.
+                    </p>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Horas sin Respuesta
                     </label>
@@ -442,7 +464,7 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ onNavigate, automationId }) =
                       max="168"
                     />
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Tiempo que debe pasar sin respuesta del cliente antes de disparar esta automatización (1-168 horas)
+                      ⏱️ Ejemplo: 24 horas = si no responde en 1 día, envía follow-up automático
                     </p>
                   </div>
                 )}
@@ -739,6 +761,14 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ onNavigate, automationId }) =
 
             {selectedNode.type === 'delay' && (
               <div className="space-y-4">
+                <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800 mb-4">
+                  <p className="text-sm text-purple-800 dark:text-purple-300">
+                    <i className="fas fa-info-circle mr-1"></i>
+                    <strong>Nodo Delay (Espera)</strong><br/>
+                    Pausa la ejecución del flujo por el tiempo especificado. Útil para espaciar mensajes y no bombardear al contacto.
+                  </p>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Cantidad
@@ -750,67 +780,152 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ onNavigate, automationId }) =
                       updateNodeData(selectedNode.id, { delayAmount: parseInt(e.target.value) })
                     }
                     className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    min="1"
+                    max="365"
                   />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Número de unidades de tiempo a esperar
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Unidad
+                    Unidad de Tiempo
                   </label>
                   <select
                     value={selectedNode.data.delayType}
                     onChange={(e) => updateNodeData(selectedNode.id, { delayType: e.target.value })}
                     className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   >
-                    <option value="hours">Horas</option>
-                    <option value="days">Días</option>
-                    <option value="weeks">Semanas</option>
+                    <option value="hours">⏰ Horas - Para delays cortos (ej: 2 horas)</option>
+                    <option value="days">📅 Días - Para espaciar mensajes (ej: 3 días)</option>
+                    <option value="weeks">📆 Semanas - Para seguimientos largos (ej: 2 semanas)</option>
                   </select>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    💡 Ejemplo: 2 días = espera 48 horas antes de continuar
+                  </p>
+                </div>
+
+                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <p className="text-xs text-blue-800 dark:text-blue-300">
+                    <strong>Vista previa:</strong> Se esperará{' '}
+                    <strong>{selectedNode.data.delayAmount || 1}</strong>{' '}
+                    {selectedNode.data.delayType === 'hours' ? 'hora(s)' :
+                     selectedNode.data.delayType === 'days' ? 'día(s)' : 'semana(s)'}
+                    {' '}antes de ejecutar el siguiente nodo.
+                  </p>
                 </div>
               </div>
             )}
 
             {selectedNode.type === 'condition' && (
               <div className="space-y-4">
+                <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800 mb-4">
+                  <p className="text-sm text-orange-800 dark:text-orange-300">
+                    <i className="fas fa-info-circle mr-1"></i>
+                    <strong>Nodo Condition (Condición)</strong><br/>
+                    Divide el flujo en 2 caminos según si la condición es verdadera o falsa. Conecta el handle verde (TRUE) y rojo (FALSE) a diferentes nodos.
+                  </p>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Campo
+                    Campo del Contacto
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={selectedNode.data.field}
                     onChange={(e) => updateNodeData(selectedNode.id, { field: e.target.value })}
                     className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    placeholder="ej: status, name"
-                  />
+                  >
+                    <option value="">Selecciona un campo...</option>
+                    <option value="status">📊 status - Estado del contacto (lead, cliente, etc)</option>
+                    <option value="name">👤 name - Nombre del contacto</option>
+                    <option value="email">📧 email - Email del contacto</option>
+                    <option value="phone">📱 phone - Teléfono del contacto</option>
+                    <option value="company">🏢 company - Empresa del contacto</option>
+                    <option value="position">💼 position - Cargo del contacto</option>
+                  </select>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Campo que quieres evaluar del contacto
+                  </p>
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Operador
+                    Operador de Comparación
                   </label>
                   <select
                     value={selectedNode.data.operator}
                     onChange={(e) => updateNodeData(selectedNode.id, { operator: e.target.value })}
                     className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   >
-                    <option value="equals">Igual a</option>
-                    <option value="not_equals">Diferente de</option>
-                    <option value="contains">Contiene</option>
-                    <option value="not_contains">No contiene</option>
-                    <option value="greater_than">Mayor que</option>
-                    <option value="less_than">Menor que</option>
+                    <option value="equals">= Igual a (exactamente igual)</option>
+                    <option value="not_equals">≠ Diferente de (no es igual)</option>
+                    <option value="contains">⊃ Contiene (incluye el texto)</option>
+                    <option value="not_contains">⊅ No contiene (no incluye el texto)</option>
+                    <option value="greater_than">&gt; Mayor que (números)</option>
+                    <option value="less_than">&lt; Menor que (números)</option>
+                    <option value="is_empty">∅ Está vacío (no tiene valor)</option>
+                    <option value="is_not_empty">∃ No está vacío (tiene algún valor)</option>
                   </select>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Cómo comparar el campo con el valor
+                  </p>
                 </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Valor
+                    Valor a Comparar
                   </label>
                   <input
                     type="text"
                     value={selectedNode.data.value}
                     onChange={(e) => updateNodeData(selectedNode.id, { value: e.target.value })}
                     className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    placeholder="Valor a comparar"
+                    placeholder="Valor a comparar (ej: lead, VIP, 100)"
                   />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    El valor contra el cual comparar (no necesario para "está vacío/no está vacío")
+                  </p>
+                </div>
+
+                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <p className="text-xs text-blue-800 dark:text-blue-300 mb-2">
+                    <strong>Vista previa de la condición:</strong>
+                  </p>
+                  <p className="text-xs text-blue-800 dark:text-blue-300 font-mono">
+                    SI el campo <strong>{selectedNode.data.field || '(campo)'}</strong>{' '}
+                    {selectedNode.data.operator === 'equals' ? 'es igual a' :
+                     selectedNode.data.operator === 'not_equals' ? 'es diferente de' :
+                     selectedNode.data.operator === 'contains' ? 'contiene' :
+                     selectedNode.data.operator === 'not_contains' ? 'no contiene' :
+                     selectedNode.data.operator === 'greater_than' ? 'es mayor que' :
+                     selectedNode.data.operator === 'less_than' ? 'es menor que' :
+                     selectedNode.data.operator === 'is_empty' ? 'está vacío' :
+                     selectedNode.data.operator === 'is_not_empty' ? 'no está vacío' :
+                     '(operador)'}{' '}
+                    {!['is_empty', 'is_not_empty'].includes(selectedNode.data.operator) && (
+                      <strong>"{selectedNode.data.value || '(valor)'}"</strong>
+                    )}
+                  </p>
+                  <p className="text-xs text-blue-800 dark:text-blue-300 mt-2">
+                    ✅ TRUE (verde) → Si la condición es verdadera<br/>
+                    ❌ FALSE (rojo) → Si la condición es falsa
+                  </p>
+                </div>
+
+                <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                  <p className="text-xs text-green-800 dark:text-green-300">
+                    <strong>💡 Ejemplo práctico:</strong><br/>
+                    Campo: <code>status</code>, Operador: <code>=</code>, Valor: <code>lead</code><br/>
+                    → Si el contacto es un lead, sigue por TRUE (verde)<br/>
+                    → Si no es un lead, sigue por FALSE (rojo)
+                  </p>
+                </div>
+
+                <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                  <p className="text-xs text-yellow-800 dark:text-yellow-300">
+                    <strong>⚠️ IMPORTANTE:</strong> Debes conectar AMBOS handles (verde y rojo) a nodos diferentes. Si no conectas uno, el flujo terminará cuando se tome ese camino.
+                  </p>
                 </div>
               </div>
             )}
