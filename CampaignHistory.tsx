@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { loadCampaigns, saveCampaigns } from '@/react-app/utils/storage';
+import { loadCampaigns, saveCampaigns } from './storage';
 
 interface Campaign {
   id: string;

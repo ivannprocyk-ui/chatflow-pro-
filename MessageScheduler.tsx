@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { loadScheduledMessages, saveScheduledMessages, loadContactLists } from '@/react-app/utils/storage';
+import { loadScheduledMessages, saveScheduledMessages, loadContactLists } from './storage';
 
 interface ScheduledMessage {
   id: string;

@@ -39,7 +39,11 @@ export function loadConfig(): AppConfig {
     const stored = localStorage.getItem('chatflow_config');
     if (stored) {
       const parsed = JSON.parse(stored);
-      return { ...defaultConfig, ...parsed };
+      // Deep merge to ensure all nested properties exist
+      return {
+        api: { ...defaultConfig.api, ...(parsed.api || {}) },
+        branding: { ...defaultConfig.branding, ...(parsed.branding || {}) }
+      };
     }
   } catch (error) {
     console.error('Error loading config:', error);
