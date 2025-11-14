@@ -90,12 +90,47 @@ const CustomNode: React.FC<NodeProps<CustomNodeData>> = ({ data, type }) => {
       </div>
       <div className="text-gray-900 dark:text-white font-medium text-sm">{getLabel()}</div>
 
-      {/* Handle de salida */}
-      <Handle
-        type="source"
-        position={Position.Right}
-        className="w-3 h-3 !bg-gray-400 dark:!bg-gray-500 border-2 border-white dark:border-gray-800"
-      />
+      {/* Handles de salida - Diferentes para condiciones */}
+      {type === 'condition' ? (
+        <>
+          {/* Handle TRUE (arriba derecha) */}
+          <Handle
+            type="source"
+            position={Position.Right}
+            id="true"
+            style={{ top: '30%' }}
+            className="w-3 h-3 !bg-green-500 border-2 border-white dark:border-gray-800"
+          />
+          <div
+            className="absolute right-[-50px] top-[25%] text-xs font-semibold text-green-600 dark:text-green-400 bg-white dark:bg-gray-800 px-2 py-1 rounded border border-green-500"
+            style={{ transform: 'translateY(-50%)' }}
+          >
+            ✓ TRUE
+          </div>
+
+          {/* Handle FALSE (abajo derecha) */}
+          <Handle
+            type="source"
+            position={Position.Right}
+            id="false"
+            style={{ top: '70%' }}
+            className="w-3 h-3 !bg-red-500 border-2 border-white dark:border-gray-800"
+          />
+          <div
+            className="absolute right-[-50px] top-[65%] text-xs font-semibold text-red-600 dark:text-red-400 bg-white dark:bg-gray-800 px-2 py-1 rounded border border-red-500"
+            style={{ transform: 'translateY(-50%)' }}
+          >
+            ✗ FALSE
+          </div>
+        </>
+      ) : (
+        /* Handle de salida normal para otros tipos */
+        <Handle
+          type="source"
+          position={Position.Right}
+          className="w-3 h-3 !bg-gray-400 dark:!bg-gray-500 border-2 border-white dark:border-gray-800"
+        />
+      )}
     </div>
   );
 };

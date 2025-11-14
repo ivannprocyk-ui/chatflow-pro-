@@ -8,6 +8,8 @@ import {
   Automation,
   getTriggerLabel,
 } from '../utils/automationStorage';
+import { loadContacts } from '../utils/storage';
+import { executeAutomationForContacts } from '../utils/flowEngine';
 
 interface AutomationsProps {
   onNavigate: (section: string, data?: { automationId?: string | null }) => void;
@@ -18,14 +20,74 @@ const Automations: React.FC<AutomationsProps> = ({ onNavigate }) => {
   const [filter, setFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Estados para modal de ejecución
+  const [showExecuteModal, setShowExecuteModal] = useState(false);
+  const [selectedAutomation, setSelectedAutomation] = useState<Automation | null>(null);
+  const [contacts, setContacts] = useState<any[]>([]);
+  const [selectedContacts, setSelectedContacts] = useState<Set<string>>(new Set());
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [executionResult, setExecutionResult] = useState<any>(null);
+
   useEffect(() => {
     loadData();
+    setContacts(loadContacts());
   }, []);
 
   const loadData = () => {
     initializeDemoAutomations();
     const data = loadAutomations();
     setAutomations(data);
+  };
+
+  const handleExecuteNow = (automation: Automation) => {
+    setSelectedAutomation(automation);
+    setSelectedContacts(new Set());
+    setExecutionResult(null);
+    setShowExecuteModal(true);
+  };
+
+  const handleToggleContact = (contactId: string) => {
+    const newSet = new Set(selectedContacts);
+    if (newSet.has(contactId)) {
+      newSet.delete(contactId);
+    } else {
+      newSet.add(contactId);
+    }
+    setSelectedContacts(newSet);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedContacts.size === contacts.length) {
+      setSelectedContacts(new Set());
+    } else {
+      setSelectedContacts(new Set(contacts.map(c => c.id)));
+    }
+  };
+
+  const handleExecute = async () => {
+    if (!selectedAutomation || selectedContacts.size === 0) return;
+
+    setIsExecuting(true);
+    setExecutionResult(null);
+
+    try {
+      const result = await executeAutomationForContacts(
+        selectedAutomation.id,
+        Array.from(selectedContacts)
+      );
+
+      setExecutionResult(result);
+      loadData(); // Reload automations to update stats
+    } catch (error: any) {
+      setExecutionResult({
+        successCount: 0,
+        failCount: selectedContacts.size,
+        results: [],
+        error: error.message,
+      });
+    } finally {
+      setIsExecuting(false);
+    }
   };
 
   const handleDelete = (id: string) => {
@@ -283,6 +345,13 @@ const Automations: React.FC<AutomationsProps> = ({ onNavigate }) => {
 
                 <div className="flex gap-2 ml-4">
                   <button
+                    onClick={() => handleExecuteNow(automation)}
+                    className="p-3 bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 rounded-lg hover:bg-orange-200 dark:hover:bg-orange-900/30 transition-colors"
+                    title="Ejecutar Ahora"
+                  >
+                    <i className="fas fa-bolt"></i>
+                  </button>
+                  <button
                     onClick={() => handleToggleStatus(automation.id)}
                     className={`p-3 rounded-lg transition-colors ${
                       automation.active
@@ -318,6 +387,194 @@ const Automations: React.FC<AutomationsProps> = ({ onNavigate }) => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Modal de Ejecución Manual */}
+      {showExecuteModal && selectedAutomation && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <i className="fas fa-bolt text-orange-600 dark:text-orange-400"></i>
+                  Ejecutar Automatización
+                </h3>
+                <button
+                  onClick={() => setShowExecuteModal(false)}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  <i className="fas fa-times text-gray-600 dark:text-gray-400"></i>
+                </button>
+              </div>
+              <p className="text-gray-600 dark:text-gray-400">
+                {selectedAutomation.name}
+              </p>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {!executionResult ? (
+                <>
+                  <div className="mb-4 flex items-center justify-between">
+                    <h4 className="font-semibold text-gray-900 dark:text-white">
+                      Seleccionar Contactos ({selectedContacts.size} seleccionados)
+                    </h4>
+                    <button
+                      onClick={handleSelectAll}
+                      className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300"
+                    >
+                      {selectedContacts.size === contacts.length ? 'Deseleccionar' : 'Seleccionar'} Todos
+                    </button>
+                  </div>
+
+                  {contacts.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                      <i className="fas fa-user-slash text-4xl mb-2"></i>
+                      <p>No hay contactos disponibles</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {contacts.map((contact) => (
+                        <div
+                          key={contact.id}
+                          onClick={() => handleToggleContact(contact.id)}
+                          className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                            selectedContacts.has(contact.id)
+                              ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/20'
+                              : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                                selectedContacts.has(contact.id)
+                                  ? 'bg-purple-600 text-white'
+                                  : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                              }`}>
+                                {selectedContacts.has(contact.id) ? (
+                                  <i className="fas fa-check"></i>
+                                ) : (
+                                  <i className="fas fa-user"></i>
+                                )}
+                              </div>
+                              <div>
+                                <div className="font-medium text-gray-900 dark:text-white">
+                                  {contact.name || 'Sin nombre'}
+                                </div>
+                                <div className="text-sm text-gray-600 dark:text-gray-400">
+                                  {contact.phone || 'Sin teléfono'}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                /* Resultados de Ejecución */
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-700">
+                      <div className="text-sm text-green-600 dark:text-green-400 mb-1">Exitosos</div>
+                      <div className="text-3xl font-bold text-green-600 dark:text-green-400">
+                        {executionResult.successCount}
+                      </div>
+                    </div>
+                    <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-200 dark:border-red-700">
+                      <div className="text-sm text-red-600 dark:text-red-400 mb-1">Fallidos</div>
+                      <div className="text-3xl font-bold text-red-600 dark:text-red-400">
+                        {executionResult.failCount}
+                      </div>
+                    </div>
+                  </div>
+
+                  {executionResult.error && (
+                    <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-200 dark:border-red-700">
+                      <p className="text-red-600 dark:text-red-400 text-sm">
+                        <i className="fas fa-exclamation-triangle mr-2"></i>
+                        {executionResult.error}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="max-h-60 overflow-y-auto space-y-2">
+                    {executionResult.results.map((result: any, index: number) => (
+                      <div
+                        key={index}
+                        className={`p-3 rounded-lg border ${
+                          result.success
+                            ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-700'
+                            : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-700'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <i className={`fas fa-${result.success ? 'check-circle text-green-600 dark:text-green-400' : 'times-circle text-red-600 dark:text-red-400'}`}></i>
+                            <span className={`text-sm ${
+                              result.success
+                                ? 'text-green-600 dark:text-green-400'
+                                : 'text-red-600 dark:text-red-400'
+                            }`}>
+                              Contacto #{index + 1}
+                            </span>
+                          </div>
+                          <span className={`text-xs ${
+                            result.success
+                              ? 'text-green-600 dark:text-green-400'
+                              : 'text-red-600 dark:text-red-400'
+                          }`}>
+                            {result.message}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex gap-3">
+              {!executionResult ? (
+                <>
+                  <button
+                    onClick={() => setShowExecuteModal(false)}
+                    className="flex-1 px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleExecute}
+                    disabled={selectedContacts.size === 0 || isExecuting}
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isExecuting ? (
+                      <>
+                        <i className="fas fa-spinner fa-spin"></i>
+                        Ejecutando...
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-bolt"></i>
+                        Ejecutar ({selectedContacts.size})
+                      </>
+                    )}
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => setShowExecuteModal(false)}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all"
+                >
+                  Cerrar
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -23,6 +23,11 @@ import {
   TriggerType,
   ActionType,
 } from '../utils/automationStorage';
+import {
+  loadTemplates,
+  loadTags,
+  loadContactLists,
+} from '../utils/storage';
 import CustomNode from '../components/automation/CustomNode';
 
 // NodeTypes fuera del componente para evitar re-renders
@@ -46,6 +51,18 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ onNavigate, automationId }) =
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [showNodeConfig, setShowNodeConfig] = useState(false);
   const nodeIdCounter = useRef(1);
+
+  // Cargar datos para selectores
+  const [templates, setTemplates] = useState<any[]>([]);
+  const [tags, setTags] = useState<any[]>([]);
+  const [contactLists, setContactLists] = useState<any[]>([]);
+
+  // Cargar datos al montar el componente
+  useEffect(() => {
+    setTemplates(loadTemplates());
+    setTags(loadTags());
+    setContactLists(loadContactLists());
+  }, []);
 
   useEffect(() => {
     if (automationId) {
@@ -432,21 +449,56 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ onNavigate, automationId }) =
                 </div>
 
                 {selectedNode.data.actionType === 'send_message' && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Mensaje
-                    </label>
-                    <textarea
-                      value={selectedNode.data.config.message || ''}
-                      onChange={(e) =>
-                        updateNodeData(selectedNode.id, {
-                          config: { ...selectedNode.data.config, message: e.target.value },
-                        })
-                      }
-                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                      rows={4}
-                      placeholder="Escribe el mensaje..."
-                    />
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Plantilla de WhatsApp
+                      </label>
+                      <select
+                        value={selectedNode.data.config.templateName || ''}
+                        onChange={(e) =>
+                          updateNodeData(selectedNode.id, {
+                            config: { ...selectedNode.data.config, templateName: e.target.value },
+                          })
+                        }
+                        className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      >
+                        <option value="">Selecciona una plantilla...</option>
+                        {templates.filter(t => t.status === 'APPROVED').map((template) => (
+                          <option key={template.name} value={template.name}>
+                            {template.name}
+                          </option>
+                        ))}
+                      </select>
+                      {templates.length === 0 && (
+                        <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
+                          ⚠️ No hay plantillas. Sincroniza en la sección "Plantillas"
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Mostrar si la plantilla tiene imagen */}
+                    {selectedNode.data.config.templateName && templates.find(t => t.name === selectedNode.data.config.templateName)?.components?.some((c: any) => c.type === 'HEADER' && c.format === 'IMAGE') && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          URL de Imagen (opcional)
+                        </label>
+                        <input
+                          type="url"
+                          value={selectedNode.data.config.imageUrl || ''}
+                          onChange={(e) =>
+                            updateNodeData(selectedNode.id, {
+                              config: { ...selectedNode.data.config, imageUrl: e.target.value },
+                            })
+                          }
+                          className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                          placeholder="https://ejemplo.com/imagen.jpg"
+                        />
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          La plantilla seleccionada requiere una imagen
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -466,6 +518,173 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ onNavigate, automationId }) =
                       className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       placeholder="ej: qualified, interested"
                     />
+                  </div>
+                )}
+
+                {(selectedNode.data.actionType === 'add_tag' || selectedNode.data.actionType === 'remove_tag') && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Tag
+                    </label>
+                    <select
+                      value={selectedNode.data.config.tagId || ''}
+                      onChange={(e) =>
+                        updateNodeData(selectedNode.id, {
+                          config: { ...selectedNode.data.config, tagId: e.target.value },
+                        })
+                      }
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      <option value="">Selecciona un tag...</option>
+                      {tags.map((tag) => (
+                        <option key={tag.id} value={tag.id}>
+                          {tag.name}
+                        </option>
+                      ))}
+                    </select>
+                    {tags.length === 0 && (
+                      <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
+                        ⚠️ No hay tags. Crea tags en la sección "CRM Panel"
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {selectedNode.data.actionType === 'add_to_list' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Lista de Contactos
+                    </label>
+                    <select
+                      value={selectedNode.data.config.listId || ''}
+                      onChange={(e) =>
+                        updateNodeData(selectedNode.id, {
+                          config: { ...selectedNode.data.config, listId: e.target.value },
+                        })
+                      }
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      <option value="">Selecciona una lista...</option>
+                      {contactLists.map((list) => (
+                        <option key={list.id} value={list.id}>
+                          {list.name} ({list.contacts.length} contactos)
+                        </option>
+                      ))}
+                    </select>
+                    {contactLists.length === 0 && (
+                      <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
+                        ⚠️ No hay listas. Crea listas en "Listas de Contactos"
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {selectedNode.data.actionType === 'create_event' && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Título del Evento
+                      </label>
+                      <input
+                        type="text"
+                        value={selectedNode.data.config.eventTitle || ''}
+                        onChange={(e) =>
+                          updateNodeData(selectedNode.id, {
+                            config: { ...selectedNode.data.config, eventTitle: e.target.value },
+                          })
+                        }
+                        className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        placeholder="ej: Llamada de seguimiento"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Fecha del Evento
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={selectedNode.data.config.eventDate || ''}
+                        onChange={(e) =>
+                          updateNodeData(selectedNode.id, {
+                            config: { ...selectedNode.data.config, eventDate: e.target.value },
+                          })
+                        }
+                        className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Tipo de Evento
+                      </label>
+                      <select
+                        value={selectedNode.data.config.eventType || 'other'}
+                        onChange={(e) =>
+                          updateNodeData(selectedNode.id, {
+                            config: { ...selectedNode.data.config, eventType: e.target.value },
+                          })
+                        }
+                        className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      >
+                        <option value="call">Llamada</option>
+                        <option value="meeting">Reunión</option>
+                        <option value="follow-up">Seguimiento</option>
+                        <option value="reminder">Recordatorio</option>
+                        <option value="other">Otro</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Descripción (opcional)
+                      </label>
+                      <textarea
+                        value={selectedNode.data.config.eventDescription || ''}
+                        onChange={(e) =>
+                          updateNodeData(selectedNode.id, {
+                            config: { ...selectedNode.data.config, eventDescription: e.target.value },
+                          })
+                        }
+                        className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        rows={3}
+                        placeholder="Detalles del evento..."
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {selectedNode.data.actionType === 'update_field' && (
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Nombre del Campo
+                      </label>
+                      <input
+                        type="text"
+                        value={selectedNode.data.config.fieldName || ''}
+                        onChange={(e) =>
+                          updateNodeData(selectedNode.id, {
+                            config: { ...selectedNode.data.config, fieldName: e.target.value },
+                          })
+                        }
+                        className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        placeholder="ej: email, phone, empresa"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Nuevo Valor
+                      </label>
+                      <input
+                        type="text"
+                        value={selectedNode.data.config.fieldValue || ''}
+                        onChange={(e) =>
+                          updateNodeData(selectedNode.id, {
+                            config: { ...selectedNode.data.config, fieldValue: e.target.value },
+                          })
+                        }
+                        className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        placeholder="Nuevo valor para el campo"
+                      />
+                    </div>
                   </div>
                 )}
               </div>

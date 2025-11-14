@@ -13,8 +13,19 @@ import {
   updateAutomationStats,
   getAutomationById,
 } from './automationStorage';
-import { loadContacts, saveContacts, Contact } from './storage';
-import { loadTags } from './storage';
+import {
+  loadContacts,
+  saveContacts,
+  Contact,
+  loadTags,
+  loadConfig,
+  loadTemplates,
+  loadContactLists,
+  saveContactLists,
+  loadCalendarEvents,
+  saveCalendarEvents,
+  addMessageToHistory,
+} from './storage';
 
 // ==================== FLOW EXECUTION ENGINE ====================
 
@@ -195,7 +206,13 @@ export class FlowEngine {
     // Evaluar la condición
     const conditionMet = this.evaluateCondition(data);
 
-    const nextNodeId = conditionMet ? data.trueTarget : data.falseTarget;
+    // Buscar el edge con el sourceHandle correcto (true o false)
+    const targetHandle = conditionMet ? 'true' : 'false';
+    const nextEdge = this.automation.edges.find(
+      e => e.source === node.id && e.sourceHandle === targetHandle
+    );
+
+    const nextNodeId = nextEdge?.target;
 
     return {
       success: true,
@@ -242,20 +259,140 @@ export class FlowEngine {
   // ==================== ACCIONES ====================
 
   private async sendMessage(data: ActionNodeData): Promise<{ success: boolean; message?: string }> {
-    // Aquí se integraría con la API de WhatsApp
-    // Por ahora, solo simulamos el envío
+    try {
+      const config = loadConfig();
 
-    const message = data.config.message || 'Mensaje automático';
+      // Validar configuración de API
+      if (!config.api.accessToken || !config.api.phoneNumberId) {
+        return {
+          success: false,
+          message: 'API de WhatsApp no configurada'
+        };
+      }
 
-    console.log(`[AUTOMATION] Enviando mensaje a ${this.contact.phone}: ${message}`);
+      const templateName = data.config.templateName;
+      if (!templateName) {
+        return {
+          success: false,
+          message: 'No se especificó plantilla de mensaje'
+        };
+      }
 
-    // Guardar en historial de mensajes (si existe la función)
-    // addMessageToHistory(this.contact.id, message);
+      // Obtener detalles de la plantilla
+      const templates = loadTemplates();
+      const template = templates.find(t => t.name === templateName);
+      if (!template) {
+        return {
+          success: false,
+          message: `Plantilla "${templateName}" no encontrada`
+        };
+      }
 
-    return {
-      success: true,
-      message: `Mensaje enviado a ${this.contact.name}`,
-    };
+      const phoneNumber = this.contact.phone;
+      if (!phoneNumber) {
+        return {
+          success: false,
+          message: 'Contacto no tiene número de teléfono'
+        };
+      }
+
+      // Construir el body del mensaje
+      const messageBody: any = {
+        messaging_product: 'whatsapp',
+        to: phoneNumber,
+        type: 'template',
+        template: {
+          name: templateName,
+          language: {
+            code: template.language || 'es'
+          }
+        }
+      };
+
+      // Agregar imagen en header si la plantilla lo requiere
+      const imageUrl = data.config.imageUrl;
+      if (template.components?.some((c: any) => c.type === 'HEADER' && c.format === 'IMAGE') && imageUrl) {
+        messageBody.template.components = [
+          {
+            type: 'header',
+            parameters: [
+              {
+                type: 'image',
+                image: { link: imageUrl }
+              }
+            ]
+          }
+        ];
+      }
+
+      // Enviar mensaje via Meta API
+      const response = await fetch(
+        `https://graph.facebook.com/${config.api.apiVersion}/${config.api.phoneNumberId}/messages`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${config.api.accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(messageBody)
+        }
+      );
+
+      if (response.ok) {
+        const responseData = await response.json();
+
+        // Guardar en historial de mensajes
+        addMessageToHistory({
+          contactId: this.contact.id,
+          templateName: templateName,
+          sentAt: new Date().toISOString(),
+          status: 'sent',
+          phoneNumber: phoneNumber,
+          messageId: responseData.messages?.[0]?.id,
+          campaignName: `Automatización: ${this.automation.name}`,
+          metadata: {
+            automationId: this.automation.id,
+            executionId: this.execution.id,
+            imageUrl: imageUrl || undefined
+          }
+        });
+
+        return {
+          success: true,
+          message: `Mensaje enviado a ${this.contact.name} (${phoneNumber})`
+        };
+      } else {
+        const errorData = await response.json();
+        const errorMessage = errorData.error?.message || 'Error desconocido';
+
+        // Guardar mensaje fallido en historial
+        addMessageToHistory({
+          contactId: this.contact.id,
+          templateName: templateName,
+          sentAt: new Date().toISOString(),
+          status: 'failed',
+          phoneNumber: phoneNumber,
+          errorMessage: errorMessage,
+          campaignName: `Automatización: ${this.automation.name}`,
+          metadata: {
+            automationId: this.automation.id,
+            executionId: this.execution.id,
+            imageUrl: imageUrl || undefined
+          }
+        });
+
+        return {
+          success: false,
+          message: `Error al enviar mensaje: ${errorMessage}`
+        };
+      }
+    } catch (error: any) {
+      console.error('[AUTOMATION] Error sending message:', error);
+      return {
+        success: false,
+        message: `Error de conexión: ${error.message}`
+      };
+    }
   }
 
   private async addTag(data: ActionNodeData): Promise<{ success: boolean; message?: string }> {
@@ -358,19 +495,90 @@ export class FlowEngine {
   }
 
   private async addToList(data: ActionNodeData): Promise<{ success: boolean; message?: string }> {
-    // Implementación futura: agregar contacto a una lista
-    return {
-      success: true,
-      message: 'Contacto agregado a lista',
-    };
+    const listId = data.config.listId;
+    if (!listId) {
+      return { success: false, message: 'No se especificó lista' };
+    }
+
+    try {
+      const lists = loadContactLists();
+      const listIndex = lists.findIndex(l => l.id === listId);
+
+      if (listIndex === -1) {
+        return { success: false, message: 'Lista no encontrada' };
+      }
+
+      // Verificar si el contacto ya está en la lista
+      const isAlreadyInList = lists[listIndex].contacts.some(
+        c => c.phone === this.contact.phone
+      );
+
+      if (isAlreadyInList) {
+        return {
+          success: true,
+          message: `Contacto ya estaba en la lista "${lists[listIndex].name}"`
+        };
+      }
+
+      // Agregar contacto a la lista
+      lists[listIndex].contacts.push({
+        name: this.contact.name || 'Sin nombre',
+        phone: this.contact.phone,
+        email: this.contact.email,
+      });
+
+      saveContactLists(lists);
+
+      return {
+        success: true,
+        message: `Contacto agregado a lista "${lists[listIndex].name}"`
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: `Error al agregar a lista: ${error.message}`
+      };
+    }
   }
 
   private async createEvent(data: ActionNodeData): Promise<{ success: boolean; message?: string }> {
-    // Implementación futura: crear evento en calendario
-    return {
-      success: true,
-      message: 'Evento creado',
-    };
+    try {
+      const { eventTitle, eventDate, eventType, eventDescription } = data.config;
+
+      if (!eventTitle || !eventDate) {
+        return {
+          success: false,
+          message: 'Faltan datos para crear evento (título y fecha requeridos)'
+        };
+      }
+
+      const events = loadCalendarEvents();
+
+      const newEvent = {
+        id: `auto_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        title: eventTitle,
+        start: new Date(eventDate).toISOString(),
+        end: new Date(new Date(eventDate).getTime() + 3600000).toISOString(), // 1 hora después
+        type: (eventType as 'call' | 'meeting' | 'follow-up' | 'reminder' | 'other') || 'other',
+        description: eventDescription || `Evento creado automáticamente para ${this.contact.name}`,
+        contacts: [this.contact.id],
+        createdBy: 'automation',
+        createdAt: new Date().toISOString(),
+      };
+
+      events.push(newEvent);
+      saveCalendarEvents(events);
+
+      return {
+        success: true,
+        message: `Evento "${eventTitle}" creado para ${new Date(eventDate).toLocaleDateString()}`
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: `Error al crear evento: ${error.message}`
+      };
+    }
   }
 
   // ==================== EVALUACIÓN DE CONDICIONES ====================
