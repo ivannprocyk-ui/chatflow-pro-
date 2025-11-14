@@ -267,6 +267,24 @@ export function saveCRMData(data: any[]): void {
   }
 }
 
+export function loadCalendarEvents(): any[] {
+  try {
+    const stored = localStorage.getItem('chatflow_calendar_events');
+    return stored ? JSON.parse(stored) : [];
+  } catch (error) {
+    console.error('Error loading calendar events:', error);
+    return [];
+  }
+}
+
+export function saveCalendarEvents(events: any[]): void {
+  try {
+    localStorage.setItem('chatflow_calendar_events', JSON.stringify(events));
+  } catch (error) {
+    console.error('Error saving calendar events:', error);
+  }
+}
+
 export function loadCampaigns(): any[] {
   try {
     const stored = localStorage.getItem('chatflow_campaigns');
