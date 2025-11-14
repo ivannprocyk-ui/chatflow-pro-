@@ -324,7 +324,8 @@ export function saveScheduledMessages(messages: any[]): void {
 // Templates
 export function loadTemplates(): any[] {
   try {
-    const stored = localStorage.getItem('chatflow_templates');
+    // Usar la misma key que Templates.tsx para mantener sincronización
+    const stored = localStorage.getItem('chatflow_cached_templates');
     return stored ? JSON.parse(stored) : [];
   } catch (error) {
     console.error('Error loading templates:', error);
@@ -334,7 +335,8 @@ export function loadTemplates(): any[] {
 
 export function saveTemplates(templates: any[]): void {
   try {
-    localStorage.setItem('chatflow_templates', JSON.stringify(templates));
+    // Usar la misma key que Templates.tsx para mantener sincronización
+    localStorage.setItem('chatflow_cached_templates', JSON.stringify(templates));
   } catch (error) {
     console.error('Error saving templates:', error);
   }
