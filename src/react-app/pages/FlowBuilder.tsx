@@ -49,10 +49,30 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ onNavigate, automationId }) =
       if (automation) {
         setAutomationName(automation.name);
         setAutomationDescription(automation.description);
-        setNodes(automation.nodes as Node[]);
+
+        // Convertir los nodos al formato esperado por React Flow
+        const loadedNodes = automation.nodes.map(node => ({
+          ...node,
+          data: { ...node.data },
+        })) as Node[];
+
+        setNodes(loadedNodes);
         setEdges(automation.edges as Edge[]);
-        nodeIdCounter.current = automation.nodes.length + 1;
+
+        // Actualizar el contador para evitar IDs duplicados
+        const maxId = automation.nodes.reduce((max, node) => {
+          const idNum = parseInt(node.id.split('_')[1] || '0');
+          return Math.max(max, idNum);
+        }, 0);
+        nodeIdCounter.current = maxId + 1;
       }
+    } else {
+      // Limpiar cuando no hay automationId (nueva automatización)
+      setAutomationName('Nueva Automatización');
+      setAutomationDescription('');
+      setNodes([]);
+      setEdges([]);
+      nodeIdCounter.current = 1;
     }
   }, [automationId, setNodes, setEdges]);
 

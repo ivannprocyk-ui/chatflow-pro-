@@ -61,6 +61,15 @@ export default function App() {
   });
   const [config, setConfig] = useState(loadConfig());
   const { toasts, removeToast } = useToast();
+  const [flowBuilderAutomationId, setFlowBuilderAutomationId] = useState<string | null>(null);
+
+  // Navigation handler that can accept data
+  const handleNavigate = (section: AppSection, data?: any) => {
+    if (section === 'flow-builder' && data?.automationId !== undefined) {
+      setFlowBuilderAutomationId(data.automationId);
+    }
+    setCurrentSection(section);
+  };
 
   // Save current section to localStorage
   useEffect(() => {
@@ -375,9 +384,9 @@ export default function App() {
       case 'analytics':
         return <Analytics />;
       case 'automations':
-        return <Automations onNavigate={setCurrentSection} />;
+        return <Automations onNavigate={handleNavigate} />;
       case 'flow-builder':
-        return <FlowBuilder onNavigate={setCurrentSection} automationId={null} />;
+        return <FlowBuilder onNavigate={setCurrentSection} automationId={flowBuilderAutomationId} />;
       default:
         return <Dashboard />;
     }

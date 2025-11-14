@@ -10,7 +10,7 @@ import {
 } from '../utils/automationStorage';
 
 interface AutomationsProps {
-  onNavigate: (section: string, data?: any) => void;
+  onNavigate: (section: string, data?: { automationId?: string | null }) => void;
 }
 
 const Automations: React.FC<AutomationsProps> = ({ onNavigate }) => {
