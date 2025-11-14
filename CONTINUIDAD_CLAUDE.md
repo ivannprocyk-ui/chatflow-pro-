@@ -38,6 +38,7 @@ Por favor, lee los siguientes archivos para entender el proyecto:
 3. PENDING_FIXES.md - Para conocer issues pendientes
 
 Acabamos de completar FASE 1: Analytics Dashboard
+Acabamos de completar FASE 2: Automatizaciones y Flows
 
 Próxima fase a implementar: [INDICAR CUÁL]
 ```
@@ -90,12 +91,51 @@ src/react-app/components/Sidebar.tsx (MODIFICADO - añadido menú Analytics)
 
 ---
 
-## 🔄 PRÓXIMAS FASES DISPONIBLES
+#### FASE 2: AUTOMATIZACIONES Y FLOWS
+**Fecha completada:** 2025-11-13
+**Branch:** `claude/continue-implementation-011CV1Ndh2QcjXNX5Q4yA9jy`
 
-### FASE 2: AUTOMATIZACIONES Y FLOWS (4-5 días)
-- Constructor de flujos drag & drop
-- Triggers automáticos
-- Sin backend necesario ✅
+**Commits:**
+- `02aff1d` - Feat: Implement Phase 2 - Automations & Flow Builder
+
+**Archivos creados/modificados:**
+```
+src/react-app/pages/Automations.tsx (NUEVO)
+src/react-app/pages/FlowBuilder.tsx (NUEVO)
+src/react-app/utils/automationStorage.ts (NUEVO)
+src/react-app/utils/flowEngine.ts (NUEVO)
+src/react-app/AppNew.tsx (MODIFICADO - añadido Automations)
+src/react-app/components/Sidebar.tsx (MODIFICADO - añadido menú Automations)
+package.json (MODIFICADO - añadido reactflow)
+```
+
+**Funcionalidades implementadas:**
+- ✅ Visual flow builder con React Flow
+- ✅ Drag & drop para crear flows
+- ✅ 4 tipos de nodos: Trigger, Action, Condition, Delay
+- ✅ 7 tipos de triggers (nuevo contacto, cumpleaños, inactivo, etc.)
+- ✅ 7 tipos de acciones (enviar mensaje, tags, actualizar campos, etc.)
+- ✅ Sistema de condiciones IF/ELSE
+- ✅ Delays configurables (horas, días, semanas)
+- ✅ Panel de configuración de nodos
+- ✅ Validación de flows
+- ✅ Activar/desactivar automatizaciones
+- ✅ Duplicar flows
+- ✅ Estadísticas de ejecución
+- ✅ Motor de ejecución completo
+- ✅ Historial de ejecuciones
+- ✅ Dark mode completo
+- ✅ Responsive design
+
+**Tecnologías usadas:**
+- React Flow v11.10.4
+- TypeScript
+- Tailwind CSS
+- LocalStorage para persistencia
+
+---
+
+## 🔄 PRÓXIMAS FASES DISPONIBLES
 
 ### FASE 3: SEGMENTACIÓN AVANZADA (3-4 días)
 - Filtros complejos
@@ -226,8 +266,8 @@ npm run dev
 **Elegir siguiente fase a implementar:**
 
 **Opciones sin backend (inmediatas):**
-1. FASE 2: Automatizaciones ← RECOMENDADA (alto impacto)
-2. FASE 3: Segmentación
+1. ✅ ~~FASE 2: Automatizaciones~~ (COMPLETADA)
+2. FASE 3: Segmentación ← RECOMENDADA (complementa automatizaciones)
 3. FASE 4: A/B Testing
 
 **Opciones con backend (requieren infraestructura):**
@@ -278,8 +318,10 @@ npm run build
 
 **Última actualización:** 2025-11-13
 **Branch actual:** `claude/continue-implementation-011CV1Ndh2QcjXNX5Q4yA9jy`
-**Última fase completada:** FASE 1 - Analytics Dashboard
-**Próxima fase sugerida:** FASE 2 - Automatizaciones y Flows
+**Fases completadas:**
+- ✅ FASE 1 - Analytics Dashboard
+- ✅ FASE 2 - Automatizaciones y Flows
+**Próxima fase sugerida:** FASE 3 - Segmentación Avanzada
 
 ---
 
