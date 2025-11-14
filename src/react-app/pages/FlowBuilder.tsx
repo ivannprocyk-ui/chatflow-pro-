@@ -401,6 +401,7 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ onNavigate, automationId }) =
                     <option value="contact_status_change">Cambio de Estado</option>
                     <option value="specific_date">Fecha Específica</option>
                     <option value="tag_added">Tag Agregado</option>
+                    <option value="message_no_response">Sin Respuesta a Mensaje</option>
                     <option value="manual">Manual</option>
                   </select>
                 </div>
@@ -420,6 +421,29 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ onNavigate, automationId }) =
                       }
                       className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
+                  </div>
+                )}
+
+                {selectedNode.data.triggerType === 'message_no_response' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Horas sin Respuesta
+                    </label>
+                    <input
+                      type="number"
+                      value={selectedNode.data.config.hoursWithoutResponse || 24}
+                      onChange={(e) =>
+                        updateNodeData(selectedNode.id, {
+                          config: { ...selectedNode.data.config, hoursWithoutResponse: parseInt(e.target.value) },
+                        })
+                      }
+                      className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      min="1"
+                      max="168"
+                    />
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Tiempo que debe pasar sin respuesta del cliente antes de disparar esta automatización (1-168 horas)
+                    </p>
                   </div>
                 )}
               </div>

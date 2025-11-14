@@ -10,6 +10,8 @@ import {
 } from '../utils/automationStorage';
 import { loadContacts } from '../utils/storage';
 import { executeAutomationForContacts } from '../utils/flowEngine';
+import AutomationScheduler from '../components/automation/AutomationScheduler';
+import MessageTrackingPanel from '../components/MessageTrackingPanel';
 
 interface AutomationsProps {
   onNavigate: (section: string, data?: { automationId?: string | null }) => void;
@@ -27,6 +29,7 @@ const Automations: React.FC<AutomationsProps> = ({ onNavigate }) => {
   const [selectedContacts, setSelectedContacts] = useState<Set<string>>(new Set());
   const [isExecuting, setIsExecuting] = useState(false);
   const [executionResult, setExecutionResult] = useState<any>(null);
+  const [showTrackingPanel, setShowTrackingPanel] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -153,13 +156,22 @@ const Automations: React.FC<AutomationsProps> = ({ onNavigate }) => {
               Crea flujos automáticos para ahorrar tiempo y mejorar la eficiencia
             </p>
           </div>
-          <button
-            onClick={handleCreateNew}
-            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2"
-          >
-            <i className="fas fa-plus"></i>
-            Crear Automatización
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowTrackingPanel(true)}
+              className="px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-xl hover:from-orange-700 hover:to-red-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2"
+            >
+              <i className="fas fa-chart-line"></i>
+              Seguimiento de Mensajes
+            </button>
+            <button
+              onClick={handleCreateNew}
+              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2"
+            >
+              <i className="fas fa-plus"></i>
+              Crear Automatización
+            </button>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -576,6 +588,14 @@ const Automations: React.FC<AutomationsProps> = ({ onNavigate }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* AutomationScheduler - Corre en background */}
+      <AutomationScheduler enabled={true} checkIntervalMinutes={5} />
+
+      {/* Message Tracking Panel */}
+      {showTrackingPanel && (
+        <MessageTrackingPanel onClose={() => setShowTrackingPanel(false)} />
       )}
     </div>
   );

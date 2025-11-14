@@ -26,6 +26,10 @@ import {
   saveCalendarEvents,
   addMessageToHistory,
 } from './storage';
+import {
+  trackMessageSent,
+  logResponseEvent,
+} from './messageTracker';
 
 // ==================== FLOW EXECUTION ENGINE ====================
 
@@ -340,6 +344,7 @@ export class FlowEngine {
 
       if (response.ok) {
         const responseData = await response.json();
+        const whatsappMessageId = responseData.messages?.[0]?.id;
 
         // Guardar en historial de mensajes
         addMessageToHistory({
@@ -348,13 +353,26 @@ export class FlowEngine {
           sentAt: new Date().toISOString(),
           status: 'sent',
           phoneNumber: phoneNumber,
-          messageId: responseData.messages?.[0]?.id,
+          messageId: whatsappMessageId,
           campaignName: `Automatización: ${this.automation.name}`,
           metadata: {
             automationId: this.automation.id,
             executionId: this.execution.id,
             imageUrl: imageUrl || undefined
           }
+        });
+
+        // Activar tracking de respuesta
+        trackMessageSent(this.contact.id, whatsappMessageId || '', {
+          noResponseThresholdHours: 24, // Por defecto 24 horas
+          followUpAutomationId: this.automation.id,
+        });
+
+        // Log del evento
+        logResponseEvent(this.contact.id, 'message_sent', {
+          messageId: whatsappMessageId,
+          automationId: this.automation.id,
+          details: `Mensaje enviado vía automatización: ${this.automation.name}`,
         });
 
         return {

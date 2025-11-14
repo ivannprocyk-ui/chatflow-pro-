@@ -7,6 +7,7 @@ export type TriggerType =
   | 'contact_status_change' // Cambio de estado
   | 'specific_date'         // Fecha específica
   | 'tag_added'             // Tag agregado a contacto
+  | 'message_no_response'   // Cliente no respondió mensaje (tracking)
   | 'manual';               // Ejecución manual
 
 export type ActionType =
@@ -57,6 +58,8 @@ export interface TriggerNodeData {
     toStatus?: string;
     // Para 'tag_added'
     tagId?: string;
+    // Para 'message_no_response'
+    hoursWithoutResponse?: number; // Horas sin respuesta antes de disparar
   };
 }
 
@@ -398,6 +401,7 @@ export const getTriggerLabel = (triggerType: TriggerType): string => {
     contact_status_change: 'Cambio de Estado',
     specific_date: 'Fecha Específica',
     tag_added: 'Tag Agregado',
+    message_no_response: 'Sin Respuesta',
     manual: 'Manual',
   };
   return labels[triggerType];
