@@ -10,6 +10,8 @@ import ReactFlow, {
   useNodesState,
   useEdgesState,
   NodeTypes,
+  Handle,
+  Position,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import {
@@ -224,15 +226,51 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ onNavigate, automationId }) =
       }
     };
 
+    const getColor = () => {
+      switch (type) {
+        case 'trigger':
+          return 'border-green-500';
+        case 'action':
+          return 'border-blue-500';
+        case 'condition':
+          return 'border-orange-500';
+        case 'delay':
+          return 'border-purple-500';
+        default:
+          return 'border-gray-500';
+      }
+    };
+
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-300 dark:border-gray-600 p-4 min-w-[200px] shadow-lg">
+      <div className={`bg-white dark:bg-gray-800 rounded-lg border-2 ${getColor()} p-4 min-w-[200px] shadow-lg hover:shadow-xl transition-shadow cursor-pointer`}>
+        {/* Handle de entrada (excepto para trigger) */}
+        {type !== 'trigger' && (
+          <Handle
+            type="target"
+            position={Position.Left}
+            className="w-3 h-3 !bg-gray-400 dark:!bg-gray-500 border-2 border-white dark:border-gray-800"
+          />
+        )}
+
         <div className="flex items-center gap-2 mb-2">
-          <i className={`fas ${getIcon()} text-${type === 'trigger' ? 'green' : type === 'action' ? 'blue' : type === 'condition' ? 'orange' : 'purple'}-600`}></i>
+          <i className={`fas ${getIcon()} ${
+            type === 'trigger' ? 'text-green-600 dark:text-green-400' :
+            type === 'action' ? 'text-blue-600 dark:text-blue-400' :
+            type === 'condition' ? 'text-orange-600 dark:text-orange-400' :
+            'text-purple-600 dark:text-purple-400'
+          }`}></i>
           <span className="font-semibold text-sm text-gray-700 dark:text-gray-300 uppercase">
             {type}
           </span>
         </div>
-        <div className="text-gray-900 dark:text-white font-medium">{getLabel()}</div>
+        <div className="text-gray-900 dark:text-white font-medium text-sm">{getLabel()}</div>
+
+        {/* Handle de salida */}
+        <Handle
+          type="source"
+          position={Position.Right}
+          className="w-3 h-3 !bg-gray-400 dark:!bg-gray-500 border-2 border-white dark:border-gray-800"
+        />
       </div>
     );
   };
@@ -286,6 +324,16 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ onNavigate, automationId }) =
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar - Node Palette */}
         <div className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-4 overflow-y-auto">
+          <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+            <p className="text-xs text-blue-800 dark:text-blue-300">
+              <i className="fas fa-info-circle mr-1"></i>
+              <strong>Instrucciones:</strong>
+              <br/>1. Añade nodos al canvas
+              <br/>2. Conecta arrastrando desde el punto derecho al izquierdo
+              <br/>3. Haz clic en un nodo para configurarlo
+            </p>
+          </div>
+
           <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Añadir Nodo</h3>
 
           <div className="space-y-2">
@@ -368,7 +416,7 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ onNavigate, automationId }) =
         </div>
 
         {/* Right Panel - Node Configuration */}
-        {showNodeConfig && selectedNode && (
+        {showNodeConfig && selectedNode ? (
           <div className="w-80 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 p-4 overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-gray-900 dark:text-white">Configuración</h3>
@@ -563,6 +611,20 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ onNavigate, automationId }) =
                 </div>
               </div>
             )}
+          </div>
+        ) : (
+          <div className="w-80 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 p-4 flex items-center justify-center">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i className="fas fa-mouse-pointer text-2xl text-gray-400 dark:text-gray-500"></i>
+              </div>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
+                Selecciona un nodo
+              </h3>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                Haz clic en un nodo del canvas para ver y editar su configuración
+              </p>
+            </div>
           </div>
         )}
       </div>
