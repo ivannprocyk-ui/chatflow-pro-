@@ -22,6 +22,7 @@ const menuItems = [
   { id: 'calendar', icon: 'fas fa-calendar-alt', label: 'Agenda' },
   { id: 'campaign-history', icon: 'fas fa-bullhorn', label: 'Historial de Campañas' },
   { id: 'analytics', icon: 'fas fa-chart-bar', label: 'Analytics' },
+  { id: 'automations', icon: 'fas fa-magic', label: 'Automatizaciones' },
   { id: 'message-scheduler', icon: 'fas fa-clock', label: 'Programar Envíos' },
   { id: 'templates', icon: 'fas fa-file-alt', label: 'Plantillas' },
   { id: 'configuration', icon: 'fas fa-cog', label: 'Configuración' },
