@@ -21,7 +21,7 @@ const AutomationScheduler: React.FC<AutomationSchedulerProps> = ({
   checkIntervalMinutes = 5,
   enabled = true,
 }) => {
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<number | null>(null);
   const lastCheckRef = useRef<number>(0);
 
   /**
