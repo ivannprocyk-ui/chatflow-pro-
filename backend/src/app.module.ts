@@ -7,6 +7,7 @@ import { MessagesModule } from './messages/messages.module';
 import { AIModule } from './ai/ai.module';
 import { WhatsAppModule } from './whatsapp/whatsapp.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
+import { BotConfigModule } from './bot-config/bot-config.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -21,6 +22,7 @@ import { HealthController } from './health.controller';
     AIModule,
     WhatsAppModule,
     WebhooksModule,
+    BotConfigModule,
   ],
   controllers: [HealthController],
 })
