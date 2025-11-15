@@ -14,6 +14,8 @@ import AISettings from "@/react-app/pages/AISettings";
 import Analytics from "@/react-app/pages/Analytics";
 import Automations from "@/react-app/pages/Automations";
 import FlowBuilder from "@/react-app/pages/FlowBuilder";
+import BotConfiguration from "../../BotConfiguration";
+import BotAnalytics from "../../BotAnalytics";
 import { loadConfig, initializeDemoData, loadScheduledMessages, saveScheduledMessages, loadContactLists, loadCRMData, saveCampaigns, loadCampaigns, addMessageToHistory } from "@/react-app/utils/storage";
 import { ToastContainer, useToast } from "@/react-app/components/Toast";
 
@@ -31,7 +33,9 @@ export type AppSection =
   | 'ai-settings'
   | 'analytics'
   | 'automations'
-  | 'flow-builder';
+  | 'flow-builder'
+  | 'bot-configuration'
+  | 'bot-analytics';
 
 export default function App() {
   const [currentSection, setCurrentSection] = useState<AppSection>(() => {
@@ -42,7 +46,7 @@ export default function App() {
       'dashboard', 'bulk-messaging', 'contact-lists', 'crm-panel',
       'crm-settings', 'campaign-history', 'message-scheduler',
       'templates', 'calendar', 'configuration', 'ai-settings', 'analytics',
-      'automations', 'flow-builder'
+      'automations', 'flow-builder', 'bot-configuration', 'bot-analytics'
     ];
     return saved && validSections.includes(saved as AppSection)
       ? (saved as AppSection)
@@ -387,6 +391,10 @@ export default function App() {
         return <Automations onNavigate={handleNavigate} />;
       case 'flow-builder':
         return <FlowBuilder onNavigate={setCurrentSection} automationId={flowBuilderAutomationId} />;
+      case 'bot-configuration':
+        return <BotConfiguration />;
+      case 'bot-analytics':
+        return <BotAnalytics />;
       default:
         return <Dashboard />;
     }
