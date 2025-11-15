@@ -22,4 +22,10 @@ export class WebhooksController {
       message: 'Meta webhook received',
     };
   }
+
+  @Post('chatwoot')
+  async handleChatWoot(@Body() payload: any) {
+    this.logger.log(`ChatWoot webhook - Event: ${payload.event}`);
+    return this.webhooksService.handleChatWootWebhook(payload);
+  }
 }

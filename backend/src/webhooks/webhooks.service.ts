@@ -3,6 +3,7 @@ import { ContactsService } from '../contacts/contacts.service';
 import { MessagesService } from '../messages/messages.service';
 import { AIService } from '../ai/ai.service';
 import { WhatsAppService } from '../whatsapp/whatsapp.service';
+import { ChatWootService } from '../chatwoot/chatwoot.service';
 
 @Injectable()
 export class WebhooksService {
@@ -13,6 +14,7 @@ export class WebhooksService {
     private messagesService: MessagesService,
     private aiService: AIService,
     private whatsappService: WhatsAppService,
+    private chatwootService: ChatWootService,
   ) {}
 
   async handleEvolutionWebhook(payload: any) {
@@ -136,6 +138,75 @@ export class WebhooksService {
       };
     } catch (error) {
       this.logger.error(`Error processing webhook: ${error.message}`);
+      return {
+        processed: false,
+        error: error.message,
+      };
+    }
+  }
+
+  /**
+   * Handle ChatWoot webhook
+   * Main handler for ChatWoot message_created events
+   */
+  async handleChatWootWebhook(payload: any) {
+    this.logger.log('📨 Received ChatWoot webhook');
+
+    try {
+      // Only process message_created events from incoming messages
+      if (payload.event !== 'message_created') {
+        this.logger.log(`Ignoring non-message event: ${payload.event}`);
+        return { processed: false, reason: 'not_message_created_event' };
+      }
+
+      // Ignore outgoing messages (sent by us or agents)
+      if (payload.message_type === 'outgoing') {
+        this.logger.log('Ignoring outgoing message');
+        return { processed: false, reason: 'outgoing_message' };
+      }
+
+      // Extract data from webhook
+      const messageContent = payload.content;
+      const conversationId = payload.conversation?.id;
+      const accountId = payload.account?.id;
+      const inboxId = payload.inbox?.id;
+      const contactPhone = payload.sender?.phone_number || payload.sender?.id;
+
+      if (!messageContent || !conversationId || !accountId || !inboxId) {
+        this.logger.warn('Invalid ChatWoot webhook - missing required fields');
+        return { processed: false, reason: 'invalid_payload' };
+      }
+
+      this.logger.log(`Message from ChatWoot inbox ${inboxId}, conversation ${conversationId}`);
+
+      // Generate AI response using the new handleChatWootMessage method
+      this.logger.log('🤖 Generating AI response via ChatWoot handler...');
+      const aiResponse = await this.aiService.handleChatWootMessage(payload);
+
+      if (!aiResponse || aiResponse === 'Bot is disabled') {
+        this.logger.log('Bot disabled or no response generated');
+        return { processed: false, reason: 'bot_disabled' };
+      }
+
+      // Send AI response back to ChatWoot
+      this.logger.log('📤 Sending AI response to ChatWoot...');
+      await this.chatwootService.sendMessage({
+        accountId: accountId.toString(),
+        conversationId: conversationId,
+        content: aiResponse,
+        messageType: 'outgoing',
+        private: false,
+      });
+
+      this.logger.log('✅ AI response sent to ChatWoot successfully');
+
+      return {
+        processed: true,
+        conversationId,
+        response: aiResponse,
+      };
+    } catch (error) {
+      this.logger.error(`Error processing ChatWoot webhook: ${error.message}`);
       return {
         processed: false,
         error: error.message,

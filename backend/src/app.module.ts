@@ -9,6 +9,7 @@ import { WhatsAppModule } from './whatsapp/whatsapp.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { BotConfigModule } from './bot-config/bot-config.module';
 import { EvolutionApiModule } from './evolution-api/evolution-api.module';
+import { ChatWootModule } from './chatwoot/chatwoot.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -24,6 +25,7 @@ import { HealthController } from './health.controller';
     WhatsAppModule,
     BotConfigModule,
     EvolutionApiModule,
+    ChatWootModule,
     WebhooksModule,
   ],
   controllers: [HealthController],
