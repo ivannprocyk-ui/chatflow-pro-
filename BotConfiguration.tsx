@@ -355,34 +355,6 @@ export default function BotConfiguration() {
                   </div>
                 </div>
 
-                {/* ChatWoot Integration */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      ChatWoot Account ID
-                    </label>
-                    <input
-                      type="text"
-                      value={config.chatwootAccountId || ''}
-                      onChange={(e) => handleInputChange('chatwootAccountId', e.target.value)}
-                      placeholder="12345"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      ChatWoot Inbox ID
-                    </label>
-                    <input
-                      type="text"
-                      value={config.chatwootInboxId || ''}
-                      onChange={(e) => handleInputChange('chatwootInboxId', e.target.value)}
-                      placeholder="67890"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
                 {/* Save Button */}
                 <button
                   onClick={saveConfiguration}
@@ -400,49 +372,9 @@ export default function BotConfiguration() {
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                   <h3 className="font-medium text-blue-900 mb-2">ℹ️ Conexión a WhatsApp</h3>
                   <p className="text-sm text-blue-800">
-                    Conecta tu número de WhatsApp usando Evolution API. Escanea el código QR
-                    con tu WhatsApp para vincular tu cuenta.
+                    Conecta tu número de WhatsApp escaneando el código QR con tu dispositivo móvil.
+                    El bot se conectará automáticamente al servicio de mensajería.
                   </p>
-                </div>
-
-                {/* Evolution API Config */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Evolution API URL *
-                  </label>
-                  <input
-                    type="text"
-                    value={config.evolutionApiUrl || ''}
-                    onChange={(e) => handleInputChange('evolutionApiUrl', e.target.value)}
-                    placeholder="https://your-evolution-api.com"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Evolution API Key *
-                  </label>
-                  <input
-                    type="password"
-                    value={config.evolutionApiKey || ''}
-                    onChange={(e) => handleInputChange('evolutionApiKey', e.target.value)}
-                    placeholder="your-api-key"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Instance Name (Opcional)
-                  </label>
-                  <input
-                    type="text"
-                    value={config.evolutionInstanceName || ''}
-                    onChange={(e) => handleInputChange('evolutionInstanceName', e.target.value)}
-                    placeholder="mi-bot-instance"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  />
                 </div>
 
                 {/* Connection Status */}
