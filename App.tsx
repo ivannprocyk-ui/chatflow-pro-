@@ -9,19 +9,21 @@ import CampaignHistory from "./CampaignHistory";
 import MessageScheduler from "./MessageScheduler";
 import Templates from "./Templates";
 import Configuration from "./Configuration";
+import BotConfiguration from "./src/pages/BotConfiguration";
 import { loadConfig } from "./storage";
 import { useToast, ToastContainer } from "./Toast";
 
-export type AppSection = 
-  | 'dashboard' 
-  | 'chat' 
-  | 'bulk-messaging' 
-  | 'contact-lists' 
-  | 'crm-panel' 
-  | 'campaign-history' 
-  | 'message-scheduler' 
-  | 'templates' 
-  | 'configuration';
+export type AppSection =
+  | 'dashboard'
+  | 'chat'
+  | 'bulk-messaging'
+  | 'contact-lists'
+  | 'crm-panel'
+  | 'campaign-history'
+  | 'message-scheduler'
+  | 'templates'
+  | 'configuration'
+  | 'bot-configuration';
 
 export default function App() {
   const [currentSection, setCurrentSection] = useState<AppSection>('dashboard');
@@ -57,6 +59,8 @@ export default function App() {
         return <Templates />;
       case 'configuration':
         return <Configuration onConfigUpdate={setConfig} />;
+      case 'bot-configuration':
+        return <BotConfiguration />;
       default:
         return <Dashboard />;
     }

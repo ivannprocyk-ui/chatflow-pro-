@@ -64,4 +64,33 @@ export const contactsAPI = {
   addContacts: (listId: string, data: any) => api.post(`/contact-lists/${listId}/contacts`, data),
 };
 
+export const botConfigAPI = {
+  // Bot Configuration
+  get: () => api.get('/bot-config'),
+  upsert: (data: any) => api.post('/bot-config', data),
+  toggleBot: () => api.patch('/bot-config/toggle'),
+
+  // Evolution API - WhatsApp Connection
+  connectInstance: (data: any) => api.post('/evolution-api/instance', data),
+  getQRCode: () => api.get('/evolution-api/qrcode'),
+  getStatus: () => api.get('/evolution-api/status'),
+  disconnect: () => api.post('/evolution-api/disconnect'),
+  deleteInstance: () => api.delete('/evolution-api/instance'),
+  setWebhook: (data: any) => api.post('/evolution-api/webhook', data),
+};
+
+export const botTrackingAPI = {
+  // Bot Metrics & Analytics
+  getMetrics: (period: 'day' | 'week' | 'month' | 'all' = 'all') =>
+    api.get(`/bot-tracking/metrics?period=${period}`),
+  getMetricsByAgentType: (period: 'day' | 'week' | 'month' | 'all' = 'all') =>
+    api.get(`/bot-tracking/metrics/by-agent-type?period=${period}`),
+  getLogs: (params?: { limit?: number; offset?: number; status?: string }) =>
+    api.get('/bot-tracking/logs', { params }),
+  getConversationLogs: (conversationId: string) =>
+    api.get(`/bot-tracking/conversation/${conversationId}`),
+  getSuccessRate: (period: 'day' | 'week' | 'month' | 'all' = 'all') =>
+    api.get(`/bot-tracking/success-rate?period=${period}`),
+};
+
 export default api;

@@ -17,6 +17,7 @@ const menuItems = [
   { id: 'crm-panel', icon: 'fas fa-chart-line', label: 'Panel CRM' },
   { id: 'campaign-history', icon: 'fas fa-bullhorn', label: 'Historial de Campañas' },
   { id: 'message-scheduler', icon: 'fas fa-clock', label: 'Programador de Mensajes' },
+  { id: 'bot-configuration', icon: 'fas fa-robot', label: '🤖 Bot IA' },
   { id: 'templates', icon: 'fas fa-file-alt', label: 'Plantillas' },
   { id: 'configuration', icon: 'fas fa-cog', label: 'Configuración' },
 ] as const;
