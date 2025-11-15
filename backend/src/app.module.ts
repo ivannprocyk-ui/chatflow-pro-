@@ -8,6 +8,7 @@ import { AIModule } from './ai/ai.module';
 import { WhatsAppModule } from './whatsapp/whatsapp.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
 import { BotConfigModule } from './bot-config/bot-config.module';
+import { EvolutionApiModule } from './evolution-api/evolution-api.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -21,8 +22,9 @@ import { HealthController } from './health.controller';
     MessagesModule,
     AIModule,
     WhatsAppModule,
-    WebhooksModule,
     BotConfigModule,
+    EvolutionApiModule,
+    WebhooksModule,
   ],
   controllers: [HealthController],
 })
