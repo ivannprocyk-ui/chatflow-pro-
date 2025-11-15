@@ -9,8 +9,8 @@ import CampaignHistory from "./CampaignHistory";
 import MessageScheduler from "./MessageScheduler";
 import Templates from "./Templates";
 import Configuration from "./Configuration";
-import BotConfiguration from "./src/pages/BotConfiguration";
-import BotAnalytics from "./src/pages/BotAnalytics";
+import BotConfiguration from "./BotConfiguration";
+import BotAnalytics from "./BotAnalytics";
 import { loadConfig } from "./storage";
 import { useToast, ToastContainer } from "./Toast";
 
