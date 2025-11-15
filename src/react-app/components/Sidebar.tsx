@@ -27,6 +27,7 @@ const menuItems = [
   { id: 'bot-analytics', icon: 'fas fa-chart-bar', label: 'Analytics Bot' },
   { id: 'message-scheduler', icon: 'fas fa-clock', label: 'Programar Envíos' },
   { id: 'templates', icon: 'fas fa-file-alt', label: 'Plantillas' },
+  { id: 'admin-panel', icon: 'fas fa-shield-alt', label: 'Admin Panel' },
   { id: 'configuration', icon: 'fas fa-cog', label: 'Configuración' },
 ] as const;
 

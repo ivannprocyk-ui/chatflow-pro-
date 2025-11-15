@@ -14,6 +14,7 @@ import AISettings from "@/react-app/pages/AISettings";
 import Analytics from "@/react-app/pages/Analytics";
 import Automations from "@/react-app/pages/Automations";
 import FlowBuilder from "@/react-app/pages/FlowBuilder";
+import AdminPanel from "@/react-app/pages/AdminPanel";
 import BotConfiguration from "../../BotConfiguration";
 import BotAnalytics from "../../BotAnalytics";
 import { loadConfig, initializeDemoData, loadScheduledMessages, saveScheduledMessages, loadContactLists, loadCRMData, saveCampaigns, loadCampaigns, addMessageToHistory } from "@/react-app/utils/storage";
@@ -35,7 +36,8 @@ export type AppSection =
   | 'automations'
   | 'flow-builder'
   | 'bot-configuration'
-  | 'bot-analytics';
+  | 'bot-analytics'
+  | 'admin-panel';
 
 export default function App() {
   const [currentSection, setCurrentSection] = useState<AppSection>(() => {
@@ -46,7 +48,7 @@ export default function App() {
       'dashboard', 'bulk-messaging', 'contact-lists', 'crm-panel',
       'crm-settings', 'campaign-history', 'message-scheduler',
       'templates', 'calendar', 'configuration', 'ai-settings', 'analytics',
-      'automations', 'flow-builder', 'bot-configuration', 'bot-analytics'
+      'automations', 'flow-builder', 'bot-configuration', 'bot-analytics', 'admin-panel'
     ];
     return saved && validSections.includes(saved as AppSection)
       ? (saved as AppSection)
@@ -395,6 +397,8 @@ export default function App() {
         return <BotConfiguration />;
       case 'bot-analytics':
         return <BotAnalytics />;
+      case 'admin-panel':
+        return <AdminPanel />;
       default:
         return <Dashboard />;
     }
