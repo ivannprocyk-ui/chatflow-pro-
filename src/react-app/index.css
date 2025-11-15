@@ -5,6 +5,9 @@
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
 
+  /* Base font size - reduced by 30% from default 16px to ~11px */
+  font-size: 14px;
+
   /* Theme Colors - Light Mode */
   --primary-color: #2563eb;
   --primary-hover: #1d4ed8;
@@ -401,4 +404,177 @@ button, a, input, select, textarea {
 
 .dark .hover-elevate:hover {
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+}
+
+/* ===================================
+   COMPACT UI MODE - 30% reduction
+   =================================== */
+
+/* Reduce spacing globally */
+* {
+  --spacing-scale: 0.7;
+}
+
+/* Compact padding classes */
+.p-6 {
+  padding: calc(1.5rem * var(--spacing-scale)) !important;
+}
+
+.p-4 {
+  padding: calc(1rem * var(--spacing-scale)) !important;
+}
+
+.p-3 {
+  padding: calc(0.75rem * var(--spacing-scale)) !important;
+}
+
+.p-2 {
+  padding: calc(0.5rem * var(--spacing-scale)) !important;
+}
+
+.px-6 {
+  padding-left: calc(1.5rem * var(--spacing-scale)) !important;
+  padding-right: calc(1.5rem * var(--spacing-scale)) !important;
+}
+
+.py-6 {
+  padding-top: calc(1.5rem * var(--spacing-scale)) !important;
+  padding-bottom: calc(1.5rem * var(--spacing-scale)) !important;
+}
+
+.px-4 {
+  padding-left: calc(1rem * var(--spacing-scale)) !important;
+  padding-right: calc(1rem * var(--spacing-scale)) !important;
+}
+
+.py-4 {
+  padding-top: calc(1rem * var(--spacing-scale)) !important;
+  padding-bottom: calc(1rem * var(--spacing-scale)) !important;
+}
+
+.px-3 {
+  padding-left: calc(0.75rem * var(--spacing-scale)) !important;
+  padding-right: calc(0.75rem * var(--spacing-scale)) !important;
+}
+
+.py-3 {
+  padding-top: calc(0.75rem * var(--spacing-scale)) !important;
+  padding-bottom: calc(0.75rem * var(--spacing-scale)) !important;
+}
+
+/* Compact margins */
+.mb-6 {
+  margin-bottom: calc(1.5rem * var(--spacing-scale)) !important;
+}
+
+.mb-4 {
+  margin-bottom: calc(1rem * var(--spacing-scale)) !important;
+}
+
+.mb-3 {
+  margin-bottom: calc(0.75rem * var(--spacing-scale)) !important;
+}
+
+.mb-2 {
+  margin-bottom: calc(0.5rem * var(--spacing-scale)) !important;
+}
+
+.gap-6 {
+  gap: calc(1.5rem * var(--spacing-scale)) !important;
+}
+
+.gap-4 {
+  gap: calc(1rem * var(--spacing-scale)) !important;
+}
+
+.gap-3 {
+  gap: calc(0.75rem * var(--spacing-scale)) !important;
+}
+
+.gap-2 {
+  gap: calc(0.5rem * var(--spacing-scale)) !important;
+}
+
+.space-y-6 > * + * {
+  margin-top: calc(1.5rem * var(--spacing-scale)) !important;
+}
+
+.space-y-4 > * + * {
+  margin-top: calc(1rem * var(--spacing-scale)) !important;
+}
+
+.space-y-3 > * + * {
+  margin-top: calc(0.75rem * var(--spacing-scale)) !important;
+}
+
+/* Compact text sizes */
+.text-3xl {
+  font-size: calc(1.875rem * 0.85) !important;
+  line-height: 1.2 !important;
+}
+
+.text-2xl {
+  font-size: calc(1.5rem * 0.85) !important;
+  line-height: 1.3 !important;
+}
+
+.text-xl {
+  font-size: calc(1.25rem * 0.85) !important;
+  line-height: 1.4 !important;
+}
+
+.text-lg {
+  font-size: calc(1.125rem * 0.85) !important;
+}
+
+.text-sm {
+  font-size: calc(0.875rem * 0.95) !important;
+}
+
+.text-xs {
+  font-size: calc(0.75rem * 0.95) !important;
+}
+
+/* Compact buttons and inputs */
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="number"],
+textarea,
+select {
+  padding-top: calc(0.5rem * var(--spacing-scale)) !important;
+  padding-bottom: calc(0.5rem * var(--spacing-scale)) !important;
+  font-size: 0.9rem !important;
+}
+
+button {
+  padding-top: calc(0.5rem * var(--spacing-scale)) !important;
+  padding-bottom: calc(0.5rem * var(--spacing-scale)) !important;
+}
+
+/* Compact cards */
+.rounded-xl, .rounded-2xl {
+  border-radius: calc(0.75rem * var(--spacing-scale)) !important;
+}
+
+.shadow-lg {
+  box-shadow: 0 6px 12px -2px rgb(0 0 0 / 0.1), 0 3px 5px -3px rgb(0 0 0 / 0.1) !important;
+}
+
+/* Compact charts */
+.recharts-wrapper {
+  font-size: 0.8rem !important;
+}
+
+.recharts-cartesian-axis-tick text {
+  font-size: 0.75rem !important;
+}
+
+.recharts-legend-wrapper {
+  font-size: 0.8rem !important;
+}
+
+/* Compact icons */
+.fas, .far, .fab {
+  font-size: 0.9em !important;
 }
