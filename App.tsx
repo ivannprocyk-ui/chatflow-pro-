@@ -10,6 +10,7 @@ import MessageScheduler from "./MessageScheduler";
 import Templates from "./Templates";
 import Configuration from "./Configuration";
 import BotConfiguration from "./src/pages/BotConfiguration";
+import BotAnalytics from "./src/pages/BotAnalytics";
 import { loadConfig } from "./storage";
 import { useToast, ToastContainer } from "./Toast";
 
@@ -23,7 +24,8 @@ export type AppSection =
   | 'message-scheduler'
   | 'templates'
   | 'configuration'
-  | 'bot-configuration';
+  | 'bot-configuration'
+  | 'bot-analytics';
 
 export default function App() {
   const [currentSection, setCurrentSection] = useState<AppSection>('dashboard');
@@ -61,6 +63,8 @@ export default function App() {
         return <Configuration onConfigUpdate={setConfig} />;
       case 'bot-configuration':
         return <BotConfiguration />;
+      case 'bot-analytics':
+        return <BotAnalytics />;
       default:
         return <Dashboard />;
     }
