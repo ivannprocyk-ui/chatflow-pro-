@@ -10,6 +10,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
 import { BotConfigModule } from './bot-config/bot-config.module';
 import { EvolutionApiModule } from './evolution-api/evolution-api.module';
 import { ChatWootModule } from './chatwoot/chatwoot.module';
+import { BotTrackingModule } from './bot-tracking/bot-tracking.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -26,6 +27,7 @@ import { HealthController } from './health.controller';
     BotConfigModule,
     EvolutionApiModule,
     ChatWootModule,
+    BotTrackingModule,
     WebhooksModule,
   ],
   controllers: [HealthController],

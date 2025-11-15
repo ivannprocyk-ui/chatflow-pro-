@@ -4,6 +4,7 @@ import { MessagesService } from '../messages/messages.service';
 import { AIService } from '../ai/ai.service';
 import { WhatsAppService } from '../whatsapp/whatsapp.service';
 import { ChatWootService } from '../chatwoot/chatwoot.service';
+import { BotTrackingService } from '../bot-tracking/bot-tracking.service';
 
 @Injectable()
 export class WebhooksService {
@@ -15,6 +16,7 @@ export class WebhooksService {
     private aiService: AIService,
     private whatsappService: WhatsAppService,
     private chatwootService: ChatWootService,
+    private botTrackingService: BotTrackingService,
   ) {}
 
   async handleEvolutionWebhook(payload: any) {
@@ -152,6 +154,10 @@ export class WebhooksService {
   async handleChatWootWebhook(payload: any) {
     this.logger.log('📨 Received ChatWoot webhook');
 
+    const startTime = Date.now();
+    let organizationId: string;
+    let botConfig: any;
+
     try {
       // Only process message_created events from incoming messages
       if (payload.event !== 'message_created') {
@@ -179,12 +185,43 @@ export class WebhooksService {
 
       this.logger.log(`Message from ChatWoot inbox ${inboxId}, conversation ${conversationId}`);
 
+      // Track inbound message
+      const inboundTracking = await this.botTrackingService.trackMessage({
+        organizationId: 'temp', // Will be updated after we get bot config
+        messageId: payload.id?.toString(),
+        conversationId: conversationId.toString(),
+        inboxId: inboxId.toString(),
+        direction: 'inbound',
+        botEnabled: false, // Will be updated
+        botProcessed: false,
+        botResponded: false,
+        status: 'pending',
+      });
+
       // Generate AI response using the new handleChatWootMessage method
       this.logger.log('🤖 Generating AI response via ChatWoot handler...');
+      const aiProcessingStart = Date.now();
+
       const aiResponse = await this.aiService.handleChatWootMessage(payload);
+
+      const processingTimeMs = Date.now() - aiProcessingStart;
 
       if (!aiResponse || aiResponse === 'Bot is disabled') {
         this.logger.log('Bot disabled or no response generated');
+
+        // Update tracking - bot disabled/skipped
+        await this.botTrackingService.trackMessage({
+          organizationId: inboundTracking.organizationId,
+          messageId: payload.id?.toString(),
+          conversationId: conversationId.toString(),
+          inboxId: inboxId.toString(),
+          direction: 'inbound',
+          botEnabled: false,
+          botProcessed: false,
+          botResponded: false,
+          status: 'skipped',
+        });
+
         return { processed: false, reason: 'bot_disabled' };
       }
 
@@ -198,15 +235,58 @@ export class WebhooksService {
         private: false,
       });
 
+      const responseTimeMs = Date.now() - startTime;
+
       this.logger.log('✅ AI response sent to ChatWoot successfully');
+
+      // Track successful processing
+      await this.botTrackingService.trackMessage({
+        organizationId: inboundTracking.organizationId,
+        messageId: payload.id?.toString(),
+        conversationId: conversationId.toString(),
+        inboxId: inboxId.toString(),
+        direction: 'outbound',
+        botEnabled: true,
+        botProcessed: true,
+        botResponded: true,
+        processingTimeMs,
+        responseTimeMs,
+        aiProvider: 'flowise',
+        aiModel: 'grok-1',
+        agentType: 'asistente', // Will get from bot config in future
+        status: 'success',
+      });
 
       return {
         processed: true,
         conversationId,
         response: aiResponse,
+        metrics: {
+          processingTimeMs,
+          responseTimeMs,
+        },
       };
     } catch (error) {
       this.logger.error(`Error processing ChatWoot webhook: ${error.message}`);
+
+      // Track failed processing
+      try {
+        await this.botTrackingService.trackMessage({
+          organizationId: organizationId || 'unknown',
+          conversationId: payload.conversation?.id?.toString(),
+          inboxId: payload.inbox?.id?.toString(),
+          direction: 'inbound',
+          botEnabled: true,
+          botProcessed: true,
+          botResponded: false,
+          status: 'failed',
+          errorMessage: error.message,
+          errorCode: error.code || 'UNKNOWN_ERROR',
+        });
+      } catch (trackingError) {
+        this.logger.error(`Error tracking failed message: ${trackingError.message}`);
+      }
+
       return {
         processed: false,
         error: error.message,

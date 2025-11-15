@@ -6,9 +6,17 @@ import { MessagesModule } from '../messages/messages.module';
 import { AIModule } from '../ai/ai.module';
 import { WhatsAppModule} from '../whatsapp/whatsapp.module';
 import { ChatWootModule } from '../chatwoot/chatwoot.module';
+import { BotTrackingModule } from '../bot-tracking/bot-tracking.module';
 
 @Module({
-  imports: [ContactsModule, MessagesModule, AIModule, WhatsAppModule, ChatWootModule],
+  imports: [
+    ContactsModule,
+    MessagesModule,
+    AIModule,
+    WhatsAppModule,
+    ChatWootModule,
+    BotTrackingModule,
+  ],
   controllers: [WebhooksController],
   providers: [WebhooksService],
 })
