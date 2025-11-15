@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { loadConfig, saveConfig, AppConfig } from '@/react-app/utils/storage';
+import { loadConfig, saveConfig, AppConfig } from './storage';
 
 interface ConfigurationProps {
   onConfigUpdate: (config: AppConfig) => void;

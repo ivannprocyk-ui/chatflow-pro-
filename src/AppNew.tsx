@@ -1,0 +1,164 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ErrorBoundary } from './ErrorBoundary';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from '../Dashboard';
+import Chat from '../Chat';
+import BulkMessaging from '../BulkMessaging';
+import ContactLists from '../ContactLists';
+import CRMPanel from '../CRMPanel';
+import CampaignHistory from '../CampaignHistory';
+import MessageScheduler from '../MessageScheduler';
+import Templates from '../Templates';
+import Configuration from '../Configuration';
+import Sidebar from '../Sidebar';
+import { useToast, ToastContainer } from '../Toast';
+import { useState, useEffect } from 'react';
+import { loadConfig, AppConfig } from '../storage';
+
+type AppSection =
+  | 'dashboard'
+  | 'chat'
+  | 'bulk-messaging'
+  | 'contact-lists'
+  | 'crm-panel'
+  | 'campaign-history'
+  | 'message-scheduler'
+  | 'templates'
+  | 'configuration';
+
+const defaultConfig: AppConfig = {
+  api: {
+    phoneNumberId: '',
+    wabaId: '',
+    accessToken: '',
+    apiVersion: 'v21.0'
+  },
+  branding: {
+    appName: 'ChatFlow Pro',
+    logoUrl: '',
+    primaryColor: '#25D366',
+    secondaryColor: '#128C7E',
+    accentColor: '#8B5CF6'
+  }
+};
+
+function ProtectedLayout() {
+  const { user, isLoading } = useAuth();
+  const [currentSection, setCurrentSection] = useState<AppSection>('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [config, setConfig] = useState<AppConfig>(() => {
+    try {
+      return loadConfig();
+    } catch (error) {
+      console.error('[ProtectedLayout] Error loading config, using defaults:', error);
+      return defaultConfig;
+    }
+  });
+  const { toasts, removeToast } = useToast();
+
+  console.log('[ProtectedLayout] Rendering, user:', user);
+  console.log('[ProtectedLayout] Current section:', currentSection);
+  console.log('[ProtectedLayout] Config:', config);
+
+  useEffect(() => {
+    // Apply custom colors to CSS variables
+    try {
+      const root = document.documentElement;
+      root.style.setProperty('--primary-color', config?.branding?.primaryColor || '#25D366');
+      root.style.setProperty('--secondary-color', config?.branding?.secondaryColor || '#128C7E');
+      root.style.setProperty('--accent-color', config?.branding?.accentColor || '#8B5CF6');
+    } catch (error) {
+      console.error('[ProtectedLayout] Error applying CSS variables:', error);
+    }
+  }, [config]);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    console.log('[ProtectedLayout] No user, redirecting to login');
+    return <Navigate to="/login" replace />;
+  }
+
+  const renderCurrentSection = () => {
+    console.log('[ProtectedLayout] Rendering section:', currentSection);
+    try {
+      switch (currentSection) {
+        case 'dashboard':
+          return <Dashboard />;
+        case 'chat':
+          return <Chat />;
+        case 'bulk-messaging':
+          return <BulkMessaging />;
+        case 'contact-lists':
+          return <ContactLists />;
+        case 'crm-panel':
+          return <CRMPanel />;
+        case 'campaign-history':
+          return <CampaignHistory />;
+        case 'message-scheduler':
+          return <MessageScheduler />;
+        case 'templates':
+          return <Templates />;
+        case 'configuration':
+          return <Configuration config={config} onConfigUpdate={setConfig} />;
+        default:
+          return <Dashboard />;
+      }
+    } catch (error) {
+      console.error('[ProtectedLayout] Error rendering section:', error);
+      return (
+        <div className="p-8">
+          <h2 className="text-xl font-bold text-red-600 mb-4">Error al cargar la sección</h2>
+          <p className="text-gray-600">{String(error)}</p>
+        </div>
+      );
+    }
+  };
+
+  return (
+    <ErrorBoundary>
+      <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+        <Sidebar
+          currentSection={currentSection}
+          onSectionChange={setCurrentSection}
+          isOpen={sidebarOpen}
+          onToggle={() => setSidebarOpen(!sidebarOpen)}
+          config={config}
+        />
+        <main className="flex-1 overflow-auto">
+          {renderCurrentSection()}
+        </main>
+        <ToastContainer toasts={toasts} removeToast={removeToast} />
+      </div>
+    </ErrorBoundary>
+  );
+}
+
+export default function AppNew() {
+  console.log('[AppNew] Rendering');
+  return (
+    <ErrorBoundary>
+      <BrowserRouter>
+        <AuthProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/dashboard" element={<ProtectedLayout />} />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </AuthProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
+  );
+}

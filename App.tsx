@@ -1,31 +1,37 @@
 import { useState, useEffect } from "react";
-import Sidebar from "@/react-app/components/Sidebar";
-import Dashboard from "@/react-app/pages/Dashboard";
-import Chat from "@/react-app/pages/Chat";
-import BulkMessaging from "@/react-app/pages/BulkMessaging";
-import ContactLists from "@/react-app/pages/ContactLists";
-import CRMPanel from "@/react-app/pages/CRMPanel";
-import CampaignHistory from "@/react-app/pages/CampaignHistory";
-import MessageScheduler from "@/react-app/pages/MessageScheduler";
-import Templates from "@/react-app/pages/Templates";
-import Configuration from "@/react-app/pages/Configuration";
-import { loadConfig } from "@/react-app/utils/storage";
+import Sidebar from "./Sidebar";
+import Dashboard from "./Dashboard";
+import Chat from "./Chat";
+import BulkMessaging from "./BulkMessaging";
+import ContactLists from "./ContactLists";
+import CRMPanel from "./CRMPanel";
+import CampaignHistory from "./CampaignHistory";
+import MessageScheduler from "./MessageScheduler";
+import Templates from "./Templates";
+import Configuration from "./Configuration";
+import BotConfiguration from "./src/pages/BotConfiguration";
+import BotAnalytics from "./src/pages/BotAnalytics";
+import { loadConfig } from "./storage";
+import { useToast, ToastContainer } from "./Toast";
 
-export type AppSection = 
-  | 'dashboard' 
-  | 'chat' 
-  | 'bulk-messaging' 
-  | 'contact-lists' 
-  | 'crm-panel' 
-  | 'campaign-history' 
-  | 'message-scheduler' 
-  | 'templates' 
-  | 'configuration';
+export type AppSection =
+  | 'dashboard'
+  | 'chat'
+  | 'bulk-messaging'
+  | 'contact-lists'
+  | 'crm-panel'
+  | 'campaign-history'
+  | 'message-scheduler'
+  | 'templates'
+  | 'configuration'
+  | 'bot-configuration'
+  | 'bot-analytics';
 
 export default function App() {
   const [currentSection, setCurrentSection] = useState<AppSection>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [config, setConfig] = useState(loadConfig());
+  const { toasts, removeToast } = useToast();
 
   useEffect(() => {
     // Apply custom colors to CSS variables
@@ -55,6 +61,10 @@ export default function App() {
         return <Templates />;
       case 'configuration':
         return <Configuration onConfigUpdate={setConfig} />;
+      case 'bot-configuration':
+        return <BotConfiguration />;
+      case 'bot-analytics':
+        return <BotAnalytics />;
       default:
         return <Dashboard />;
     }
@@ -62,7 +72,9 @@ export default function App() {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar 
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
+
+      <Sidebar
         isOpen={sidebarOpen}
         currentSection={currentSection}
         onSectionChange={setCurrentSection}

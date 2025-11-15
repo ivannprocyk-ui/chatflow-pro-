@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { loadCRMData, saveCRMData } from '@/react-app/utils/storage';
+import { loadCRMData, saveCRMData } from './storage';
 
 interface CRMContact {
   id: string;

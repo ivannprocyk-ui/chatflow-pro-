@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { loadContactLists, saveContactLists } from '@/react-app/utils/storage';
+import { loadContactLists, saveContactLists } from './storage';
 
 interface ContactList {
   id: string;

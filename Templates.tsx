@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { loadConfig } from '@/react-app/utils/storage';
+import { loadConfig } from './storage';
 
 interface WhatsAppTemplate {
   id: string;
