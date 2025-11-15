@@ -99,7 +99,7 @@ export default function CampaignHistory() {
 
   const handleNewCampaign = () => {
     // This would redirect to bulk messaging page
-    window.dispatchEvent(new CustomEvent('navigate-to-bulk-messaging'));
+    window.dispatchEvent(new CustomEvent('navigate-to', { detail: 'bulk-messaging' }));
   };
 
   const handleDeleteCampaign = (campaignId: string) => {

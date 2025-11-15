@@ -306,7 +306,7 @@ export default function Templates() {
             </button>
           ) : (
             <button
-              onClick={() => window.dispatchEvent(new CustomEvent('navigate-to-configuration'))}
+              onClick={() => window.dispatchEvent(new CustomEvent('navigate-to', { detail: 'configuration' }))}
               className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-8 py-3 rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl"
             >
               <i className="fas fa-cog mr-2"></i>
