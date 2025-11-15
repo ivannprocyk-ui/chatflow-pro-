@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 import { OrganizationsService } from '../organizations/organizations.service';
 import { MessagesService } from '../messages/messages.service';
+import { BotConfigService } from '../bot-config/bot-config.service';
 import { PROMPT_TEMPLATES } from './prompt-templates';
 
 @Injectable()
@@ -18,6 +19,7 @@ export class AIService {
     private configService: ConfigService,
     private organizationsService: OrganizationsService,
     private messagesService: MessagesService,
+    private botConfigService: BotConfigService,
   ) {
     this.flowiseUrl = this.configService.get<string>('FLOWISE_API_URL') || '';
     this.flowiseApiKey = this.configService.get<string>('FLOWISE_API_KEY') || '';
@@ -139,5 +141,137 @@ export class AIService {
     if (messageLower.includes('tarjeta') || messageLower.includes('pago')) score += 20;
 
     return Math.min(score, 50); // Max 50 points per message
+  }
+
+  /**
+   * Build custom prompt from bot-config
+   * Uses bot-config instead of organization config
+   */
+  buildCustomPrompt(botConfig: any): string {
+    // If custom prompt, use it directly
+    if (botConfig.agentType === 'custom' && botConfig.customPrompt) {
+      return this.replaceVariables(botConfig.customPrompt, botConfig);
+    }
+
+    // Use template based on agent type
+    const template = PROMPT_TEMPLATES[botConfig.agentType] || PROMPT_TEMPLATES.asistente;
+    return this.replaceVariables(template, botConfig);
+  }
+
+  /**
+   * Replace variables in prompt template
+   */
+  private replaceVariables(template: string, botConfig: any): string {
+    return template
+      .replace(/{{company_name}}/g, botConfig.businessName || 'la empresa')
+      .replace(/{{company_info}}/g, botConfig.businessDescription || 'Información no disponible')
+      .replace(/{{products_list}}/g, botConfig.products || 'Productos no disponibles')
+      .replace(/{{business_hours}}/g, botConfig.businessHours || 'Horario no especificado')
+      .replace(/{{language}}/g, botConfig.language || 'es')
+      .replace(/{{tone}}/g, botConfig.tone || 'casual')
+      .replace(/{{objective}}/g, this.getObjectiveByAgentType(botConfig.agentType));
+  }
+
+  /**
+   * Get objective based on agent type
+   */
+  private getObjectiveByAgentType(agentType: string): string {
+    const objectives: Record<string, string> = {
+      vendedor: 'Ayudar a los clientes a encontrar productos y cerrar ventas',
+      asistente: 'Resolver dudas y problemas de los clientes',
+      secretaria: 'Agendar citas y organizar reuniones',
+      custom: 'Ayudar al cliente',
+    };
+    return objectives[agentType] || objectives.custom;
+  }
+
+  /**
+   * Handle ChatWoot message webhook
+   * Main method for processing messages from ChatWoot
+   */
+  async handleChatWootMessage(webhook: any): Promise<string> {
+    try {
+      this.logger.log('Processing ChatWoot message webhook');
+
+      // Extract data from webhook
+      const inboxId = webhook.inbox?.id;
+      const conversationId = webhook.conversation?.id;
+      const messageContent = webhook.content;
+      const contactPhone = webhook.sender?.phone_number || webhook.sender?.id;
+
+      if (!inboxId || !messageContent) {
+        this.logger.warn('Invalid ChatWoot webhook - missing inbox or content');
+        throw new Error('Invalid webhook data');
+      }
+
+      this.logger.log(`Message from inbox ${inboxId}: ${messageContent.substring(0, 50)}...`);
+
+      // 1. Find bot config by inbox ID
+      const botConfig = await this.botConfigService.findByInboxId(inboxId);
+
+      if (!botConfig) {
+        this.logger.warn(`No bot config found for inbox ${inboxId}`);
+        throw new Error('Bot config not found');
+      }
+
+      // 2. Check if bot is enabled
+      if (!botConfig.botEnabled) {
+        this.logger.log(`Bot disabled for org ${botConfig.organizationId}`);
+        return 'Bot is disabled';
+      }
+
+      // 3. Build custom prompt from bot config
+      const systemPrompt = this.buildCustomPrompt(botConfig);
+
+      this.logger.log(`Generating AI response for ${botConfig.businessName} (${botConfig.agentType})`);
+
+      // 4. Get Flowise URL (use bot config override or global config)
+      const flowiseUrl = botConfig.flowiseUrl || this.flowiseUrl;
+      const flowiseApiKey = botConfig.flowiseApiKey || this.flowiseApiKey;
+      const flowiseFlowId = this.flowiseFlowId;
+
+      if (!flowiseUrl || !flowiseApiKey || !flowiseFlowId) {
+        this.logger.warn('Flowise not configured');
+        return this.getFallbackResponseFromConfig(botConfig);
+      }
+
+      // 5. Call Flowise API
+      const response = await firstValueFrom(
+        this.httpService.post(
+          `${flowiseUrl}/prediction/${flowiseFlowId}`,
+          {
+            question: messageContent,
+            overrideConfig: {
+              sessionId: `org-${botConfig.organizationId}-${contactPhone}`,
+              systemMessagePrompt: systemPrompt,
+            },
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${flowiseApiKey}`,
+              'Content-Type': 'application/json',
+            },
+          },
+        ),
+      );
+
+      const aiResponse = response.data.text || response.data.answer || 'Lo siento, no pude generar una respuesta.';
+
+      this.logger.log(`AI response generated successfully (${aiResponse.length} chars)`);
+
+      return aiResponse;
+    } catch (error) {
+      this.logger.error(`Error handling ChatWoot message: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Get fallback response from bot config
+   */
+  private getFallbackResponseFromConfig(botConfig: any): string {
+    const businessName = botConfig.businessName || 'nuestro equipo';
+    const businessHours = botConfig.businessHours || 'nuestro horario de atención';
+    return `Gracias por tu mensaje. ${businessName} te responderá pronto durante ${businessHours}.`;
   }
 }
