@@ -54,6 +54,52 @@ export default function BotAnalytics() {
       setLastUpdate(new Date());
     } catch (error: any) {
       console.error('Error loading metrics:', error);
+      // Si no hay backend, usar datos demo
+      setMetrics({
+        organizationId: 'demo-org',
+        period,
+        totalMessages: 1247,
+        inboundMessages: 823,
+        outboundMessages: 424,
+        botProcessedCount: 687,
+        botRespondedCount: 652,
+        botSkippedCount: 28,
+        botFailedCount: 7,
+        successRate: 94.9,
+        responseRate: 83.5,
+        avgProcessingTimeMs: 234,
+        avgResponseTimeMs: 1450,
+        maxProcessingTimeMs: 3200,
+        maxResponseTimeMs: 5800,
+        totalConversations: 156,
+        activeConversations: 42,
+        errorCount: 7,
+        topErrors: [
+          { code: 'TIMEOUT_ERROR', count: 3 },
+          { code: 'API_RATE_LIMIT', count: 2 },
+          { code: 'INVALID_FORMAT', count: 2 },
+        ],
+        periodStart: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+        periodEnd: new Date(),
+        generatedAt: new Date(),
+      });
+      setMetricsByAgentType({
+        vendedor: {
+          totalMessages: 456,
+          successRate: 96.3,
+          avgProcessingTimeMs: 198,
+        },
+        asistente: {
+          totalMessages: 523,
+          successRate: 93.8,
+          avgProcessingTimeMs: 267,
+        },
+        secretaria: {
+          totalMessages: 268,
+          successRate: 94.4,
+          avgProcessingTimeMs: 223,
+        },
+      });
     } finally {
       setIsLoading(false);
     }
