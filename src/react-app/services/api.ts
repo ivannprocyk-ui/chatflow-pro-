@@ -93,4 +93,15 @@ export const botTrackingAPI = {
     api.get(`/bot-tracking/success-rate?period=${period}`),
 };
 
+export const organizationsAPI = {
+  getCurrent: () => api.get('/organizations/current'),
+  update: (data: any) => api.put('/organizations/current', data),
+};
+
+export const aiAPI = {
+  getConfig: () => api.get('/ai/config'),
+  updateConfig: (data: any) => api.put('/ai/config', data),
+  testConnection: () => api.post('/ai/test'),
+};
+
 export default api;
