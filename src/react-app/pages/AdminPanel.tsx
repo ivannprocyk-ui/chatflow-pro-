@@ -89,7 +89,24 @@ interface MetricasMensuales {
   margen_ganancia: number;
 }
 
-type AdminSection = 'overview' | 'clientes' | 'ingresos' | 'costos' | 'uso-ia' | 'retencion' | 'facturacion';
+interface AlertaCliente {
+  id: string;
+  nombre: string;
+  tipo: 'fecha_pago' | 'consumo_mensajes' | 'consumo_tokens' | 'limite_agentes' | 'mrr_bajo' | 'custom';
+  condicion: {
+    tipo: 'menor_que' | 'mayor_que' | 'igual_a' | 'dias_restantes' | 'porcentaje_uso';
+    valor: number;
+    campo: string;
+  };
+  mensaje: string;
+  severidad: 'info' | 'warning' | 'error';
+  activo: boolean;
+  aplicar_a: 'todos' | 'especificos';
+  cliente_ids?: string[]; // If empty or aplicar_a='todos', applies to all
+  created_at: Date;
+}
+
+type AdminSection = 'overview' | 'clientes' | 'ingresos' | 'costos' | 'uso-ia' | 'retencion' | 'facturacion' | 'alertas';
 
 // ==================== DEMO DATA GENERATION ====================
 
@@ -247,6 +264,116 @@ const generateDemoUso = (clientes: Cliente[]): Uso[] => {
   return usos;
 };
 
+const generateDemoAlertas = (): AlertaCliente[] => {
+  return [
+    {
+      id: 'alerta-1',
+      nombre: 'Pago Próximo (7 días)',
+      tipo: 'fecha_pago',
+      condicion: {
+        tipo: 'dias_restantes',
+        valor: 7,
+        campo: 'fecha_proximo_pago'
+      },
+      mensaje: '⚠️ Tu próximo pago vence en menos de 7 días. Por favor verifica que tu método de pago esté actualizado.',
+      severidad: 'warning',
+      activo: true,
+      aplicar_a: 'todos',
+      created_at: new Date('2024-01-15')
+    },
+    {
+      id: 'alerta-2',
+      nombre: 'Pago Urgente (3 días)',
+      tipo: 'fecha_pago',
+      condicion: {
+        tipo: 'dias_restantes',
+        valor: 3,
+        campo: 'fecha_proximo_pago'
+      },
+      mensaje: '🚨 URGENTE: Tu pago vence en 3 días o menos. Actualiza tu información de pago para evitar la suspensión del servicio.',
+      severidad: 'error',
+      activo: true,
+      aplicar_a: 'todos',
+      created_at: new Date('2024-01-15')
+    },
+    {
+      id: 'alerta-3',
+      nombre: 'Consumo Alto de Mensajes (80%)',
+      tipo: 'consumo_mensajes',
+      condicion: {
+        tipo: 'porcentaje_uso',
+        valor: 80,
+        campo: 'mensajes_usados'
+      },
+      mensaje: '📊 Has usado más del 80% de tu límite mensual de mensajes. Considera actualizar tu plan para evitar interrupciones.',
+      severidad: 'warning',
+      activo: true,
+      aplicar_a: 'todos',
+      created_at: new Date('2024-02-01')
+    },
+    {
+      id: 'alerta-4',
+      nombre: 'Límite de Mensajes Alcanzado',
+      tipo: 'consumo_mensajes',
+      condicion: {
+        tipo: 'porcentaje_uso',
+        valor: 95,
+        campo: 'mensajes_usados'
+      },
+      mensaje: '🔴 CRÍTICO: Has alcanzado el 95% de tu límite de mensajes. Actualiza tu plan ahora para continuar usando el servicio.',
+      severidad: 'error',
+      activo: true,
+      aplicar_a: 'todos',
+      created_at: new Date('2024-02-01')
+    },
+    {
+      id: 'alerta-5',
+      nombre: 'Consumo Alto de Tokens (75%)',
+      tipo: 'consumo_tokens',
+      condicion: {
+        tipo: 'porcentaje_uso',
+        valor: 75,
+        campo: 'tokens_usados'
+      },
+      mensaje: '⚡ Has consumido el 75% de tu límite mensual de tokens IA. Revisa tu uso para optimizar costos.',
+      severidad: 'info',
+      activo: true,
+      aplicar_a: 'todos',
+      created_at: new Date('2024-02-10')
+    },
+    {
+      id: 'alerta-6',
+      nombre: 'Límite de Agentes',
+      tipo: 'limite_agentes',
+      condicion: {
+        tipo: 'mayor_que',
+        valor: 90,
+        campo: 'agentes_activos_porcentaje'
+      },
+      mensaje: '🤖 Estás cerca del límite de agentes activos. Considera actualizar tu plan para crear más agentes.',
+      severidad: 'info',
+      activo: true,
+      aplicar_a: 'todos',
+      created_at: new Date('2024-02-15')
+    },
+    {
+      id: 'alerta-7',
+      nombre: 'Clientes Plan Free - Upgrade',
+      tipo: 'custom',
+      condicion: {
+        tipo: 'igual_a',
+        valor: 0,
+        campo: 'precio_mensual'
+      },
+      mensaje: '🎉 ¡Descubre todo el potencial de ChatFlow Pro! Actualiza a un plan de pago y accede a funciones premium.',
+      severidad: 'info',
+      activo: true,
+      aplicar_a: 'todos',
+      created_at: new Date('2024-03-01')
+    }
+  ];
+};
+
 const calculateMetricasMensuales = (clientes: Cliente[], pagos: Pago[], usos: Uso[]): MetricasMensuales[] => {
   const metricas: MetricasMensuales[] = [];
 
@@ -297,12 +424,16 @@ export default function AdminPanel() {
   const [pagos, setPagos] = useState<Pago[]>([]);
   const [usos, setUsos] = useState<Uso[]>([]);
   const [metricas, setMetricas] = useState<MetricasMensuales[]>([]);
+  const [alertas, setAlertas] = useState<AlertaCliente[]>([]);
   const [alert, setAlert] = useState<{ type: 'success' | 'destructive' | 'warning' | 'info'; message: string } | null>(null);
   const [showClienteModal, setShowClienteModal] = useState(false);
   const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
   const [formData, setFormData] = useState<Partial<Cliente>>({});
   const [selectedCliente, setSelectedCliente] = useState<Cliente | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showAlertaModal, setShowAlertaModal] = useState(false);
+  const [editingAlerta, setEditingAlerta] = useState<AlertaCliente | null>(null);
+  const [alertaFormData, setAlertaFormData] = useState<Partial<AlertaCliente>>({});
 
   useEffect(() => {
     // Generate demo data on mount
@@ -310,11 +441,13 @@ export default function AdminPanel() {
     const pagosData = generateDemoPagos(clientesData);
     const usosData = generateDemoUso(clientesData);
     const metricasData = calculateMetricasMensuales(clientesData, pagosData, usosData);
+    const alertasData = generateDemoAlertas();
 
     setClientes(clientesData);
     setPagos(pagosData);
     setUsos(usosData);
     setMetricas(metricasData);
+    setAlertas(alertasData);
   }, []);
 
   const showAlert = (type: 'success' | 'destructive' | 'warning' | 'info', message: string) => {
@@ -1909,6 +2042,358 @@ export default function AdminPanel() {
     );
   };
 
+  // ==================== ALERTAS MODULE ====================
+
+  const openCreateAlertaModal = () => {
+    setEditingAlerta(null);
+    setAlertaFormData({
+      nombre: '',
+      tipo: 'fecha_pago',
+      condicion: {
+        tipo: 'dias_restantes',
+        valor: 7,
+        campo: 'fecha_proximo_pago'
+      },
+      mensaje: '',
+      severidad: 'warning',
+      activo: true,
+      aplicar_a: 'todos',
+      created_at: new Date(),
+    });
+    setShowAlertaModal(true);
+  };
+
+  const openEditAlertaModal = (alerta: AlertaCliente) => {
+    setEditingAlerta(alerta);
+    setAlertaFormData(alerta);
+    setShowAlertaModal(true);
+  };
+
+  const saveAlerta = () => {
+    if (!alertaFormData.nombre || !alertaFormData.mensaje) {
+      showAlert('destructive', 'Por favor completa todos los campos requeridos');
+      return;
+    }
+
+    if (editingAlerta) {
+      // Update existing alerta
+      setAlertas(alertas.map(a => a.id === editingAlerta.id ? { ...alertaFormData as AlertaCliente, id: editingAlerta.id } : a));
+      showAlert('success', 'Alerta actualizada correctamente');
+    } else {
+      // Create new alerta
+      const newAlerta: AlertaCliente = {
+        ...alertaFormData as AlertaCliente,
+        id: `alerta-${alertas.length + 1}`,
+      };
+      setAlertas([...alertas, newAlerta]);
+      showAlert('success', 'Alerta creada correctamente');
+    }
+    setShowAlertaModal(false);
+  };
+
+  const deleteAlerta = (id: string) => {
+    if (confirm('¿Estás seguro de que deseas eliminar esta alerta?')) {
+      setAlertas(alertas.filter(a => a.id !== id));
+      showAlert('success', 'Alerta eliminada correctamente');
+    }
+  };
+
+  const toggleAlertaActiva = (id: string) => {
+    setAlertas(alertas.map(a => a.id === id ? { ...a, activo: !a.activo } : a));
+    const alerta = alertas.find(a => a.id === id);
+    showAlert('success', `Alerta ${alerta?.activo ? 'desactivada' : 'activada'} correctamente`);
+  };
+
+  // Evaluar qué clientes cumplen con cada alerta
+  const evaluarAlertas = (cliente: Cliente): AlertaCliente[] => {
+    return alertas.filter(alerta => {
+      if (!alerta.activo) return false;
+
+      // Check if alert applies to this client
+      if (alerta.aplicar_a === 'especificos' && !alerta.cliente_ids?.includes(cliente.id)) {
+        return false;
+      }
+
+      // Evaluate condition based on alert type
+      switch (alerta.tipo) {
+        case 'fecha_pago':
+          if (alerta.condicion.tipo === 'dias_restantes' && cliente.fecha_proximo_pago) {
+            const diasRestantes = Math.ceil((new Date(cliente.fecha_proximo_pago).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+            return diasRestantes <= alerta.condicion.valor && diasRestantes >= 0;
+          }
+          break;
+
+        case 'consumo_mensajes':
+          if (alerta.condicion.tipo === 'porcentaje_uso') {
+            const porcentajeUso = cliente.usedMessages ? (cliente.usedMessages / cliente.limite_mensajes) * 100 : 0;
+            return porcentajeUso >= alerta.condicion.valor;
+          }
+          break;
+
+        case 'consumo_tokens':
+          if (alerta.condicion.tipo === 'porcentaje_uso') {
+            // Calculate token usage from usos data
+            const usosCliente = usos.filter(u => u.cliente_id === cliente.id);
+            const totalTokens = usosCliente.reduce((sum, u) => sum + u.tokens_input + u.tokens_output, 0);
+            const porcentajeUso = (totalTokens / cliente.limite_tokens) * 100;
+            return porcentajeUso >= alerta.condicion.valor;
+          }
+          break;
+
+        case 'limite_agentes':
+          if (alerta.condicion.tipo === 'mayor_que') {
+            const usosCliente = usos.filter(u => u.cliente_id === cliente.id);
+            const agentesActivos = usosCliente.length > 0 ? usosCliente[0].agentes_activos : 0;
+            const porcentaje = (agentesActivos / cliente.limite_agentes) * 100;
+            return porcentaje >= alerta.condicion.valor;
+          }
+          break;
+
+        case 'custom':
+          if (alerta.condicion.campo === 'precio_mensual' && alerta.condicion.tipo === 'igual_a') {
+            return cliente.precio_mensual === alerta.condicion.valor;
+          }
+          break;
+      }
+
+      return false;
+    });
+  };
+
+  const renderAlertas = () => {
+    // Calculate stats
+    const alertasActivas = alertas.filter(a => a.activo).length;
+    const alertasInactivas = alertas.filter(a => !a.activo).length;
+
+    // Count how many clients match each alert
+    const alertasConConteo = alertas.map(alerta => {
+      const clientesAfectados = clientes.filter(cliente =>
+        evaluarAlertas(cliente).some(a => a.id === alerta.id)
+      );
+      return { ...alerta, clientesAfectados: clientesAfectados.length, clientes: clientesAfectados };
+    });
+
+    const totalClientesConAlertas = new Set(
+      clientes.filter(c => evaluarAlertas(c).length > 0).map(c => c.id)
+    ).size;
+
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              Gestión de Alertas ({alertas.length})
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
+              Configura alertas automáticas para tus clientes
+            </p>
+          </div>
+          <button
+            onClick={openCreateAlertaModal}
+            className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-3 rounded-xl font-medium transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
+          >
+            <i className="fas fa-plus"></i>
+            Nueva Alerta
+          </button>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-2xl p-6 border border-blue-200 dark:border-blue-800">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white">
+                <i className="fas fa-bell text-xl"></i>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Alertas</p>
+            <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{alertas.length}</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-2xl p-6 border border-green-200 dark:border-green-800">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white">
+                <i className="fas fa-check-circle text-xl"></i>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Activas</p>
+            <p className="text-3xl font-bold text-green-600 dark:text-green-400">{alertasActivas}</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20 rounded-2xl p-6 border border-gray-200 dark:border-gray-800">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-500 to-gray-600 flex items-center justify-center text-white">
+                <i className="fas fa-bell-slash text-xl"></i>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Inactivas</p>
+            <p className="text-3xl font-bold text-gray-600 dark:text-gray-400">{alertasInactivas}</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 rounded-2xl p-6 border border-yellow-200 dark:border-yellow-800">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-500 to-yellow-600 flex items-center justify-center text-white">
+                <i className="fas fa-users text-xl"></i>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Clientes con Alertas</p>
+            <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">{totalClientesConAlertas}</p>
+          </div>
+        </div>
+
+        {/* Alertas Table */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            Todas las Alertas
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Nombre</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Tipo</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Condición</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Severidad</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Clientes Afectados</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Estado</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {alertasConConteo.map((alerta) => (
+                  <tr key={alerta.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">
+                      {alerta.nombre}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
+                        {alerta.tipo.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                      {alerta.condicion.tipo} {alerta.condicion.valor}
+                      {alerta.condicion.tipo === 'porcentaje_uso' && '%'}
+                      {alerta.condicion.tipo === 'dias_restantes' && ' días'}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                        alerta.severidad === 'error' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300' :
+                        alerta.severidad === 'warning' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300' :
+                        'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300'
+                      }`}>
+                        {alerta.severidad}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <span className={`font-semibold ${
+                        alerta.clientesAfectados > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'
+                      }`}>
+                        {alerta.clientesAfectados} clientes
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <button
+                        onClick={() => toggleAlertaActiva(alerta.id)}
+                        className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                          alerta.activo
+                            ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300'
+                            : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300'
+                        }`}
+                      >
+                        {alerta.activo ? 'Activa' : 'Inactiva'}
+                      </button>
+                    </td>
+                    <td className="px-6 py-4 text-sm space-x-2">
+                      <button
+                        onClick={() => openEditAlertaModal(alerta)}
+                        className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                      >
+                        <i className="fas fa-edit"></i>
+                      </button>
+                      <button
+                        onClick={() => deleteAlerta(alerta.id)}
+                        className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                      >
+                        <i className="fas fa-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Preview de Clientes Afectados */}
+        {totalClientesConAlertas > 0 && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+              <i className="fas fa-exclamation-triangle text-yellow-600 mr-2"></i>
+              Clientes con Alertas Activas ({totalClientesConAlertas})
+            </h3>
+            <div className="space-y-3">
+              {clientes.filter(c => evaluarAlertas(c).length > 0).slice(0, 10).map((cliente) => {
+                const alertasCliente = evaluarAlertas(cliente);
+                return (
+                  <div key={cliente.id} className="border border-gray-200 dark:border-gray-700 rounded-xl p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <h4 className="font-semibold text-gray-900 dark:text-gray-100">{cliente.nombre}</h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{cliente.empresa}</p>
+                      </div>
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                        cliente.plan === 'enterprise' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300' :
+                        cliente.plan === 'pro' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300' :
+                        'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300'
+                      }`}>
+                        {cliente.plan.toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      {alertasCliente.map((alerta) => (
+                        <div key={alerta.id} className={`p-3 rounded-lg border ${
+                          alerta.severidad === 'error' ? 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800' :
+                          alerta.severidad === 'warning' ? 'bg-yellow-50 dark:bg-yellow-900/10 border-yellow-200 dark:border-yellow-800' :
+                          'bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800'
+                        }`}>
+                          <p className={`text-sm font-medium ${
+                            alerta.severidad === 'error' ? 'text-red-800 dark:text-red-200' :
+                            alerta.severidad === 'warning' ? 'text-yellow-800 dark:text-yellow-200' :
+                            'text-blue-800 dark:text-blue-200'
+                          }`}>
+                            {alerta.mensaje}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Insights */}
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-6">
+          <div className="flex items-start space-x-4">
+            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-800 rounded-lg flex items-center justify-center flex-shrink-0">
+              <i className="fas fa-lightbulb text-blue-600 dark:text-blue-400"></i>
+            </div>
+            <div>
+              <h3 className="text-lg font-medium text-blue-900 dark:text-blue-100 mb-2">Sistema de Alertas</h3>
+              <div className="text-blue-800 dark:text-blue-200 text-sm space-y-1">
+                <p>• Las alertas se evalúan automáticamente en tiempo real para cada cliente</p>
+                <p>• Los clientes verán estas alertas en su panel como mensajes destacados</p>
+                <p>• Puedes configurar alertas globales (todos) o específicas por cliente</p>
+                <p>• {totalClientesConAlertas} clientes tienen alertas activas en este momento</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // ==================== MAIN RENDER ====================
 
   return (
@@ -1948,6 +2433,7 @@ export default function AdminPanel() {
                 { id: 'uso-ia', label: 'Uso IA', icon: 'fa-robot' },
                 { id: 'retencion', label: 'Retención', icon: 'fa-user-check' },
                 { id: 'facturacion', label: 'Facturación', icon: 'fa-file-invoice' },
+                { id: 'alertas', label: 'Alertas', icon: 'fa-bell' },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -1976,6 +2462,7 @@ export default function AdminPanel() {
             {activeSection === 'uso-ia' && renderUsoIA()}
             {activeSection === 'retencion' && renderRetencion()}
             {activeSection === 'facturacion' && renderFacturacion()}
+            {activeSection === 'alertas' && renderAlertas()}
           </div>
         </div>
 
@@ -2308,6 +2795,202 @@ export default function AdminPanel() {
                   className="px-6 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
                 >
                   Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Alerta Modal (Create/Edit) */}
+        {showAlertaModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-3xl w-full my-8">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    {editingAlerta ? 'Editar Alerta' : 'Nueva Alerta'}
+                  </h3>
+                  <button
+                    onClick={() => setShowAlertaModal(false)}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                  >
+                    <i className="fas fa-times text-xl"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Nombre de la Alerta *
+                  </label>
+                  <input
+                    type="text"
+                    value={alertaFormData.nombre || ''}
+                    onChange={(e) => setAlertaFormData({ ...alertaFormData, nombre: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    placeholder="Ej: Pago próximo a vencer"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Tipo de Alerta
+                    </label>
+                    <select
+                      value={alertaFormData.tipo || 'fecha_pago'}
+                      onChange={(e) => setAlertaFormData({ ...alertaFormData, tipo: e.target.value as AlertaCliente['tipo'] })}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    >
+                      <option value="fecha_pago">Fecha de Pago</option>
+                      <option value="consumo_mensajes">Consumo de Mensajes</option>
+                      <option value="consumo_tokens">Consumo de Tokens</option>
+                      <option value="limite_agentes">Límite de Agentes</option>
+                      <option value="mrr_bajo">MRR Bajo</option>
+                      <option value="custom">Personalizada</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Severidad
+                    </label>
+                    <select
+                      value={alertaFormData.severidad || 'warning'}
+                      onChange={(e) => setAlertaFormData({ ...alertaFormData, severidad: e.target.value as AlertaCliente['severidad'] })}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    >
+                      <option value="info">Info (Azul)</option>
+                      <option value="warning">Advertencia (Amarillo)</option>
+                      <option value="error">Error (Rojo)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Tipo de Condición
+                    </label>
+                    <select
+                      value={alertaFormData.condicion?.tipo || 'dias_restantes'}
+                      onChange={(e) => setAlertaFormData({
+                        ...alertaFormData,
+                        condicion: {
+                          ...alertaFormData.condicion!,
+                          tipo: e.target.value as AlertaCliente['condicion']['tipo']
+                        }
+                      })}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    >
+                      <option value="dias_restantes">Días Restantes</option>
+                      <option value="porcentaje_uso">Porcentaje de Uso</option>
+                      <option value="mayor_que">Mayor Que</option>
+                      <option value="menor_que">Menor Que</option>
+                      <option value="igual_a">Igual A</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Valor
+                    </label>
+                    <input
+                      type="number"
+                      value={alertaFormData.condicion?.valor || 7}
+                      onChange={(e) => setAlertaFormData({
+                        ...alertaFormData,
+                        condicion: {
+                          ...alertaFormData.condicion!,
+                          valor: parseFloat(e.target.value)
+                        }
+                      })}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      placeholder="7"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Campo a Evaluar
+                  </label>
+                  <input
+                    type="text"
+                    value={alertaFormData.condicion?.campo || 'fecha_proximo_pago'}
+                    onChange={(e) => setAlertaFormData({
+                      ...alertaFormData,
+                      condicion: {
+                        ...alertaFormData.condicion!,
+                        campo: e.target.value
+                      }
+                    })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    placeholder="fecha_proximo_pago, mensajes_usados, etc."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Mensaje de la Alerta *
+                  </label>
+                  <textarea
+                    value={alertaFormData.mensaje || ''}
+                    onChange={(e) => setAlertaFormData({ ...alertaFormData, mensaje: e.target.value })}
+                    rows={3}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    placeholder="Este mensaje aparecerá en el panel del cliente..."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Aplicar a
+                  </label>
+                  <select
+                    value={alertaFormData.aplicar_a || 'todos'}
+                    onChange={(e) => setAlertaFormData({ ...alertaFormData, aplicar_a: e.target.value as 'todos' | 'especificos' })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                  >
+                    <option value="todos">Todos los Clientes</option>
+                    <option value="especificos">Clientes Específicos</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="alertaActiva"
+                    checked={alertaFormData.activo !== false}
+                    onChange={(e) => setAlertaFormData({ ...alertaFormData, activo: e.target.checked })}
+                    className="w-4 h-4 text-blue-600 rounded"
+                  />
+                  <label htmlFor="alertaActiva" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Alerta Activa
+                  </label>
+                </div>
+
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    <i className="fas fa-info-circle mr-2"></i>
+                    Esta alerta se evaluará automáticamente para cada cliente que cumpla con las condiciones especificadas.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
+                <button
+                  onClick={() => setShowAlertaModal(false)}
+                  className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={saveAlerta}
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                >
+                  {editingAlerta ? 'Guardar Cambios' : 'Crear Alerta'}
                 </button>
               </div>
             </div>
