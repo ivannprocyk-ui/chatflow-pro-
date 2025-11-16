@@ -1993,6 +1993,7 @@ export default function AdminPanel() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Fecha</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Método</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Estado</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -2008,9 +2009,31 @@ export default function AdminPanel() {
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400 capitalize">{pago.metodo_pago}</td>
                         <td className="px-6 py-4">
-                          <span className="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300">
-                            Pendiente
-                          </span>
+                          <select
+                            value={pago.estado}
+                            onChange={(e) => updatePaymentStatus(pago.id, e.target.value as Pago['estado'])}
+                            className={`px-3 py-1 text-xs font-semibold rounded-full border-0 cursor-pointer ${
+                              pago.estado === 'pagado' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300' :
+                              pago.estado === 'vencido' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300' :
+                              pago.estado === 'cancelado' ? 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300' :
+                              'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300'
+                            }`}
+                          >
+                            <option value="pendiente">Pendiente</option>
+                            <option value="pagado">Pagado</option>
+                            <option value="vencido">Vencido</option>
+                            <option value="cancelado">Cancelado</option>
+                          </select>
+                        </td>
+                        <td className="px-6 py-4">
+                          <button
+                            onClick={() => updatePaymentStatus(pago.id, 'pagado')}
+                            className="px-3 py-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
+                            title="Marcar como pagado"
+                          >
+                            <i className="fas fa-check mr-1"></i>
+                            Marcar Pagado
+                          </button>
                         </td>
                       </tr>
                     );
@@ -2022,18 +2045,37 @@ export default function AdminPanel() {
         )}
 
         {/* Summary */}
-        <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 border border-green-200 dark:border-green-800 rounded-2xl p-6">
-          <div className="flex items-start space-x-4">
-            <div className="w-10 h-10 bg-green-100 dark:bg-green-800 rounded-lg flex items-center justify-center flex-shrink-0">
-              <i className="fas fa-chart-pie text-green-600 dark:text-green-400"></i>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 border border-green-200 dark:border-green-800 rounded-2xl p-6">
+            <div className="flex items-start space-x-4">
+              <div className="w-10 h-10 bg-green-100 dark:bg-green-800 rounded-lg flex items-center justify-center flex-shrink-0">
+                <i className="fas fa-chart-pie text-green-600 dark:text-green-400"></i>
+              </div>
+              <div>
+                <h3 className="text-lg font-medium text-green-900 dark:text-green-100 mb-2">Resumen de Facturación</h3>
+                <div className="text-green-800 dark:text-green-200 text-sm space-y-1">
+                  <p>• Próximos 30 días: ${totalProximosPagos.toLocaleString()} en {proximosPagos.length} pagos esperados</p>
+                  <p>• Facturas pendientes: ${totalPendiente.toLocaleString()} en {facturasPendientes.length} facturas</p>
+                  <p>• Pagos este mes: ${pagosMesActual.toLocaleString()} recibidos</p>
+                  <p>• Método más usado: Stripe ({metodosPago[0].porcentaje}% de transacciones)</p>
+                </div>
+              </div>
             </div>
-            <div>
-              <h3 className="text-lg font-medium text-green-900 dark:text-green-100 mb-2">Resumen de Facturación</h3>
-              <div className="text-green-800 dark:text-green-200 text-sm space-y-1">
-                <p>• Próximos 30 días: ${totalProximosPagos.toLocaleString()} en {proximosPagos.length} pagos esperados</p>
-                <p>• Facturas pendientes: ${totalPendiente.toLocaleString()} en {facturasPendientes.length} facturas</p>
-                <p>• Pagos este mes: ${pagosMesActual.toLocaleString()} recibidos</p>
-                <p>• Método más usado: Stripe ({metodosPago[0].porcentaje}% de transacciones)</p>
+          </div>
+
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-6">
+            <div className="flex items-start space-x-4">
+              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-800 rounded-lg flex items-center justify-center flex-shrink-0">
+                <i className="fas fa-info-circle text-blue-600 dark:text-blue-400"></i>
+              </div>
+              <div>
+                <h3 className="text-lg font-medium text-blue-900 dark:text-blue-100 mb-2">Origen de Datos de Facturación</h3>
+                <div className="text-blue-800 dark:text-blue-200 text-sm space-y-1">
+                  <p>• <strong>Pagos:</strong> Generados automáticamente desde la función generateDemoPagos()</p>
+                  <p>• <strong>Facturas:</strong> Se crean al momento del alta del cliente y mensualmente según ciclo</p>
+                  <p>• <strong>Estado:</strong> Editable directamente desde esta tabla (pendiente → pagado)</p>
+                  <p>• <strong>Integración futura:</strong> Conectar con Stripe/PayPal para sincronización automática</p>
+                </div>
               </div>
             </div>
           </div>
@@ -2102,6 +2144,13 @@ export default function AdminPanel() {
     setAlertas(alertas.map(a => a.id === id ? { ...a, activo: !a.activo } : a));
     const alerta = alertas.find(a => a.id === id);
     showAlert('success', `Alerta ${alerta?.activo ? 'desactivada' : 'activada'} correctamente`);
+  };
+
+  // ==================== PAYMENT STATUS UPDATE ====================
+
+  const updatePaymentStatus = (pagoId: string, nuevoEstado: Pago['estado']) => {
+    setPagos(pagos.map(p => p.id === pagoId ? { ...p, estado: nuevoEstado } : p));
+    showAlert('success', `Pago actualizado a "${nuevoEstado}" correctamente`);
   };
 
   // Evaluar qué clientes cumplen con cada alerta
@@ -2744,15 +2793,68 @@ export default function AdminPanel() {
                   </div>
                 )}
 
+                {/* Payment Alerts */}
+                {selectedCliente.fecha_proximo_pago && (() => {
+                  const diasRestantes = Math.ceil((new Date(selectedCliente.fecha_proximo_pago).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+                  if (diasRestantes <= 15 && diasRestantes >= 0) {
+                    return (
+                      <div className={`rounded-xl p-4 border ${
+                        diasRestantes <= 3 ? 'bg-red-50 dark:bg-red-900/10 border-red-300 dark:border-red-800' :
+                        diasRestantes <= 7 ? 'bg-yellow-50 dark:bg-yellow-900/10 border-yellow-300 dark:border-yellow-800' :
+                        'bg-blue-50 dark:bg-blue-900/10 border-blue-300 dark:border-blue-800'
+                      }`}>
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                            diasRestantes <= 3 ? 'bg-red-100 dark:bg-red-900' :
+                            diasRestantes <= 7 ? 'bg-yellow-100 dark:bg-yellow-900' :
+                            'bg-blue-100 dark:bg-blue-900'
+                          }`}>
+                            <i className={`fas fa-exclamation-triangle ${
+                              diasRestantes <= 3 ? 'text-red-600 dark:text-red-400' :
+                              diasRestantes <= 7 ? 'text-yellow-600 dark:text-yellow-400' :
+                              'text-blue-600 dark:text-blue-400'
+                            }`}></i>
+                          </div>
+                          <div>
+                            <p className={`font-semibold ${
+                              diasRestantes <= 3 ? 'text-red-800 dark:text-red-200' :
+                              diasRestantes <= 7 ? 'text-yellow-800 dark:text-yellow-200' :
+                              'text-blue-800 dark:text-blue-200'
+                            }`}>
+                              {diasRestantes <= 3 ? '🚨 PAGO URGENTE' :
+                               diasRestantes <= 7 ? '⚠️ Pago Próximo' :
+                               '📅 Pago en 15 días'}
+                            </p>
+                            <p className={`text-sm ${
+                              diasRestantes <= 3 ? 'text-red-700 dark:text-red-300' :
+                              diasRestantes <= 7 ? 'text-yellow-700 dark:text-yellow-300' :
+                              'text-blue-700 dark:text-blue-300'
+                            }`}>
+                              Vence en <strong>{diasRestantes} días</strong> - ${selectedCliente.precio_mensual} ({new Date(selectedCliente.fecha_proximo_pago).toLocaleDateString('es-ES')})
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+
                 {/* Payment History */}
                 <div>
-                  <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-4">Historial de Pagos (Últimos 5)</h4>
+                  <h4 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-4 flex items-center justify-between">
+                    <span>Historial Completo de Pagos</span>
+                    <span className="text-xs font-normal text-gray-400">
+                      Total: {pagos.filter(p => p.cliente_id === selectedCliente.id).length} pagos
+                    </span>
+                  </h4>
                   <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                     <table className="w-full">
                       <thead className="bg-gray-50 dark:bg-gray-700">
                         <tr>
                           <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Fecha</th>
                           <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Monto</th>
+                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Método</th>
                           <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Estado</th>
                           <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400">Factura</th>
                         </tr>
@@ -2760,31 +2862,57 @@ export default function AdminPanel() {
                       <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                         {pagos
                           .filter(p => p.cliente_id === selectedCliente.id)
-                          .slice(-5)
-                          .reverse()
-                          .map(pago => (
-                            <tr key={pago.id}>
+                          .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
+                          .map((pago, index) => (
+                            <tr key={pago.id} className={index < 3 ? 'bg-blue-50/30 dark:bg-blue-900/5' : ''}>
                               <td className="px-4 py-2 text-sm text-gray-900 dark:text-gray-100">
-                                {new Date(pago.fecha).toLocaleDateString('es-ES')}
+                                {new Date(pago.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
                               </td>
                               <td className="px-4 py-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
                                 ${pago.monto}
                               </td>
+                              <td className="px-4 py-2 text-xs text-gray-600 dark:text-gray-400 capitalize">
+                                {pago.metodo_pago}
+                              </td>
                               <td className="px-4 py-2">
                                 <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
                                   pago.estado === 'pagado' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300' :
+                                  pago.estado === 'vencido' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300' :
+                                  pago.estado === 'cancelado' ? 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300' :
                                   'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300'
                                 }`}>
                                   {pago.estado}
                                 </span>
                               </td>
-                              <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">
+                              <td className="px-4 py-2 text-xs font-mono text-gray-600 dark:text-gray-400">
                                 {pago.numero_factura}
                               </td>
                             </tr>
                           ))}
                       </tbody>
                     </table>
+                  </div>
+
+                  {/* Payment Summary */}
+                  <div className="mt-4 grid grid-cols-3 gap-3">
+                    <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 border border-green-200 dark:border-green-800">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Total Pagado</p>
+                      <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                        ${pagos.filter(p => p.cliente_id === selectedCliente.id && p.estado === 'pagado').reduce((sum, p) => sum + p.monto, 0).toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3 border border-yellow-200 dark:border-yellow-800">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Pendiente</p>
+                      <p className="text-lg font-bold text-yellow-600 dark:text-yellow-400">
+                        ${pagos.filter(p => p.cliente_id === selectedCliente.id && p.estado === 'pendiente').reduce((sum, p) => sum + p.monto, 0).toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Lifetime Value</p>
+                      <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                        ${pagos.filter(p => p.cliente_id === selectedCliente.id && p.estado === 'pagado').length * selectedCliente.precio_mensual}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
