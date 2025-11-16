@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react';
 import { botTrackingAPI } from '@/react-app/services/api';
+import LineChart from '@/react-app/components/charts/LineChart';
+import BarChart from '@/react-app/components/charts/BarChart';
+import PieChart from '@/react-app/components/charts/PieChart';
+import Heatmap from '@/react-app/components/charts/Heatmap';
+import AnalyticsCard from '@/react-app/components/AnalyticsCard';
 
 interface MetricsSummary {
   organizationId: string;
@@ -32,6 +37,45 @@ export default function BotAnalytics() {
   const [metricsByAgentType, setMetricsByAgentType] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+
+  // Demo data for time series (evolución temporal)
+  const [timeSeriesData] = useState([
+    { date: 'Lun', messages: 187, responses: 178, avgTime: 1.2 },
+    { date: 'Mar', messages: 234, responses: 221, avgTime: 1.4 },
+    { date: 'Mié', messages: 198, responses: 189, avgTime: 1.1 },
+    { date: 'Jue', messages: 276, responses: 264, avgTime: 1.5 },
+    { date: 'Vie', messages: 245, responses: 235, avgTime: 1.3 },
+    { date: 'Sáb', messages: 89, responses: 84, avgTime: 0.9 },
+    { date: 'Dom', messages: 67, responses: 63, avgTime: 0.8 },
+  ]);
+
+  // Demo data for hourly heatmap (mejor horario de actividad)
+  const [heatmapData] = useState([
+    { day: 'Dom', hours: [2,1,1,0,0,0,1,3,8,12,15,18,16,14,12,9,7,5,4,3,3,2,2,1] },
+    { day: 'Lun', hours: [1,0,0,0,0,1,4,12,24,35,42,45,38,41,39,34,28,22,16,12,8,5,3,2] },
+    { day: 'Mar', hours: [1,1,0,0,0,2,5,15,28,38,48,52,44,47,43,37,31,25,18,13,9,6,4,2] },
+    { day: 'Mié', hours: [1,0,0,0,0,1,4,14,26,36,44,49,42,45,41,35,29,23,17,12,8,5,3,2] },
+    { day: 'Jue', hours: [2,1,0,0,0,2,6,16,30,41,51,56,48,51,47,40,33,27,20,14,10,7,4,3] },
+    { day: 'Vie', hours: [1,1,0,0,0,2,5,13,25,37,46,50,43,46,42,36,30,24,18,13,9,6,4,2] },
+    { day: 'Sáb', hours: [2,1,1,0,0,0,2,6,14,19,22,24,21,19,16,13,10,8,6,4,3,2,2,1] },
+  ]);
+
+  // Demo data for conversation status distribution
+  const [conversationStatusData] = useState([
+    { name: 'Resueltas', value: 89, fill: '#10b981' },
+    { name: 'En Curso', value: 42, fill: '#3b82f6' },
+    { name: 'Pendientes', value: 18, fill: '#f59e0b' },
+    { name: 'Abandonadas', value: 7, fill: '#ef4444' },
+  ]);
+
+  // Demo data for query types
+  const [queryTypesData] = useState([
+    { type: 'Información', count: 245, fill: '#8b5cf6' },
+    { type: 'Soporte', count: 189, fill: '#3b82f6' },
+    { type: 'Ventas', count: 167, fill: '#10b981' },
+    { type: 'Reclamos', count: 78, fill: '#ef4444' },
+    { type: 'Otros', count: 45, fill: '#6b7280' },
+  ]);
 
   useEffect(() => {
     loadMetrics();
@@ -110,238 +154,303 @@ export default function BotAnalytics() {
     return `${(ms / 1000).toFixed(2)}s`;
   };
 
-  const StatCard = ({ title, value, subtitle, icon, color = 'purple' }: any) => (
-    <div className={`bg-white rounded-xl shadow-lg p-6 border-l-4 border-${color}-500`}>
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-gray-600 text-sm font-medium">{title}</p>
-          <h3 className="text-3xl font-bold text-gray-900 mt-2">{value}</h3>
-          {subtitle && <p className="text-gray-500 text-sm mt-1">{subtitle}</p>}
-        </div>
-        <div className={`text-4xl text-${color}-500`}>{icon}</div>
-      </div>
-    </div>
-  );
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">
-                📊 Analytics del Bot IA
-              </h1>
-              <p className="text-gray-600 mt-2">
-                Métricas y estadísticas de rendimiento en tiempo real
-              </p>
-              <p className="text-sm text-gray-500 mt-1">
-                Última actualización: {lastUpdate.toLocaleTimeString()}
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              {['day', 'week', 'month', 'all'].map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPeriod(p as any)}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                    period === p
-                      ? 'bg-purple-600 text-white shadow-lg'
-                      : 'bg-white text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  {p === 'day' && '24h'}
-                  {p === 'week' && '7d'}
-                  {p === 'month' && '30d'}
-                  {p === 'all' && 'Todo'}
-                </button>
-              ))}
-              <button
-                onClick={loadMetrics}
-                disabled={isLoading}
-                className="ml-2 p-2 rounded-lg bg-white hover:bg-gray-100 transition-colors disabled:opacity-50"
-                title="Refrescar"
-              >
-                <span className={`${isLoading ? 'animate-spin' : ''}`}>🔄</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {isLoading && !metrics ? (
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="text-6xl mb-4">⏳</div>
-              <p className="text-gray-600">Cargando métricas...</p>
-            </div>
-          </div>
-        ) : metrics ? (
-          <>
-            {/* Key Metrics Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-              <StatCard
-                title="Total Mensajes"
-                value={metrics.totalMessages}
-                subtitle={`${metrics.inboundMessages} recibidos / ${metrics.outboundMessages} enviados`}
-                icon="💬"
-                color="purple"
-              />
-              <StatCard
-                title="Tasa de Éxito"
-                value={`${metrics.successRate.toFixed(1)}%`}
-                subtitle={`${metrics.botRespondedCount} respuestas exitosas`}
-                icon="✅"
-                color="green"
-              />
-              <StatCard
-                title="Tasa de Respuesta"
-                value={`${metrics.responseRate.toFixed(1)}%`}
-                subtitle={`${metrics.botProcessedCount} procesados por bot`}
-                icon="🤖"
-                color="blue"
-              />
-              <StatCard
-                title="Conversaciones"
-                value={metrics.totalConversations}
-                subtitle={`${metrics.activeConversations} activas (24h)`}
-                icon="👥"
-                color="indigo"
-              />
-            </div>
-
-            {/* Performance Metrics */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-              <div className="bg-white rounded-xl shadow-lg p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">⚡ Rendimiento</h2>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-purple-50 rounded-lg">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Tiempo Promedio de Procesamiento</p>
-                      <p className="text-2xl font-bold text-purple-600">
-                        {formatTime(metrics.avgProcessingTimeMs)}
-                      </p>
-                    </div>
-                    <div className="text-3xl">⚙️</div>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Tiempo Promedio de Respuesta</p>
-                      <p className="text-2xl font-bold text-blue-600">
-                        {formatTime(metrics.avgResponseTimeMs)}
-                      </p>
-                    </div>
-                    <div className="text-3xl">⏱️</div>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-orange-50 rounded-lg">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Tiempo Máximo</p>
-                      <p className="text-xl font-bold text-orange-600">
-                        {formatTime(metrics.maxResponseTimeMs)}
-                      </p>
-                    </div>
-                    <div className="text-3xl">📈</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl shadow-lg p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">📊 Estado de Mensajes</h2>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                      <span className="font-medium text-gray-700">Exitosos</span>
-                    </div>
-                    <span className="text-lg font-bold text-green-600">
-                      {metrics.botRespondedCount}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                      <span className="font-medium text-gray-700">Omitidos</span>
-                    </div>
-                    <span className="text-lg font-bold text-yellow-600">
-                      {metrics.botSkippedCount}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                      <span className="font-medium text-gray-700">Fallidos</span>
-                    </div>
-                    <span className="text-lg font-bold text-red-600">
-                      {metrics.botFailedCount}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Agent Type Performance */}
-            {metricsByAgentType && Object.keys(metricsByAgentType).length > 0 && (
-              <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">🎭 Rendimiento por Tipo de Agente</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {Object.entries(metricsByAgentType).map(([agentType, data]: [string, any]) => (
-                    <div key={agentType} className="p-4 bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg">
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="font-semibold text-gray-900 capitalize">
-                          {agentType === 'vendedor' && '🛍️ Vendedor'}
-                          {agentType === 'asistente' && '👥 Asistente'}
-                          {agentType === 'secretaria' && '📅 Secretaria'}
-                          {agentType === 'custom' && '✏️ Personalizado'}
-                        </h3>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">Mensajes:</span>
-                          <span className="font-medium">{data.totalMessages}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">Éxito:</span>
-                          <span className="font-medium text-green-600">{data.successRate.toFixed(1)}%</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-sm text-gray-600">Procesamiento:</span>
-                          <span className="font-medium text-blue-600">{formatTime(data.avgProcessingTimeMs)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Top Errors */}
-            {metrics.errorCount > 0 && (
-              <div className="bg-white rounded-xl shadow-lg p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">⚠️ Errores Principales</h2>
-                <div className="space-y-2">
-                  {metrics.topErrors.map((error, idx) => (
-                    <div key={idx} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <span className="text-lg font-bold text-red-500">#{idx + 1}</span>
-                        <span className="font-medium text-gray-700">{error.code}</span>
-                      </div>
-                      <span className="text-lg font-bold text-red-600">{error.count} ocurrencias</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="bg-white rounded-xl shadow-lg p-12 text-center">
-            <div className="text-6xl mb-4">📊</div>
-            <h3 className="text-xl font-medium text-gray-900 mb-2">No hay datos disponibles</h3>
-            <p className="text-gray-600">
-              Las métricas aparecerán aquí cuando el bot comience a procesar mensajes
+    <div className="p-6 max-w-7xl mx-auto space-y-8 bg-gray-50 dark:bg-gray-900 min-h-screen">
+      {/* Header */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent flex items-center">
+              <i className="fas fa-brain text-purple-600 dark:text-purple-400 mr-3"></i>
+              Analytics Bot IA
+            </h1>
+            <p className="text-gray-600 dark:text-gray-300 mt-2">
+              Métricas y rendimiento del bot inteligente en tiempo real
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              Última actualización: {lastUpdate.toLocaleTimeString()}
             </p>
           </div>
-        )}
+          <div className="flex items-center gap-2">
+            {['day', 'week', 'month', 'all'].map((p) => (
+              <button
+                key={p}
+                onClick={() => setPeriod(p as any)}
+                className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                  period === p
+                    ? 'bg-gradient-to-r from-purple-600 to-blue-500 text-white shadow-lg'
+                    : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
+                }`}
+              >
+                {p === 'day' && '24h'}
+                {p === 'week' && '7d'}
+                {p === 'month' && '30d'}
+                {p === 'all' && 'Todo'}
+              </button>
+            ))}
+            <button
+              onClick={loadMetrics}
+              disabled={isLoading}
+              className="ml-2 p-2 rounded-lg bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
+              title="Refrescar"
+            >
+              <span className={`${isLoading ? 'animate-spin' : ''}`}>🔄</span>
+            </button>
+          </div>
+        </div>
       </div>
+
+      {isLoading && !metrics ? (
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="text-6xl mb-4">⏳</div>
+            <p className="text-gray-600 dark:text-gray-300">Cargando métricas...</p>
+          </div>
+        </div>
+      ) : metrics ? (
+        <>
+          {/* Key Metrics Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <AnalyticsCard
+              title="Total Mensajes"
+              value={metrics.totalMessages}
+              icon="fa-comments"
+              color="purple"
+              subtitle={`${metrics.inboundMessages} recibidos / ${metrics.outboundMessages} enviados`}
+            />
+            <AnalyticsCard
+              title="Tasa de Éxito"
+              value={`${metrics.successRate.toFixed(1)}%`}
+              icon="fa-check-circle"
+              color="green"
+              subtitle={`${metrics.botRespondedCount} respuestas exitosas`}
+            />
+            <AnalyticsCard
+              title="Tiempo Respuesta"
+              value={formatTime(metrics.avgResponseTimeMs)}
+              icon="fa-clock"
+              color="blue"
+              subtitle={`Procesamiento: ${formatTime(metrics.avgProcessingTimeMs)}`}
+            />
+            <AnalyticsCard
+              title="Conversaciones"
+              value={metrics.totalConversations}
+              icon="fa-users"
+              color="indigo"
+              subtitle={`${metrics.activeConversations} activas ahora`}
+            />
+          </div>
+
+          {/* Time Series - Evolución Temporal */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+            <div className="mb-6">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
+                <i className="fas fa-chart-line text-purple-600 dark:text-purple-400 mr-2"></i>
+                Evolución de Mensajes del Bot
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Actividad del bot en los últimos 7 días
+              </p>
+            </div>
+            <LineChart
+              data={timeSeriesData}
+              lines={[
+                { dataKey: 'messages', stroke: '#8b5cf6', name: 'Mensajes' },
+                { dataKey: 'responses', stroke: '#10b981', name: 'Respuestas' },
+              ]}
+            />
+          </div>
+
+          {/* Heatmap - Mejores Horarios */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+            <div className="mb-6">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
+                <i className="fas fa-fire text-red-600 dark:text-red-400 mr-2"></i>
+                Actividad del Bot por Horario
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                Mapa de calor: volumen de conversaciones por día y hora
+              </p>
+            </div>
+            <Heatmap data={heatmapData} />
+          </div>
+
+          {/* Charts Row - Status & Query Types */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Conversation Status Distribution */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+              <div className="mb-6">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
+                  <i className="fas fa-chart-pie text-blue-600 dark:text-blue-400 mr-2"></i>
+                  Estado de Conversaciones
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  Distribución por estado de resolución
+                </p>
+              </div>
+              <PieChart data={conversationStatusData} />
+            </div>
+
+            {/* Query Types */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+              <div className="mb-6">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
+                  <i className="fas fa-question-circle text-purple-600 dark:text-purple-400 mr-2"></i>
+                  Tipos de Consultas
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  Categorización automática de consultas
+                </p>
+              </div>
+              <PieChart data={queryTypesData} />
+            </div>
+          </div>
+
+          {/* Agent Type Performance Comparison */}
+          {metricsByAgentType && Object.keys(metricsByAgentType).length > 0 && (
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+              <div className="mb-6">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
+                  <i className="fas fa-users-cog text-indigo-600 dark:text-indigo-400 mr-2"></i>
+                  Comparación por Tipo de Agente
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  Rendimiento según configuración del bot
+                </p>
+              </div>
+              <BarChart
+                data={Object.entries(metricsByAgentType).map(([type, data]: [string, any]) => ({
+                  name: type === 'vendedor' ? 'Vendedor' : type === 'asistente' ? 'Asistente' : type === 'secretaria' ? 'Secretaria' : 'Personalizado',
+                  mensajes: data.totalMessages,
+                  exito: Math.round(data.totalMessages * data.successRate / 100),
+                  tiempo: data.avgProcessingTimeMs,
+                }))}
+                bars={[
+                  { dataKey: 'mensajes', fill: '#8b5cf6', name: 'Total Mensajes' },
+                  { dataKey: 'exito', fill: '#10b981', name: 'Exitosos' },
+                ]}
+              />
+            </div>
+          )}
+
+          {/* Performance Metrics Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-2xl p-6 border border-purple-200 dark:border-purple-800">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white">
+                  <i className="fas fa-bolt text-xl"></i>
+                </div>
+                <h3 className="font-semibold text-purple-900 dark:text-purple-100">Procesamiento IA</h3>
+              </div>
+              <p className="text-4xl font-bold text-purple-600 dark:text-purple-400">{formatTime(metrics.avgProcessingTimeMs)}</p>
+              <p className="text-sm text-purple-700 dark:text-purple-300 mt-2">
+                Tiempo promedio de análisis por mensaje
+              </p>
+            </div>
+
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-2xl p-6 border border-blue-200 dark:border-blue-800">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white">
+                  <i className="fas fa-reply text-xl"></i>
+                </div>
+                <h3 className="font-semibold text-blue-900 dark:text-blue-100">Tasa Respuesta</h3>
+              </div>
+              <p className="text-4xl font-bold text-blue-600 dark:text-blue-400">{metrics.responseRate.toFixed(1)}%</p>
+              <p className="text-sm text-blue-700 dark:text-blue-300 mt-2">
+                {metrics.botProcessedCount} de {metrics.inboundMessages} mensajes procesados
+              </p>
+            </div>
+
+            <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-2xl p-6 border border-green-200 dark:border-green-800">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white">
+                  <i className="fas fa-chart-line text-xl"></i>
+                </div>
+                <h3 className="font-semibold text-green-900 dark:text-green-100">Eficiencia</h3>
+              </div>
+              <p className="text-4xl font-bold text-green-600 dark:text-green-400">{metrics.successRate.toFixed(1)}%</p>
+              <p className="text-sm text-green-700 dark:text-green-300 mt-2">
+                {metrics.botRespondedCount} respuestas exitosas
+              </p>
+            </div>
+          </div>
+
+          {/* Message Status Breakdown */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
+              <i className="fas fa-list-check text-blue-600 dark:text-blue-400 mr-2"></i>
+              Desglose de Estados
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="flex items-center justify-between p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-800">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Exitosos</span>
+                </div>
+                <span className="text-lg font-bold text-green-600 dark:text-green-400">
+                  {metrics.botRespondedCount}
+                </span>
+              </div>
+              <div className="flex items-center justify-between p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl border border-yellow-200 dark:border-yellow-800">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Omitidos</span>
+                </div>
+                <span className="text-lg font-bold text-yellow-600 dark:text-yellow-400">
+                  {metrics.botSkippedCount}
+                </span>
+              </div>
+              <div className="flex items-center justify-between p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Fallidos</span>
+                </div>
+                <span className="text-lg font-bold text-red-600 dark:text-red-400">
+                  {metrics.botFailedCount}
+                </span>
+              </div>
+              <div className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                  <span className="font-medium text-gray-700 dark:text-gray-300">Procesados</span>
+                </div>
+                <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                  {metrics.botProcessedCount}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Top Errors */}
+          {metrics.errorCount > 0 && (
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                <i className="fas fa-exclamation-triangle text-red-600 dark:text-red-400 mr-2"></i>
+                Errores Principales
+              </h2>
+              <div className="space-y-2">
+                {metrics.topErrors.map((error, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-4 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-200 dark:border-red-800">
+                    <div className="flex items-center gap-3">
+                      <span className="text-lg font-bold text-red-500">#{idx + 1}</span>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">{error.code}</span>
+                    </div>
+                    <span className="text-lg font-bold text-red-600 dark:text-red-400">{error.count} ocurrencias</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-12 text-center">
+          <div className="text-6xl mb-4">📊</div>
+          <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-2">No hay datos disponibles</h3>
+          <p className="text-gray-600 dark:text-gray-300">
+            Las métricas aparecerán aquí cuando el bot comience a procesar mensajes
+          </p>
+        </div>
+      )}
     </div>
   );
 }

@@ -158,16 +158,17 @@ export default function BotConfiguration() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">
-                🤖 Configuración del Bot IA
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent flex items-center">
+                <i className="fas fa-robot text-purple-600 dark:text-purple-400 mr-3"></i>
+                Bot IA
               </h1>
-              <p className="text-gray-600 mt-2">
+              <p className="text-gray-600 dark:text-gray-300 mt-2">
                 Configura tu asistente virtual inteligente con IA
               </p>
             </div>
@@ -176,9 +177,9 @@ export default function BotConfiguration() {
                 <div className={`w-3 h-3 rounded-full ${
                   config.connectionStatus === 'connected' ? 'bg-green-500' :
                   config.connectionStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' :
-                  'bg-gray-400'
+                  'bg-gray-400 dark:bg-gray-600'
                 }`} />
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-gray-600 dark:text-gray-300">
                   {config.connectionStatus === 'connected' ? 'Conectado' :
                    config.connectionStatus === 'connecting' ? 'Conectando...' :
                    'Desconectado'}
@@ -186,10 +187,10 @@ export default function BotConfiguration() {
               </div>
               <button
                 onClick={toggleBot}
-                className={`px-6 py-2 rounded-lg font-medium transition-all ${
+                className={`px-6 py-2 rounded-lg font-medium transition-all shadow-lg ${
                   config.botEnabled
-                    ? 'bg-green-500 hover:bg-green-600 text-white'
-                    : 'bg-gray-300 hover:bg-gray-400 text-gray-700'
+                    ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white'
+                    : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-200'
                 }`}
               >
                 {config.botEnabled ? '✅ Bot Activo' : '⏸️ Bot Inactivo'}
@@ -200,25 +201,25 @@ export default function BotConfiguration() {
 
         {/* Status Message */}
         {statusMessage && (
-          <div className={`mb-6 p-4 rounded-lg ${
-            statusMessage.type === 'success' ? 'bg-green-100 text-green-800' :
-            statusMessage.type === 'error' ? 'bg-red-100 text-red-800' :
-            'bg-blue-100 text-blue-800'
+          <div className={`mb-6 p-4 rounded-lg shadow ${
+            statusMessage.type === 'success' ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-800' :
+            statusMessage.type === 'error' ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800' :
+            'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
           }`}>
             {statusMessage.text}
           </div>
         )}
 
         {/* Tabs */}
-        <div className="bg-white rounded-xl shadow-lg mb-6">
-          <div className="border-b border-gray-200">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg mb-6">
+          <div className="border-b border-gray-200 dark:border-gray-700">
             <div className="flex">
               <button
                 onClick={() => setActiveTab('config')}
                 className={`px-6 py-4 font-medium transition-colors ${
                   activeTab === 'config'
-                    ? 'border-b-2 border-purple-500 text-purple-600'
-                    : 'text-gray-500 hover:text-gray-700'
+                    ? 'border-b-2 border-purple-500 text-purple-600 dark:text-purple-400'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                 }`}
               >
                 ⚙️ Configuración
@@ -227,8 +228,8 @@ export default function BotConfiguration() {
                 onClick={() => setActiveTab('connection')}
                 className={`px-6 py-4 font-medium transition-colors ${
                   activeTab === 'connection'
-                    ? 'border-b-2 border-purple-500 text-purple-600'
-                    : 'text-gray-500 hover:text-gray-700'
+                    ? 'border-b-2 border-purple-500 text-purple-600 dark:text-purple-400'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                 }`}
               >
                 📱 Conexión WhatsApp
@@ -237,8 +238,8 @@ export default function BotConfiguration() {
                 onClick={() => setActiveTab('prompt')}
                 className={`px-6 py-4 font-medium transition-colors ${
                   activeTab === 'prompt'
-                    ? 'border-b-2 border-purple-500 text-purple-600'
-                    : 'text-gray-500 hover:text-gray-700'
+                    ? 'border-b-2 border-purple-500 text-purple-600 dark:text-purple-400'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                 }`}
               >
                 💬 Prompt Personalizado
@@ -252,13 +253,13 @@ export default function BotConfiguration() {
               <div className="space-y-6">
                 {/* Agent Type */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Tipo de Agente
                   </label>
                   <select
                     value={config.agentType}
                     onChange={(e) => handleInputChange('agentType', e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   >
                     <option value="vendedor">🛍️ Vendedor - Para ventas y promociones</option>
                     <option value="asistente">👥 Asistente - Atención al cliente general</option>
@@ -269,7 +270,7 @@ export default function BotConfiguration() {
 
                 {/* Business Name */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Nombre del Negocio *
                   </label>
                   <input
@@ -277,13 +278,13 @@ export default function BotConfiguration() {
                     value={config.businessName}
                     onChange={(e) => handleInputChange('businessName', e.target.value)}
                     placeholder="Mi Empresa SA"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-400 dark:placeholder-gray-500"
                   />
                 </div>
 
                 {/* Business Description */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Descripción del Negocio *
                   </label>
                   <textarea
@@ -291,13 +292,13 @@ export default function BotConfiguration() {
                     onChange={(e) => handleInputChange('businessDescription', e.target.value)}
                     placeholder="Somos una empresa dedicada a..."
                     rows={3}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-400 dark:placeholder-gray-500"
                   />
                 </div>
 
                 {/* Products */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Productos/Servicios
                   </label>
                   <textarea
@@ -305,13 +306,13 @@ export default function BotConfiguration() {
                     onChange={(e) => handleInputChange('products', e.target.value)}
                     placeholder="Producto A ($100), Producto B ($200)..."
                     rows={3}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-400 dark:placeholder-gray-500"
                   />
                 </div>
 
                 {/* Business Hours */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Horario de Atención
                   </label>
                   <input
@@ -319,20 +320,20 @@ export default function BotConfiguration() {
                     value={config.businessHours}
                     onChange={(e) => handleInputChange('businessHours', e.target.value)}
                     placeholder="Lunes a Viernes 9:00 - 18:00"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-400 dark:placeholder-gray-500"
                   />
                 </div>
 
                 {/* Language & Tone */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Idioma
                     </label>
                     <select
                       value={config.language}
                       onChange={(e) => handleInputChange('language', e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     >
                       <option value="es">🇪🇸 Español</option>
                       <option value="en">🇺🇸 English</option>
@@ -340,13 +341,13 @@ export default function BotConfiguration() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Tono
                     </label>
                     <select
                       value={config.tone}
                       onChange={(e) => handleInputChange('tone', e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     >
                       <option value="formal">👔 Formal</option>
                       <option value="casual">😊 Casual</option>
@@ -358,7 +359,7 @@ export default function BotConfiguration() {
                 {/* ChatWoot Integration */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       ChatWoot Account ID
                     </label>
                     <input
@@ -366,11 +367,11 @@ export default function BotConfiguration() {
                       value={config.chatwootAccountId || ''}
                       onChange={(e) => handleInputChange('chatwootAccountId', e.target.value)}
                       placeholder="12345"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-400 dark:placeholder-gray-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       ChatWoot Inbox ID
                     </label>
                     <input
@@ -378,7 +379,7 @@ export default function BotConfiguration() {
                       value={config.chatwootInboxId || ''}
                       onChange={(e) => handleInputChange('chatwootInboxId', e.target.value)}
                       placeholder="67890"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-400 dark:placeholder-gray-500"
                     />
                   </div>
                 </div>
@@ -387,7 +388,7 @@ export default function BotConfiguration() {
                 <button
                   onClick={saveConfiguration}
                   disabled={isSaving}
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 rounded-lg transition-colors disabled:opacity-50"
+                  className="w-full bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white font-medium py-3 rounded-lg transition-all shadow-lg disabled:opacity-50"
                 >
                   {isSaving ? '⏳ Guardando...' : '💾 Guardar Configuración'}
                 </button>
@@ -397,9 +398,9 @@ export default function BotConfiguration() {
             {/* Connection Tab */}
             {activeTab === 'connection' && (
               <div className="space-y-6">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                  <h3 className="font-medium text-blue-900 mb-2">ℹ️ Conexión a WhatsApp</h3>
-                  <p className="text-sm text-blue-800">
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+                  <h3 className="font-medium text-blue-900 dark:text-blue-300 mb-2">ℹ️ Conexión a WhatsApp</h3>
+                  <p className="text-sm text-blue-800 dark:text-blue-400">
                     Conecta tu número de WhatsApp usando Evolution API. Escanea el código QR
                     con tu WhatsApp para vincular tu cuenta.
                   </p>
@@ -407,7 +408,7 @@ export default function BotConfiguration() {
 
                 {/* Evolution API Config */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Evolution API URL *
                   </label>
                   <input
@@ -415,12 +416,12 @@ export default function BotConfiguration() {
                     value={config.evolutionApiUrl || ''}
                     onChange={(e) => handleInputChange('evolutionApiUrl', e.target.value)}
                     placeholder="https://your-evolution-api.com"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-400 dark:placeholder-gray-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Evolution API Key *
                   </label>
                   <input
@@ -428,12 +429,12 @@ export default function BotConfiguration() {
                     value={config.evolutionApiKey || ''}
                     onChange={(e) => handleInputChange('evolutionApiKey', e.target.value)}
                     placeholder="your-api-key"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-400 dark:placeholder-gray-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Instance Name (Opcional)
                   </label>
                   <input
@@ -441,7 +442,7 @@ export default function BotConfiguration() {
                     value={config.evolutionInstanceName || ''}
                     onChange={(e) => handleInputChange('evolutionInstanceName', e.target.value)}
                     placeholder="mi-bot-instance"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-400 dark:placeholder-gray-500"
                   />
                 </div>
 
@@ -450,35 +451,35 @@ export default function BotConfiguration() {
                   <button
                     onClick={connectWhatsApp}
                     disabled={isLoading}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 rounded-lg transition-colors disabled:opacity-50"
+                    className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-medium py-3 rounded-lg transition-all shadow-lg disabled:opacity-50"
                   >
                     {isLoading ? '⏳ Conectando...' : '📱 Conectar WhatsApp'}
                   </button>
                 )}
 
                 {config.connectionStatus === 'connecting' && qrCode && (
-                  <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg">
-                    <h3 className="text-lg font-medium mb-4">Escanea este código QR con WhatsApp</h3>
+                  <div className="flex flex-col items-center justify-center p-8 bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-200 dark:border-gray-600">
+                    <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Escanea este código QR con WhatsApp</h3>
                     <img src={qrCode} alt="QR Code" className="w-64 h-64 border-4 border-purple-500 rounded-lg" />
-                    <p className="text-sm text-gray-600 mt-4">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-4">
                       Abre WhatsApp → Dispositivos vinculados → Vincular un dispositivo
                     </p>
                   </div>
                 )}
 
                 {config.connectionStatus === 'connected' && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-6 text-center">
+                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6 text-center">
                     <div className="text-6xl mb-4">✅</div>
-                    <h3 className="text-xl font-medium text-green-900 mb-2">
+                    <h3 className="text-xl font-medium text-green-900 dark:text-green-300 mb-2">
                       WhatsApp Conectado
                     </h3>
-                    <p className="text-green-700 mb-4">
+                    <p className="text-green-700 dark:text-green-400 mb-4">
                       Tu bot está listo para recibir y responder mensajes
                     </p>
                     <button
                       onClick={disconnectWhatsApp}
                       disabled={isLoading}
-                      className="bg-red-600 hover:bg-red-700 text-white font-medium px-6 py-2 rounded-lg transition-colors disabled:opacity-50"
+                      className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-medium px-6 py-2 rounded-lg transition-all shadow-lg disabled:opacity-50"
                     >
                       {isLoading ? '⏳ Desconectando...' : '🔌 Desconectar'}
                     </button>
@@ -490,16 +491,16 @@ export default function BotConfiguration() {
             {/* Prompt Tab */}
             {activeTab === 'prompt' && (
               <div className="space-y-6">
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-                  <h3 className="font-medium text-yellow-900 mb-2">⚠️ Solo para Agente Personalizado</h3>
-                  <p className="text-sm text-yellow-800">
+                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6">
+                  <h3 className="font-medium text-yellow-900 dark:text-yellow-300 mb-2">⚠️ Solo para Agente Personalizado</h3>
+                  <p className="text-sm text-yellow-800 dark:text-yellow-400">
                     Si seleccionaste "Personalizado" como tipo de agente, puedes escribir tu propio prompt aquí.
                     Variables disponibles: {'{{company_name}}'}, {'{{company_info}}'}, {'{{products_list}}'}, {'{{business_hours}}'}
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Prompt Personalizado
                   </label>
                   <textarea
@@ -507,11 +508,11 @@ export default function BotConfiguration() {
                     onChange={(e) => handleInputChange('customPrompt', e.target.value)}
                     placeholder={`Eres un asistente virtual de {{company_name}}. Tu trabajo es ayudar a los clientes con información sobre nuestros productos y servicios.\n\nInformación de la empresa: {{company_info}}\n\nProductos: {{products_list}}\n\nHorario: {{business_hours}}`}
                     rows={12}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono text-sm"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono text-sm placeholder-gray-400 dark:placeholder-gray-500"
                     disabled={config.agentType !== 'custom'}
                   />
                   {config.agentType !== 'custom' && (
-                    <p className="text-sm text-gray-500 mt-2">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                       Para usar un prompt personalizado, cambia el tipo de agente a "Personalizado"
                     </p>
                   )}
@@ -520,7 +521,7 @@ export default function BotConfiguration() {
                 <button
                   onClick={saveConfiguration}
                   disabled={isSaving || config.agentType !== 'custom'}
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 rounded-lg transition-colors disabled:opacity-50"
+                  className="w-full bg-gradient-to-r from-purple-600 to-blue-500 hover:from-purple-700 hover:to-blue-600 text-white font-medium py-3 rounded-lg transition-all shadow-lg disabled:opacity-50"
                 >
                   {isSaving ? '⏳ Guardando...' : '💾 Guardar Prompt'}
                 </button>
