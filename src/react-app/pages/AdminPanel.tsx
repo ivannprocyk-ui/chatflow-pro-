@@ -435,6 +435,13 @@ export default function AdminPanel() {
   const [editingAlerta, setEditingAlerta] = useState<AlertaCliente | null>(null);
   const [alertaFormData, setAlertaFormData] = useState<Partial<AlertaCliente>>({});
 
+  // Client filters and search
+  const [clientSearch, setClientSearch] = useState('');
+  const [filterPlan, setFilterPlan] = useState<string>('all');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'nombre' | 'mrr' | 'fecha_alta' | 'uso'>('nombre');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
   useEffect(() => {
     // Generate demo data on mount
     const clientesData = generateDemoClientes();
@@ -728,167 +735,380 @@ export default function AdminPanel() {
 
   // ==================== RENDER CLIENTES ====================
 
-  const renderClientes = () => (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            Gestión de Clientes ({clientes.length})
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            {clientes.filter(c => c.status === 'active').length} activos • {clientes.filter(c => c.status === 'trial').length} en trial
-          </p>
+  const renderClientes = () => {
+    // Filter and search logic
+    let filteredClientes = clientes.filter(cliente => {
+      // Search filter
+      const searchLower = clientSearch.toLowerCase();
+      const matchesSearch = !clientSearch ||
+        cliente.nombre.toLowerCase().includes(searchLower) ||
+        cliente.empresa.toLowerCase().includes(searchLower) ||
+        cliente.email.toLowerCase().includes(searchLower);
+
+      // Plan filter
+      const matchesPlan = filterPlan === 'all' || cliente.plan === filterPlan;
+
+      // Status filter
+      const matchesStatus = filterStatus === 'all' || cliente.status === filterStatus;
+
+      return matchesSearch && matchesPlan && matchesStatus;
+    });
+
+    // Sorting logic
+    filteredClientes.sort((a, b) => {
+      let compareValue = 0;
+
+      switch (sortBy) {
+        case 'nombre':
+          compareValue = a.nombre.localeCompare(b.nombre);
+          break;
+        case 'mrr':
+          compareValue = a.precio_mensual - b.precio_mensual;
+          break;
+        case 'fecha_alta':
+          compareValue = new Date(a.fecha_alta).getTime() - new Date(b.fecha_alta).getTime();
+          break;
+        case 'uso':
+          const usageA = (a.usedMessages || 0) / (a.limite_mensajes || 1);
+          const usageB = (b.usedMessages || 0) / (b.limite_mensajes || 1);
+          compareValue = usageA - usageB;
+          break;
+      }
+
+      return sortOrder === 'asc' ? compareValue : -compareValue;
+    });
+
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              Gestión CRM de Clientes ({filteredClientes.length}/{clientes.length})
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
+              {clientes.filter(c => c.status === 'active').length} activos • {clientes.filter(c => c.status === 'trial').length} en trial
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                const csv = [
+                  ['Nombre', 'Email', 'Empresa', 'Plan', 'Estado', 'MRR', 'Fecha Alta'].join(','),
+                  ...filteredClientes.map(c => [
+                    c.nombre, c.email, c.empresa, c.plan, c.status,
+                    c.precio_mensual, new Date(c.fecha_alta).toLocaleDateString()
+                  ].join(','))
+                ].join('\n');
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'clientes.csv';
+                a.click();
+              }}
+              className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all flex items-center gap-2"
+            >
+              <i className="fas fa-download"></i>
+              Exportar CSV
+            </button>
+            <button
+              onClick={openCreateModal}
+              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-3 rounded-xl font-medium transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
+            >
+              <i className="fas fa-plus"></i>
+              Nuevo Cliente
+            </button>
+          </div>
         </div>
-        <button
-          onClick={openCreateModal}
-          className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-3 rounded-xl font-medium transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
-        >
-          <i className="fas fa-plus"></i>
-          Nuevo Cliente
-        </button>
-      </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {['active', 'trial', 'paused', 'cancelled'].map(status => {
-          const count = clientes.filter(c => c.status === status).length;
-          const colors = {
-            active: 'green',
-            trial: 'blue',
-            paused: 'yellow',
-            cancelled: 'red'
-          };
-          const color = colors[status as keyof typeof colors];
-
-          return (
-            <div key={status} className={`bg-${color}-50 dark:bg-${color}-900/20 border border-${color}-200 dark:border-${color}-800 rounded-xl p-4`}>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{status.charAt(0).toUpperCase() + status.slice(1)}</p>
-              <p className={`text-2xl font-bold text-${color}-600 dark:text-${color}-400`}>{count}</p>
+        {/* Advanced Filters */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            {/* Search */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <i className="fas fa-search mr-2"></i>
+                Buscar
+              </label>
+              <input
+                type="text"
+                value={clientSearch}
+                onChange={(e) => setClientSearch(e.target.value)}
+                placeholder="Buscar por nombre, email, empresa..."
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              />
             </div>
-          );
-        })}
-      </div>
 
-      {/* Clients Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Cliente</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Plan</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Estado</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">MRR</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Próximo Pago</th>
-                <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Uso</th>
-                <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {clientes.map((cliente) => {
-                const usagePercent = (cliente.usedMessages || 0) / (cliente.monthlyLimit || 1) * 100;
+            {/* Plan Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <i className="fas fa-layer-group mr-2"></i>
+                Plan
+              </label>
+              <select
+                value={filterPlan}
+                onChange={(e) => setFilterPlan(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              >
+                <option value="all">Todos los Planes</option>
+                <option value="free">Free</option>
+                <option value="basic">Basic</option>
+                <option value="pro">Pro</option>
+                <option value="enterprise">Enterprise</option>
+              </select>
+            </div>
 
-                return (
-                  <tr key={cliente.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold">
-                          {cliente.nombre.charAt(0)}
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{cliente.nombre}</div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">{cliente.empresa}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        cliente.plan === 'enterprise' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300' :
-                        cliente.plan === 'pro' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300' :
-                        cliente.plan === 'basic' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300' :
-                        'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                      }`}>
-                        {cliente.plan.toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <select
-                        value={cliente.status}
-                        onChange={(e) => handleToggleStatus(cliente.id, e.target.value as Cliente['status'])}
-                        className={`px-3 py-1 text-xs font-semibold rounded-full border-0 ${
-                          cliente.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300' :
-                          cliente.status === 'trial' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300' :
-                          cliente.status === 'paused' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300' :
-                          'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300'
-                        }`}
-                      >
-                        <option value="active">Activo</option>
-                        <option value="trial">Trial</option>
-                        <option value="paused">Pausado</option>
-                        <option value="cancelled">Cancelado</option>
-                      </select>
-                    </td>
-                    <td className="px-6 py-4 text-sm font-semibold text-gray-900 dark:text-gray-100">
-                      ${cliente.precio_mensual}/mes
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
-                      {cliente.fecha_proximo_pago ? new Date(cliente.fecha_proximo_pago).toLocaleDateString('es-ES') : '-'}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col">
-                        <div className="text-xs text-gray-900 dark:text-gray-100">
-                          {(cliente.usedMessages || 0).toLocaleString()} / {(cliente.monthlyLimit || 0).toLocaleString()}
-                        </div>
-                        <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1.5 mt-1">
-                          <div
-                            className={`h-1.5 rounded-full ${
-                              usagePercent > 90 ? 'bg-red-500' :
-                              usagePercent > 70 ? 'bg-yellow-500' :
-                              'bg-green-500'
-                            }`}
-                            style={{ width: `${Math.min(usagePercent, 100)}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => {
-                            setSelectedCliente(cliente);
-                            setShowDetailModal(true);
-                          }}
-                          className="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300 p-2"
-                          title="Ver detalle"
-                        >
-                          <i className="fas fa-eye"></i>
-                        </button>
-                        <button
-                          onClick={() => openEditModal(cliente)}
-                          className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-2"
-                          title="Editar"
-                        >
-                          <i className="fas fa-edit"></i>
-                        </button>
-                        <button
-                          onClick={() => handleDeleteCliente(cliente)}
-                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-2"
-                          title="Eliminar"
-                        >
-                          <i className="fas fa-trash"></i>
-                        </button>
-                      </div>
+            {/* Status Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <i className="fas fa-filter mr-2"></i>
+                Estado
+              </label>
+              <select
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              >
+                <option value="all">Todos los Estados</option>
+                <option value="active">Activo</option>
+                <option value="trial">Trial</option>
+                <option value="paused">Pausado</option>
+                <option value="cancelled">Cancelado</option>
+              </select>
+            </div>
+
+            {/* Sort */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <i className="fas fa-sort mr-2"></i>
+                Ordenar por
+              </label>
+              <select
+                value={`${sortBy}-${sortOrder}`}
+                onChange={(e) => {
+                  const [by, order] = e.target.value.split('-');
+                  setSortBy(by as any);
+                  setSortOrder(order as any);
+                }}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+              >
+                <option value="nombre-asc">Nombre (A-Z)</option>
+                <option value="nombre-desc">Nombre (Z-A)</option>
+                <option value="mrr-desc">MRR (Mayor)</option>
+                <option value="mrr-asc">MRR (Menor)</option>
+                <option value="fecha_alta-desc">Más Recientes</option>
+                <option value="fecha_alta-asc">Más Antiguos</option>
+                <option value="uso-desc">Mayor Uso</option>
+                <option value="uso-asc">Menor Uso</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Clear Filters */}
+          {(clientSearch || filterPlan !== 'all' || filterStatus !== 'all') && (
+            <div className="mt-4">
+              <button
+                onClick={() => {
+                  setClientSearch('');
+                  setFilterPlan('all');
+                  setFilterStatus('all');
+                }}
+                className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                <i className="fas fa-times mr-1"></i>
+                Limpiar filtros
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {['active', 'trial', 'paused', 'cancelled'].map(status => {
+            const count = clientes.filter(c => c.status === status).length;
+            const filteredCount = filteredClientes.filter(c => c.status === status).length;
+            const colors = {
+              active: 'green',
+              trial: 'blue',
+              paused: 'yellow',
+              cancelled: 'red'
+            };
+            const color = colors[status as keyof typeof colors];
+
+            return (
+              <div key={status} className={`bg-${color}-50 dark:bg-${color}-900/20 border border-${color}-200 dark:border-${color}-800 rounded-xl p-4 cursor-pointer hover:shadow-lg transition-shadow`}
+                onClick={() => setFilterStatus(filterStatus === status ? 'all' : status)}
+              >
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">{status.charAt(0).toUpperCase() + status.slice(1)}</p>
+                <p className={`text-2xl font-bold text-${color}-600 dark:text-${color}-400`}>
+                  {filterStatus === 'all' ? count : `${filteredCount}/${count}`}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Clients Table */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Cliente</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Plan</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Estado</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">MRR</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Próximo Pago</th>
+                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Uso</th>
+                  <th className="px-6 py-4 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {filteredClientes.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                      <i className="fas fa-search text-4xl mb-4"></i>
+                      <p className="text-lg font-medium">No se encontraron clientes</p>
+                      <p className="text-sm">Intenta ajustar los filtros de búsqueda</p>
                     </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                ) : (
+                  filteredClientes.map((cliente) => {
+                    const usagePercent = (cliente.usedMessages || 0) / (cliente.monthlyLimit || 1) * 100;
+                    const clientAlertas = evaluarAlertas(cliente);
+
+                    return (
+                      <tr key={cliente.id} className={`hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${clientAlertas.length > 0 ? 'bg-yellow-50/30 dark:bg-yellow-900/5' : ''}`}>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-semibold relative">
+                              {cliente.nombre.charAt(0)}
+                              {clientAlertas.length > 0 && (
+                                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-xs flex items-center justify-center">
+                                  {clientAlertas.length}
+                                </span>
+                              )}
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{cliente.nombre}</div>
+                              <div className="text-sm text-gray-500 dark:text-gray-400">{cliente.empresa}</div>
+                              {clientAlertas.length > 0 && (
+                                <div className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1 mt-1">
+                                  <i className="fas fa-exclamation-triangle"></i>
+                                  {clientAlertas.length} alerta{clientAlertas.length > 1 ? 's' : ''}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            cliente.plan === 'enterprise' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300' :
+                            cliente.plan === 'pro' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300' :
+                            cliente.plan === 'basic' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300' :
+                            'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+                          }`}>
+                            {cliente.plan.toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <select
+                            value={cliente.status}
+                            onChange={(e) => handleToggleStatus(cliente.id, e.target.value as Cliente['status'])}
+                            className={`px-3 py-1 text-xs font-semibold rounded-full border-0 cursor-pointer ${
+                              cliente.status === 'active' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300' :
+                              cliente.status === 'trial' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300' :
+                              cliente.status === 'paused' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300' :
+                              'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300'
+                            }`}
+                          >
+                            <option value="active">Activo</option>
+                            <option value="trial">Trial</option>
+                            <option value="paused">Pausado</option>
+                            <option value="cancelled">Cancelado</option>
+                          </select>
+                        </td>
+                        <td className="px-6 py-4 text-sm font-semibold text-gray-900 dark:text-gray-100">
+                          ${cliente.precio_mensual}/mes
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                          {cliente.fecha_proximo_pago ? new Date(cliente.fecha_proximo_pago).toLocaleDateString('es-ES') : '-'}
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex flex-col">
+                            <div className="text-xs text-gray-900 dark:text-gray-100">
+                              {(cliente.usedMessages || 0).toLocaleString()} / {(cliente.monthlyLimit || 0).toLocaleString()}
+                            </div>
+                            <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-1.5 mt-1">
+                              <div
+                                className={`h-1.5 rounded-full ${
+                                  usagePercent > 90 ? 'bg-red-500' :
+                                  usagePercent > 70 ? 'bg-yellow-500' :
+                                  'bg-green-500'
+                                }`}
+                                style={{ width: `${Math.min(usagePercent, 100)}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => {
+                                setSelectedCliente(cliente);
+                                setShowDetailModal(true);
+                              }}
+                              className="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300 p-2"
+                              title="Ver detalle"
+                            >
+                              <i className="fas fa-eye"></i>
+                            </button>
+                            <button
+                              onClick={() => openEditModal(cliente)}
+                              className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-2"
+                              title="Editar"
+                            >
+                              <i className="fas fa-edit"></i>
+                            </button>
+                            <button
+                              onClick={() => handleDeleteCliente(cliente)}
+                              className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-2"
+                              title="Eliminar"
+                            >
+                              <i className="fas fa-trash"></i>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* CRM Insights */}
+        <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border border-purple-200 dark:border-purple-800 rounded-2xl p-6">
+          <div className="flex items-start space-x-4">
+            <div className="w-10 h-10 bg-purple-100 dark:bg-purple-800 rounded-lg flex items-center justify-center flex-shrink-0">
+              <i className="fas fa-chart-line text-purple-600 dark:text-purple-400"></i>
+            </div>
+            <div>
+              <h3 className="text-lg font-medium text-purple-900 dark:text-purple-100 mb-2">CRM Insights</h3>
+              <div className="text-purple-800 dark:text-purple-200 text-sm space-y-1">
+                <p>• <strong>{filteredClientes.length}</strong> clientes mostrados de <strong>{clientes.length}</strong> total</p>
+                <p>• MRR Total: <strong>${clientes.filter(c => c.status === 'active').reduce((sum, c) => sum + c.precio_mensual, 0).toLocaleString()}</strong></p>
+                <p>• Clientes con alertas activas: <strong>{clientes.filter(c => evaluarAlertas(c).length > 0).length}</strong></p>
+                <p>• Puedes exportar la lista filtrada a CSV o editar el estado inline haciendo click en los dropdowns</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // ==================== RENDER INGRESOS ====================
 
