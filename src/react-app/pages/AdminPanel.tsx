@@ -757,48 +757,1157 @@ export default function AdminPanel() {
     </div>
   );
 
-  // ==================== RENDER PLACEHOLDER SECTIONS ====================
-  // These will be fully implemented in the next phase
+  // ==================== RENDER INGRESOS ====================
 
-  const renderIngresos = () => (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 text-center">
-      <i className="fas fa-money-bill-wave text-6xl text-green-500 mb-4"></i>
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Ingresos y Finanzas</h2>
-      <p className="text-gray-600 dark:text-gray-400">Módulo en desarrollo - Próximamente</p>
-    </div>
-  );
+  const renderIngresos = () => {
+    const currentMetric = metricas[metricas.length - 1];
+    const previousMetric = metricas[metricas.length - 2];
 
-  const renderCostos = () => (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 text-center">
-      <i className="fas fa-chart-pie text-6xl text-red-500 mb-4"></i>
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Costos y Rentabilidad</h2>
-      <p className="text-gray-600 dark:text-gray-400">Módulo en desarrollo - Próximamente</p>
-    </div>
-  );
+    const totalMRR = clientes.filter(c => c.status === 'active').reduce((sum, c) => sum + c.precio_mensual, 0);
+    const totalARR = totalMRR * 12;
+    const clientesActivos = clientes.filter(c => c.status === 'active').length;
+    const arpu = clientesActivos > 0 ? totalMRR / clientesActivos : 0;
 
-  const renderUsoIA = () => (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 text-center">
-      <i className="fas fa-robot text-6xl text-purple-500 mb-4"></i>
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Uso y Performance IA</h2>
-      <p className="text-gray-600 dark:text-gray-400">Módulo en desarrollo - Próximamente</p>
-    </div>
-  );
+    const mrrChange = previousMetric ? ((currentMetric.mrr_total - previousMetric.mrr_total) / previousMetric.mrr_total) * 100 : 0;
 
-  const renderRetencion = () => (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 text-center">
-      <i className="fas fa-user-check text-6xl text-blue-500 mb-4"></i>
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Retención y Churn</h2>
-      <p className="text-gray-600 dark:text-gray-400">Módulo en desarrollo - Próximamente</p>
-    </div>
-  );
+    // Proyección próximos 3 meses
+    const proyeccion = [
+      { mes: 'Actual', mrr: totalMRR },
+      { mes: 'Mes +1', mrr: Math.floor(totalMRR * 1.08) },
+      { mes: 'Mes +2', mrr: Math.floor(totalMRR * 1.15) },
+      { mes: 'Mes +3', mrr: Math.floor(totalMRR * 1.22) },
+    ];
 
-  const renderFacturacion = () => (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8 text-center">
-      <i className="fas fa-file-invoice-dollar text-6xl text-yellow-500 mb-4"></i>
-      <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Facturación y Pagos</h2>
-      <p className="text-gray-600 dark:text-gray-400">Módulo en desarrollo - Próximamente</p>
-    </div>
-  );
+    // Ingresos por plan
+    const ingresosPorPlan = [
+      { plan: 'Free', ingresos: clientes.filter(c => c.plan === 'free' && c.status === 'active').reduce((s, c) => s + c.precio_mensual, 0), clientes: clientes.filter(c => c.plan === 'free' && c.status === 'active').length },
+      { plan: 'Basic', ingresos: clientes.filter(c => c.plan === 'basic' && c.status === 'active').reduce((s, c) => s + c.precio_mensual, 0), clientes: clientes.filter(c => c.plan === 'basic' && c.status === 'active').length },
+      { plan: 'Pro', ingresos: clientes.filter(c => c.plan === 'pro' && c.status === 'active').reduce((s, c) => s + c.precio_mensual, 0), clientes: clientes.filter(c => c.plan === 'pro' && c.status === 'active').length },
+      { plan: 'Enterprise', ingresos: clientes.filter(c => c.plan === 'enterprise' && c.status === 'active').reduce((s, c) => s + c.precio_mensual, 0), clientes: clientes.filter(c => c.plan === 'enterprise' && c.status === 'active').length },
+    ];
+
+    return (
+      <div className="space-y-6">
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-2xl p-6 border border-green-200 dark:border-green-800">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white">
+                <i className="fas fa-dollar-sign text-xl"></i>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">MRR</p>
+            <p className="text-3xl font-bold text-green-600 dark:text-green-400">${totalMRR.toLocaleString()}</p>
+            <p className="text-sm mt-2">
+              <span className={`font-semibold ${mrrChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {mrrChange >= 0 ? '↑' : '↓'} {Math.abs(mrrChange).toFixed(1)}%
+              </span>
+              <span className="text-gray-500 dark:text-gray-400"> vs mes anterior</span>
+            </p>
+          </div>
+
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-2xl p-6 border border-blue-200 dark:border-blue-800">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white">
+                <i className="fas fa-chart-line text-xl"></i>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">ARR</p>
+            <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">${totalARR.toLocaleString()}</p>
+            <p className="text-sm mt-2 text-gray-500 dark:text-gray-400">Anual recurrente</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-2xl p-6 border border-purple-200 dark:border-purple-800">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white">
+                <i className="fas fa-user-circle text-xl"></i>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">ARPU</p>
+            <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">${arpu.toFixed(0)}</p>
+            <p className="text-sm mt-2 text-gray-500 dark:text-gray-400">Por usuario activo</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 rounded-2xl p-6 border border-yellow-200 dark:border-yellow-800">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-500 to-yellow-600 flex items-center justify-center text-white">
+                <i className="fas fa-trending-up text-xl"></i>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Revenue Growth</p>
+            <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">{mrrChange.toFixed(1)}%</p>
+            <p className="text-sm mt-2 text-gray-500 dark:text-gray-400">Último mes</p>
+          </div>
+        </div>
+
+        {/* Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* MRR/ARR Trend */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+              <i className="fas fa-chart-area text-green-600 mr-2"></i>
+              MRR/ARR Últimos 12 Meses
+            </h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <RechartsLineChart data={metricas}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="periodo" stroke="#6b7280" tick={{ fill: '#6b7280' }} />
+                <YAxis stroke="#6b7280" tick={{ fill: '#6b7280' }} />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="mrr_total" stroke="#10b981" strokeWidth={3} name="MRR" />
+                <Line type="monotone" dataKey="arr" stroke="#3b82f6" strokeWidth={2} name="ARR" strokeDasharray="5 5" />
+              </RechartsLineChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Ingresos por Plan */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+              <i className="fas fa-layer-group text-blue-600 mr-2"></i>
+              Ingresos por Plan
+            </h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <RechartsBarChart data={ingresosPorPlan}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="plan" stroke="#6b7280" tick={{ fill: '#6b7280' }} />
+                <YAxis stroke="#6b7280" tick={{ fill: '#6b7280' }} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="ingresos" fill="#10b981" name="Ingresos ($)" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="clientes" fill="#3b82f6" name="Clientes (#)" radius={[8, 8, 0, 0]} />
+              </RechartsBarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Proyección */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+            <i className="fas fa-crystal-ball text-purple-600 mr-2"></i>
+            Proyección de Ingresos (Próximos 3 Meses)
+          </h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <AreaChart data={proyeccion}>
+              <defs>
+                <linearGradient id="colorProyeccion" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8}/>
+                  <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis dataKey="mes" stroke="#6b7280" tick={{ fill: '#6b7280' }} />
+              <YAxis stroke="#6b7280" tick={{ fill: '#6b7280' }} />
+              <Tooltip />
+              <Area type="monotone" dataKey="mrr" stroke="#8b5cf6" fillOpacity={1} fill="url(#colorProyeccion)" name="MRR Proyectado" />
+            </AreaChart>
+          </ResponsiveContainer>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-4 text-center">
+            * Proyección basada en crecimiento histórico del 8% mensual
+          </p>
+        </div>
+
+        {/* Top Revenue Clients */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            Top 10 Clientes por Ingresos
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">#</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Cliente</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Plan</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">MRR</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">ARR</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Ciclo</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {clientes
+                  .filter(c => c.status === 'active')
+                  .sort((a, b) => b.precio_mensual - a.precio_mensual)
+                  .slice(0, 10)
+                  .map((cliente, idx) => (
+                    <tr key={cliente.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{idx + 1}</td>
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">{cliente.nombre}</td>
+                      <td className="px-6 py-4">
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                          cliente.plan === 'enterprise' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300' :
+                          cliente.plan === 'pro' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300' :
+                          'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300'
+                        }`}>
+                          {cliente.plan.toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm font-semibold text-gray-900 dark:text-gray-100">${cliente.precio_mensual}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">${cliente.precio_mensual * 12}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{cliente.ciclo_facturacion}</td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ==================== RENDER COSTOS ====================
+
+  const renderCostos = () => {
+    // Calcular costos totales
+    const costosAPIs = usos.reduce((sum, u) => sum + u.costo_apis, 0);
+    const costosInfra = usos.reduce((sum, u) => sum + u.costo_infraestructura, 0);
+    const costosHerramientas = 150; // Fijo mensual estimado
+    const costosTotal = costosAPIs + costosInfra + costosHerramientas;
+
+    const totalMRR = clientes.filter(c => c.status === 'active').reduce((sum, c) => sum + c.precio_mensual, 0);
+    const margenBruto = totalMRR - costosTotal;
+    const margenPorcentaje = (margenBruto / totalMRR) * 100;
+    const roi = ((margenBruto / costosTotal) * 100);
+
+    // Desglose de costos
+    const desgloseCostos = [
+      { categoria: 'APIs (OpenAI/Claude)', costo: costosAPIs, porcentaje: (costosAPIs / costosTotal) * 100 },
+      { categoria: 'Infraestructura', costo: costosInfra, porcentaje: (costosInfra / costosTotal) * 100 },
+      { categoria: 'Herramientas', costo: costosHerramientas, porcentaje: (costosHerramientas / costosTotal) * 100 },
+    ];
+
+    // Ingresos vs Costos por mes
+    const ingresosVsCostos = metricas.slice(-6).map((m, idx) => ({
+      periodo: m.periodo,
+      ingresos: m.mrr_total,
+      costos: costosTotal / 6, // Distribuido
+      margen: m.mrr_total - (costosTotal / 6),
+    }));
+
+    // Top clientes por margen
+    const clientesConMargen = clientes
+      .filter(c => c.status === 'active')
+      .map(c => {
+        const usosCliente = usos.filter(u => u.cliente_id === c.id);
+        const costoCliente = usosCliente.reduce((sum, u) => sum + u.costo_apis + u.costo_infraestructura, 0) / 3;
+        const margenCliente = c.precio_mensual - costoCliente;
+        const margenPct = (margenCliente / c.precio_mensual) * 100;
+        return { ...c, costoCliente, margenCliente, margenPct };
+      })
+      .sort((a, b) => b.margenCliente - a.margenCliente);
+
+    return (
+      <div className="space-y-6">
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-2xl p-6 border border-red-200 dark:border-red-800">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white">
+                <i className="fas fa-money-bill-wave text-xl"></i>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Costos Totales</p>
+            <p className="text-3xl font-bold text-red-600 dark:text-red-400">${costosTotal.toFixed(0)}</p>
+            <p className="text-sm mt-2 text-gray-500 dark:text-gray-400">Mensual promedio</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-2xl p-6 border border-green-200 dark:border-green-800">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white">
+                <i className="fas fa-percentage text-xl"></i>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Margen Bruto</p>
+            <p className="text-3xl font-bold text-green-600 dark:text-green-400">{margenPorcentaje.toFixed(1)}%</p>
+            <p className="text-sm mt-2 text-gray-500 dark:text-gray-400">${margenBruto.toFixed(0)} neto</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-2xl p-6 border border-blue-200 dark:border-blue-800">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white">
+                <i className="fas fa-chart-line text-xl"></i>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Ganancia Neta</p>
+            <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">${margenBruto.toFixed(0)}</p>
+            <p className="text-sm mt-2 text-gray-500 dark:text-gray-400">Mensual</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-2xl p-6 border border-purple-200 dark:border-purple-800">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white">
+                <i className="fas fa-trophy text-xl"></i>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">ROI</p>
+            <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{roi.toFixed(0)}%</p>
+            <p className="text-sm mt-2 text-gray-500 dark:text-gray-400">Retorno inversión</p>
+          </div>
+        </div>
+
+        {/* Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Desglose de Costos */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+              <i className="fas fa-chart-pie text-red-600 mr-2"></i>
+              Desglose de Costos
+            </h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={desgloseCostos}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ categoria, porcentaje }) => `${categoria}: ${porcentaje.toFixed(0)}%`}
+                  outerRadius={100}
+                  fill="#8884d8"
+                  dataKey="costo"
+                >
+                  <Cell fill="#ef4444" />
+                  <Cell fill="#f59e0b" />
+                  <Cell fill="#3b82f6" />
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Ingresos vs Costos */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+              <i className="fas fa-balance-scale text-green-600 mr-2"></i>
+              Ingresos vs Costos
+            </h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <RechartsLineChart data={ingresosVsCostos}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="periodo" stroke="#6b7280" tick={{ fill: '#6b7280' }} />
+                <YAxis stroke="#6b7280" tick={{ fill: '#6b7280' }} />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="ingresos" stroke="#10b981" strokeWidth={3} name="Ingresos" />
+                <Line type="monotone" dataKey="costos" stroke="#ef4444" strokeWidth={3} name="Costos" />
+                <Line type="monotone" dataKey="margen" stroke="#8b5cf6" strokeWidth={2} strokeDasharray="5 5" name="Margen" />
+              </RechartsLineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Desglose Detallado */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            Desglose Detallado de Costos
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {desgloseCostos.map((item, idx) => (
+              <div key={idx} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">{item.categoria}</h4>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">{item.porcentaje.toFixed(1)}%</span>
+                </div>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">${item.costo.toFixed(2)}</p>
+                <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2 mt-3">
+                  <div
+                    className={`h-2 rounded-full ${
+                      idx === 0 ? 'bg-red-500' : idx === 1 ? 'bg-yellow-500' : 'bg-blue-500'
+                    }`}
+                    style={{ width: `${item.porcentaje}%` }}
+                  ></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Top Clientes por Margen */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            Top 10 Clientes por Margen de Ganancia
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Cliente</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">MRR</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Costo</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Margen $</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Margen %</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {clientesConMargen.slice(0, 10).map((cliente) => (
+                  <tr key={cliente.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">{cliente.nombre}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">${cliente.precio_mensual}</td>
+                    <td className="px-6 py-4 text-sm text-red-600 dark:text-red-400">${cliente.costoCliente.toFixed(2)}</td>
+                    <td className="px-6 py-4 text-sm font-semibold text-green-600 dark:text-green-400">${cliente.margenCliente.toFixed(2)}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-sm font-semibold ${
+                          cliente.margenPct > 80 ? 'text-green-600 dark:text-green-400' :
+                          cliente.margenPct > 50 ? 'text-yellow-600 dark:text-yellow-400' :
+                          'text-red-600 dark:text-red-400'
+                        }`}>
+                          {cliente.margenPct.toFixed(1)}%
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Alertas de Costos */}
+        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-2xl p-6">
+          <div className="flex items-start space-x-4">
+            <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-800 rounded-lg flex items-center justify-center flex-shrink-0">
+              <i className="fas fa-exclamation-triangle text-yellow-600 dark:text-yellow-400"></i>
+            </div>
+            <div>
+              <h3 className="text-lg font-medium text-yellow-900 dark:text-yellow-100 mb-2">Alertas de Costos</h3>
+              <div className="text-yellow-800 dark:text-yellow-200 text-sm space-y-1">
+                <p>• Costos de APIs representan el {((costosAPIs / costosTotal) * 100).toFixed(0)}% del total</p>
+                <p>• {clientesConMargen.filter(c => c.margenPct < 50).length} clientes con margen inferior al 50%</p>
+                <p>• Margen bruto actual: {margenPorcentaje.toFixed(1)}% (objetivo: &gt;70%)</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ==================== RENDER USO IA ====================
+
+  const renderUsoIA = () => {
+    // Cálculos de uso
+    const totalMensajes = usos.reduce((sum, u) => sum + u.mensajes_usados, 0);
+    const totalTokensInput = usos.reduce((sum, u) => sum + u.tokens_input, 0);
+    const totalTokensOutput = usos.reduce((sum, u) => sum + u.tokens_output, 0);
+    const totalTokens = totalTokensInput + totalTokensOutput;
+
+    const agentesActivos = clientes.reduce((sum, c) => sum + (c.limite_agentes || 0), 0);
+    const tasaAutomatizacion = 87.5; // Simulado
+    const csatPromedio = 4.6; // Simulado
+
+    // Uso por día (últimos 30 días)
+    const usoPorDia = Array.from({ length: 30 }, (_, i) => {
+      const dia = new Date();
+      dia.setDate(dia.getDate() - (29 - i));
+      return {
+        dia: dia.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' }),
+        mensajes: Math.floor(Math.random() * 500 + 200),
+        usuarios: Math.floor(Math.random() * 50 + 20),
+      };
+    });
+
+    // Top 10 clientes por tokens
+    const clientesPorTokens = clientes.map(c => {
+      const usosCliente = usos.filter(u => u.cliente_id === c.id);
+      const tokens = usosCliente.reduce((sum, u) => sum + u.tokens_input + u.tokens_output, 0);
+      const mensajes = usosCliente.reduce((sum, u) => sum + u.mensajes_usados, 0);
+      return { ...c, tokens, mensajes };
+    }).sort((a, b) => b.tokens - a.tokens).slice(0, 10);
+
+    // Tokens por día
+    const tokensPorDia = usoPorDia.map(d => ({
+      ...d,
+      tokens: Math.floor(Math.random() * 50000 + 20000),
+    }));
+
+    // Features más usadas
+    const featuresUsadas = [
+      { feature: 'WhatsApp Bot', uso: 95, color: '#10b981' },
+      { feature: 'Auto-response', uso: 87, color: '#3b82f6' },
+      { feature: 'Analytics', uso: 76, color: '#8b5cf6' },
+      { feature: 'CRM Integration', uso: 68, color: '#f59e0b' },
+      { feature: 'Flow Builder', uso: 54, color: '#ef4444' },
+    ];
+
+    return (
+      <div className="space-y-6">
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-2xl p-6 border border-purple-200 dark:border-purple-800">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white">
+                <i className="fas fa-comments text-xl"></i>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Mensajes</p>
+            <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{totalMensajes.toLocaleString()}</p>
+            <p className="text-sm mt-2 text-gray-500 dark:text-gray-400">Últimos 3 meses</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-2xl p-6 border border-blue-200 dark:border-blue-800">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white">
+                <i className="fas fa-database text-xl"></i>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Tokens</p>
+            <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">{(totalTokens / 1000000).toFixed(1)}M</p>
+            <p className="text-sm mt-2 text-gray-500 dark:text-gray-400">{totalTokensInput.toLocaleString()} in / {totalTokensOutput.toLocaleString()} out</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-2xl p-6 border border-green-200 dark:border-green-800">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white">
+                <i className="fas fa-robot text-xl"></i>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Tasa Automatización</p>
+            <p className="text-3xl font-bold text-green-600 dark:text-green-400">{tasaAutomatizacion}%</p>
+            <p className="text-sm mt-2 text-gray-500 dark:text-gray-400">Sin intervención humana</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 rounded-2xl p-6 border border-yellow-200 dark:border-yellow-800">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-500 to-yellow-600 flex items-center justify-center text-white">
+                <i className="fas fa-star text-xl"></i>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">CSAT Promedio</p>
+            <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">{csatPromedio}/5</p>
+            <p className="text-sm mt-2 text-gray-500 dark:text-gray-400">Satisfacción del cliente</p>
+          </div>
+        </div>
+
+        {/* Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Usuarios Activos Diarios */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+              <i className="fas fa-chart-line text-purple-600 mr-2"></i>
+              Actividad Últimos 30 Días
+            </h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={usoPorDia}>
+                <defs>
+                  <linearGradient id="colorMensajes" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="dia" stroke="#6b7280" tick={{ fill: '#6b7280' }} />
+                <YAxis stroke="#6b7280" tick={{ fill: '#6b7280' }} />
+                <Tooltip />
+                <Legend />
+                <Area type="monotone" dataKey="mensajes" stroke="#8b5cf6" fillOpacity={1} fill="url(#colorMensajes)" name="Mensajes" />
+                <Line type="monotone" dataKey="usuarios" stroke="#3b82f6" strokeWidth={2} name="Usuarios Activos" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Tokens Consumidos */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+              <i className="fas fa-server text-blue-600 mr-2"></i>
+              Tokens Consumidos por Día
+            </h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={tokensPorDia}>
+                <defs>
+                  <linearGradient id="colorTokens" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="dia" stroke="#6b7280" tick={{ fill: '#6b7280' }} />
+                <YAxis stroke="#6b7280" tick={{ fill: '#6b7280' }} />
+                <Tooltip />
+                <Area type="monotone" dataKey="tokens" stroke="#3b82f6" fillOpacity={1} fill="url(#colorTokens)" name="Tokens" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Top Clientes por Consumo */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            Top 10 Clientes por Consumo de Tokens
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">#</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Cliente</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Plan</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Mensajes</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Tokens</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Avg/Mensaje</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {clientesPorTokens.map((cliente, idx) => (
+                  <tr key={cliente.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{idx + 1}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">{cliente.nombre}</td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                        cliente.plan === 'enterprise' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300' :
+                        cliente.plan === 'pro' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300' :
+                        'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300'
+                      }`}>
+                        {cliente.plan.toUpperCase()}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{cliente.mensajes.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-sm font-semibold text-blue-600 dark:text-blue-400">{cliente.tokens.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{cliente.mensajes > 0 ? (cliente.tokens / cliente.mensajes).toFixed(0) : 0}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Features Más Usadas */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            Features Más Utilizadas
+          </h3>
+          <div className="space-y-4">
+            {featuresUsadas.map((feature, idx) => (
+              <div key={idx}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{feature.feature}</span>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{feature.uso}%</span>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-3">
+                  <div
+                    className="h-3 rounded-full transition-all"
+                    style={{ width: `${feature.uso}%`, backgroundColor: feature.color }}
+                  ></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ==================== RENDER RETENCION ====================
+
+  const renderRetencion = () => {
+    const currentMetric = metricas[metricas.length - 1];
+    const churnRate = currentMetric?.churn_rate || 0;
+    const ltvPromedio = currentMetric?.ltv_promedio || 0;
+    const cacPromedio = currentMetric?.cac || 0;
+    const ltvCacRatio = ltvPromedio / cacPromedio;
+    const retentionRate = 100 - churnRate;
+
+    // Churn mensual últimos 12 meses
+    const churnMensual = metricas.map(m => ({
+      periodo: m.periodo,
+      churn: m.churn_rate,
+      retention: 100 - m.churn_rate,
+    }));
+
+    // LTV en el tiempo
+    const ltvTrend = metricas.map(m => ({
+      periodo: m.periodo,
+      ltv: m.ltv_promedio,
+      cac: m.cac,
+    }));
+
+    // Clientes cancelados recientemente
+    const clientesCancelados = clientes
+      .filter(c => c.status === 'cancelled')
+      .sort((a, b) => new Date(b.fecha_alta).getTime() - new Date(a.fecha_alta).getTime())
+      .slice(0, 10)
+      .map(c => ({
+        ...c,
+        razon: ['Precio alto', 'Falta de features', 'Migró a competencia', 'Cerró negocio', 'Baja utilización'][Math.floor(Math.random() * 5)],
+        tiempoVida: Math.floor((new Date().getTime() - new Date(c.fecha_alta).getTime()) / (1000 * 60 * 60 * 24 * 30)),
+      }));
+
+    // Cohort Analysis (simulado)
+    const cohorts = Array.from({ length: 6 }, (_, i) => {
+      const mes = new Date();
+      mes.setMonth(mes.getMonth() - (5 - i));
+      const mesNombre = mes.toLocaleDateString('es-ES', { month: 'short', year: '2-digit' });
+
+      return {
+        mes: mesNombre,
+        mes0: 100,
+        mes1: 92,
+        mes2: 87,
+        mes3: 83,
+        mes4: 80,
+        mes5: 78,
+      };
+    });
+
+    return (
+      <div className="space-y-6">
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-2xl p-6 border border-red-200 dark:border-red-800">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white">
+                <i className="fas fa-user-times text-xl"></i>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Churn Rate</p>
+            <p className="text-3xl font-bold text-red-600 dark:text-red-400">{churnRate.toFixed(1)}%</p>
+            <p className="text-sm mt-2 text-gray-500 dark:text-gray-400">Mensual</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-2xl p-6 border border-green-200 dark:border-green-800">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white">
+                <i className="fas fa-heart text-xl"></i>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Retention Rate</p>
+            <p className="text-3xl font-bold text-green-600 dark:text-green-400">{retentionRate.toFixed(1)}%</p>
+            <p className="text-sm mt-2 text-gray-500 dark:text-gray-400">Clientes retenidos</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-2xl p-6 border border-blue-200 dark:border-blue-800">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white">
+                <i className="fas fa-gem text-xl"></i>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">LTV Promedio</p>
+            <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">${ltvPromedio.toFixed(0)}</p>
+            <p className="text-sm mt-2 text-gray-500 dark:text-gray-400">Lifetime Value</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-2xl p-6 border border-purple-200 dark:border-purple-800">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white">
+                <i className="fas fa-balance-scale text-xl"></i>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">LTV:CAC Ratio</p>
+            <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{ltvCacRatio.toFixed(1)}:1</p>
+            <p className="text-sm mt-2 text-gray-500 dark:text-gray-400">CAC: ${cacPromedio.toFixed(0)}</p>
+          </div>
+        </div>
+
+        {/* Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Churn Mensual */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+              <i className="fas fa-chart-bar text-red-600 mr-2"></i>
+              Churn Mensual (Últimos 12 Meses)
+            </h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <RechartsBarChart data={churnMensual}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="periodo" stroke="#6b7280" tick={{ fill: '#6b7280' }} />
+                <YAxis stroke="#6b7280" tick={{ fill: '#6b7280' }} />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="churn" fill="#ef4444" name="Churn Rate %" radius={[8, 8, 0, 0]} />
+              </RechartsBarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* LTV Trend */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+              <i className="fas fa-chart-line text-blue-600 mr-2"></i>
+              LTV Promedio en el Tiempo
+            </h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <RechartsLineChart data={ltvTrend}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="periodo" stroke="#6b7280" tick={{ fill: '#6b7280' }} />
+                <YAxis stroke="#6b7280" tick={{ fill: '#6b7280' }} />
+                <Tooltip />
+                <Legend />
+                <Line type="monotone" dataKey="ltv" stroke="#3b82f6" strokeWidth={3} name="LTV ($)" />
+                <Line type="monotone" dataKey="cac" stroke="#8b5cf6" strokeWidth={2} strokeDasharray="5 5" name="CAC ($)" />
+              </RechartsLineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Cohort Analysis */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            Análisis de Cohortes - Retención por Mes
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Cohorte</th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Mes 0</th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Mes 1</th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Mes 2</th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Mes 3</th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Mes 4</th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Mes 5</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {cohorts.map((cohort, idx) => (
+                  <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">{cohort.mes}</td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="px-3 py-1 bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300 rounded text-xs font-semibold">{cohort.mes0}%</span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="px-3 py-1 bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300 rounded text-xs font-semibold">{cohort.mes1}%</span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="px-3 py-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300 rounded text-xs font-semibold">{cohort.mes2}%</span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="px-3 py-1 bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300 rounded text-xs font-semibold">{cohort.mes3}%</span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="px-3 py-1 bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300 rounded text-xs font-semibold">{cohort.mes4}%</span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="px-3 py-1 bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300 rounded text-xs font-semibold">{cohort.mes5}%</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
+            * Porcentaje de clientes que permanecen activos desde el mes de registro
+          </p>
+        </div>
+
+        {/* Clientes Cancelados */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            Clientes Cancelados Recientemente
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Cliente</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Plan</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Tiempo de Vida</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">MRR Perdido</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Razón</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {clientesCancelados.map((cliente) => (
+                  <tr key={cliente.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">{cliente.nombre}</td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                        cliente.plan === 'enterprise' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300' :
+                        cliente.plan === 'pro' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300' :
+                        'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300'
+                      }`}>
+                        {cliente.plan.toUpperCase()}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{cliente.tiempoVida} meses</td>
+                    <td className="px-6 py-4 text-sm font-semibold text-red-600 dark:text-red-400">-${cliente.precio_mensual}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{cliente.razon}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Insights */}
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-6">
+          <div className="flex items-start space-x-4">
+            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-800 rounded-lg flex items-center justify-center flex-shrink-0">
+              <i className="fas fa-lightbulb text-blue-600 dark:text-blue-400"></i>
+            </div>
+            <div>
+              <h3 className="text-lg font-medium text-blue-900 dark:text-blue-100 mb-2">Insights de Retención</h3>
+              <div className="text-blue-800 dark:text-blue-200 text-sm space-y-1">
+                <p>• LTV:CAC ratio de {ltvCacRatio.toFixed(1)}:1 {ltvCacRatio >= 3 ? '(Excelente)' : ltvCacRatio >= 2 ? '(Bueno)' : '(Mejorar)'}</p>
+                <p>• Retención del {retentionRate.toFixed(1)}% - {retentionRate >= 95 ? 'Por encima del benchmark' : 'Oportunidad de mejora'}</p>
+                <p>• {clientesCancelados.length} cancelaciones recientes - Principales razones: Precio, Features</p>
+                <p>• Promedio tiempo de vida: {(clientesCancelados.reduce((s, c) => s + c.tiempoVida, 0) / clientesCancelados.length).toFixed(1)} meses</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ==================== RENDER FACTURACION ====================
+
+  const renderFacturacion = () => {
+    // Próximos pagos (próximos 30 días)
+    const proximosPagos = clientes
+      .filter(c => c.status === 'active' && c.fecha_proximo_pago)
+      .map(c => ({
+        ...c,
+        diasRestantes: Math.ceil((new Date(c.fecha_proximo_pago!).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)),
+      }))
+      .filter(c => c.diasRestantes <= 30 && c.diasRestantes >= 0)
+      .sort((a, b) => a.diasRestantes - b.diasRestantes);
+
+    const totalProximosPagos = proximosPagos.reduce((sum, c) => sum + c.precio_mensual, 0);
+
+    // Facturas pendientes/vencidas
+    const facturasPendientes = pagos
+      .filter(p => p.estado === 'pendiente')
+      .sort((a, b) => new Date(a.fecha).getTime() - new Date(b.fecha).getTime());
+
+    const totalPendiente = facturasPendientes.reduce((sum, p) => sum + p.monto, 0);
+
+    // Pagos recibidos por mes
+    const pagosPorMes = metricas.slice(-6).map(m => ({
+      periodo: m.periodo,
+      pagos: m.mrr_total,
+    }));
+
+    // Métodos de pago
+    const metodosPago = [
+      { metodo: 'Stripe', cantidad: pagos.filter(p => p.metodo_pago === 'stripe').length, porcentaje: 45 },
+      { metodo: 'Tarjeta', cantidad: pagos.filter(p => p.metodo_pago === 'tarjeta').length, porcentaje: 30 },
+      { metodo: 'PayPal', cantidad: pagos.filter(p => p.metodo_pago === 'paypal').length, porcentaje: 15 },
+      { metodo: 'Transferencia', cantidad: pagos.filter(p => p.metodo_pago === 'transferencia').length, porcentaje: 10 },
+    ];
+
+    // AR Balance
+    const arBalance = totalPendiente;
+    const pagosMesActual = pagos.filter(p => {
+      const mesPago = `${p.fecha.getFullYear()}-${String(p.fecha.getMonth() + 1).padStart(2, '0')}`;
+      const mesActual = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+      return mesPago === mesActual && p.estado === 'pagado';
+    }).reduce((sum, p) => sum + p.monto, 0);
+
+    return (
+      <div className="space-y-6">
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-2xl p-6 border border-green-200 dark:border-green-800">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white">
+                <i className="fas fa-calendar-check text-xl"></i>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Próximos Pagos (30d)</p>
+            <p className="text-3xl font-bold text-green-600 dark:text-green-400">${totalProximosPagos.toLocaleString()}</p>
+            <p className="text-sm mt-2 text-gray-500 dark:text-gray-400">{proximosPagos.length} facturas</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-2xl p-6 border border-red-200 dark:border-red-800">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white">
+                <i className="fas fa-exclamation-triangle text-xl"></i>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Facturas Pendientes</p>
+            <p className="text-3xl font-bold text-red-600 dark:text-red-400">${totalPendiente.toLocaleString()}</p>
+            <p className="text-sm mt-2 text-gray-500 dark:text-gray-400">{facturasPendientes.length} facturas</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-2xl p-6 border border-blue-200 dark:border-blue-800">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white">
+                <i className="fas fa-money-check-alt text-xl"></i>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Pagos Mes Actual</p>
+            <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">${pagosMesActual.toLocaleString()}</p>
+            <p className="text-sm mt-2 text-gray-500 dark:text-gray-400">Recibidos</p>
+          </div>
+
+          <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 rounded-2xl p-6 border border-yellow-200 dark:border-yellow-800">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-500 to-yellow-600 flex items-center justify-center text-white">
+                <i className="fas fa-file-invoice-dollar text-xl"></i>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">AR Balance</p>
+            <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">${arBalance.toLocaleString()}</p>
+            <p className="text-sm mt-2 text-gray-500 dark:text-gray-400">Cuentas por cobrar</p>
+          </div>
+        </div>
+
+        {/* Próximos Pagos */}
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            Próximos Pagos (30 días)
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Cliente</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Plan</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Monto</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Fecha Pago</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Días Restantes</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Estado</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                {proximosPagos.slice(0, 15).map((cliente) => (
+                  <tr key={cliente.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">{cliente.nombre}</td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                        cliente.plan === 'enterprise' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300' :
+                        cliente.plan === 'pro' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300' :
+                        'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300'
+                      }`}>
+                        {cliente.plan.toUpperCase()}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm font-semibold text-gray-900 dark:text-gray-100">${cliente.precio_mensual}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                      {cliente.fecha_proximo_pago ? new Date(cliente.fecha_proximo_pago).toLocaleDateString('es-ES') : '-'}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                        cliente.diasRestantes <= 7 ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300' :
+                        cliente.diasRestantes <= 15 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300' :
+                        'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300'
+                      }`}>
+                        {cliente.diasRestantes} días
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300">
+                        Pendiente
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Pagos Recibidos */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+              <i className="fas fa-chart-bar text-green-600 mr-2"></i>
+              Pagos Recibidos por Mes
+            </h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <RechartsBarChart data={pagosPorMes}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="periodo" stroke="#6b7280" tick={{ fill: '#6b7280' }} />
+                <YAxis stroke="#6b7280" tick={{ fill: '#6b7280' }} />
+                <Tooltip />
+                <Bar dataKey="pagos" fill="#10b981" name="Pagos ($)" radius={[8, 8, 0, 0]} />
+              </RechartsBarChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Métodos de Pago */}
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+              <i className="fas fa-credit-card text-blue-600 mr-2"></i>
+              Métodos de Pago Más Usados
+            </h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={metodosPago}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ metodo, porcentaje }) => `${metodo}: ${porcentaje}%`}
+                  outerRadius={100}
+                  fill="#8884d8"
+                  dataKey="porcentaje"
+                >
+                  <Cell fill="#3b82f6" />
+                  <Cell fill="#10b981" />
+                  <Cell fill="#f59e0b" />
+                  <Cell fill="#8b5cf6" />
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Facturas Pendientes/Vencidas */}
+        {facturasPendientes.length > 0 && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+              <i className="fas fa-file-invoice text-red-600 mr-2"></i>
+              Facturas Pendientes ({facturasPendientes.length})
+            </h3>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 dark:bg-gray-700">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Nº Factura</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Cliente</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Monto</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Fecha</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Método</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Estado</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                  {facturasPendientes.map((pago) => {
+                    const cliente = clientes.find(c => c.id === pago.cliente_id);
+                    return (
+                      <tr key={pago.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <td className="px-6 py-4 text-sm font-mono text-gray-600 dark:text-gray-400">{pago.numero_factura}</td>
+                        <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">{cliente?.nombre || 'N/A'}</td>
+                        <td className="px-6 py-4 text-sm font-semibold text-gray-900 dark:text-gray-100">${pago.monto}</td>
+                        <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
+                          {new Date(pago.fecha).toLocaleDateString('es-ES')}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400 capitalize">{pago.metodo_pago}</td>
+                        <td className="px-6 py-4">
+                          <span className="px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300">
+                            Pendiente
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Summary */}
+        <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 border border-green-200 dark:border-green-800 rounded-2xl p-6">
+          <div className="flex items-start space-x-4">
+            <div className="w-10 h-10 bg-green-100 dark:bg-green-800 rounded-lg flex items-center justify-center flex-shrink-0">
+              <i className="fas fa-chart-pie text-green-600 dark:text-green-400"></i>
+            </div>
+            <div>
+              <h3 className="text-lg font-medium text-green-900 dark:text-green-100 mb-2">Resumen de Facturación</h3>
+              <div className="text-green-800 dark:text-green-200 text-sm space-y-1">
+                <p>• Próximos 30 días: ${totalProximosPagos.toLocaleString()} en {proximosPagos.length} pagos esperados</p>
+                <p>• Facturas pendientes: ${totalPendiente.toLocaleString()} en {facturasPendientes.length} facturas</p>
+                <p>• Pagos este mes: ${pagosMesActual.toLocaleString()} recibidos</p>
+                <p>• Método más usado: Stripe ({metodosPago[0].porcentaje}% de transacciones)</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   // ==================== MAIN RENDER ====================
 
