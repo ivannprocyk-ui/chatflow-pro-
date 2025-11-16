@@ -25,6 +25,7 @@ const menuItems = [
   { id: 'automations', icon: 'fas fa-magic', label: 'Automatizaciones' },
   { id: 'message-scheduler', icon: 'fas fa-clock', label: 'Programar Envíos' },
   { id: 'templates', icon: 'fas fa-file-alt', label: 'Plantillas' },
+  { id: 'admin-panel', icon: 'fas fa-user-shield', label: 'Panel Admin' },
   { id: 'configuration', icon: 'fas fa-cog', label: 'Configuración' },
 ] as const;
 
