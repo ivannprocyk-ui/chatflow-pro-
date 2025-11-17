@@ -1,3 +1,4 @@
+import React from 'react';
 import { AppSection } from "@/react-app/App";
 import { AppConfig } from "@/react-app/utils/storage";
 
@@ -14,22 +15,29 @@ interface SidebarProps {
 }
 
 const menuItems = [
-  { id: 'dashboard', icon: 'fas fa-chart-pie', label: 'Dashboard' },
-  { id: 'bulk-messaging', icon: 'fas fa-paper-plane', label: 'Envío Masivo' },
-  { id: 'contact-lists', icon: 'fas fa-address-book', label: 'Listas de Contactos' },
-  { id: 'crm-panel', icon: 'fas fa-chart-line', label: 'Contactos' },
-  { id: 'crm-settings', icon: 'fas fa-sliders-h', label: 'Configurar CRM' },
-  { id: 'calendar', icon: 'fas fa-calendar-alt', label: 'Agenda' },
-  { id: 'campaign-history', icon: 'fas fa-bullhorn', label: 'Historial de Campañas' },
-  { id: 'analytics', icon: 'fas fa-chart-bar', label: 'Analytics' },
-  { id: 'automations', icon: 'fas fa-magic', label: 'Automatizaciones' },
-  { id: 'follow-ups', icon: 'fas fa-comment-dots', label: 'Seguimientos' },
-  { id: 'message-scheduler', icon: 'fas fa-clock', label: 'Programar Envíos' },
-  { id: 'templates', icon: 'fas fa-file-alt', label: 'Plantillas' },
-  { id: 'bot-config', icon: 'fas fa-robot', label: 'Bot IA' },
-  { id: 'bot-analytics', icon: 'fas fa-brain', label: 'Analytics Bot' },
-  { id: 'admin-panel', icon: 'fas fa-user-shield', label: 'Panel Admin' },
-  { id: 'configuration', icon: 'fas fa-cog', label: 'Configuración' },
+  // Panel Principal
+  { id: 'dashboard', icon: 'fas fa-chart-pie', label: 'Dashboard', group: 'main' },
+
+  // Mensajería
+  { id: 'bulk-messaging', icon: 'fas fa-paper-plane', label: 'Envío Masivo', group: 'messaging' },
+  { id: 'templates', icon: 'fas fa-file-alt', label: 'Plantillas', group: 'messaging' },
+  { id: 'message-scheduler', icon: 'fas fa-clock', label: 'Programar Envíos', group: 'messaging' },
+  { id: 'campaign-history', icon: 'fas fa-bullhorn', label: 'Historial de Campañas', group: 'messaging' },
+
+  // Contactos y CRM
+  { id: 'contact-lists', icon: 'fas fa-address-book', label: 'Listas de Contactos', group: 'crm' },
+  { id: 'crm-panel', icon: 'fas fa-chart-line', label: 'Contactos', group: 'crm' },
+  { id: 'crm-settings', icon: 'fas fa-sliders-h', label: 'Configurar CRM', group: 'crm' },
+  { id: 'calendar', icon: 'fas fa-calendar-alt', label: 'Agenda', group: 'crm' },
+
+  // Bot e IA
+  { id: 'bot-config', icon: 'fas fa-robot', label: 'Bot IA', group: 'bot' },
+  { id: 'follow-ups', icon: 'fas fa-comment-dots', label: 'Seguimientos', group: 'bot' },
+  { id: 'bot-analytics', icon: 'fas fa-brain', label: 'Analytics Bot', group: 'bot' },
+
+  // Administración
+  { id: 'admin-panel', icon: 'fas fa-user-shield', label: 'Panel Admin', group: 'admin' },
+  { id: 'configuration', icon: 'fas fa-cog', label: 'Configuración', group: 'admin' },
 ] as const;
 
 export default function Sidebar({ isOpen, isCollapsed = false, currentSection, onSectionChange, onToggleCollapse, config, darkMode = false, onDarkModeToggle }: SidebarProps) {
@@ -75,26 +83,40 @@ export default function Sidebar({ isOpen, isCollapsed = false, currentSection, o
 
       {/* Navigation */}
       <nav className="flex-1 py-6 overflow-y-auto">
-        <ul className="space-y-2 px-4">
-          {menuItems.map((item) => (
-            <li key={item.id}>
-              <button
-                onClick={() => onSectionChange(item.id as AppSection)}
-                title={isCollapsed ? item.label : undefined}
-                className={`
-                  w-full flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} px-4 py-3 rounded-xl
-                  transition-all duration-300
-                  ${currentSection === item.id
-                    ? 'bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700 text-white font-semibold shadow-lg'
-                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100'
-                  }
-                `}
-              >
-                <i className={`${item.icon} text-lg ${isCollapsed ? '' : 'w-5'} transition-colors duration-300`}></i>
-                {!isCollapsed && <span className="transition-colors duration-300">{item.label}</span>}
-              </button>
-            </li>
-          ))}
+        <ul className="space-y-1 px-4">
+          {menuItems.map((item, index) => {
+            const prevItem = index > 0 ? menuItems[index - 1] : null;
+            const showGroupSeparator = prevItem && prevItem.group !== item.group;
+
+            return (
+              <React.Fragment key={item.id}>
+                {/* Group Separator */}
+                {showGroupSeparator && !isCollapsed && (
+                  <li className="py-2">
+                    <div className="border-t border-gray-200 dark:border-gray-700"></div>
+                  </li>
+                )}
+
+                <li>
+                  <button
+                    onClick={() => onSectionChange(item.id as AppSection)}
+                    title={isCollapsed ? item.label : undefined}
+                    className={`
+                      w-full flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} px-4 py-3 rounded-xl
+                      transition-all duration-300
+                      ${currentSection === item.id
+                        ? 'bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700 text-white font-semibold shadow-lg'
+                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100'
+                      }
+                    `}
+                  >
+                    <i className={`${item.icon} text-lg ${isCollapsed ? '' : 'w-5'} transition-colors duration-300`}></i>
+                    {!isCollapsed && <span className="transition-colors duration-300">{item.label}</span>}
+                  </button>
+                </li>
+              </React.Fragment>
+            );
+          })}
         </ul>
       </nav>
 
