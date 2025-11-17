@@ -23,6 +23,7 @@ const menuItems = [
   { id: 'campaign-history', icon: 'fas fa-bullhorn', label: 'Historial de Campañas' },
   { id: 'analytics', icon: 'fas fa-chart-bar', label: 'Analytics' },
   { id: 'automations', icon: 'fas fa-magic', label: 'Automatizaciones' },
+  { id: 'follow-ups', icon: 'fas fa-comment-dots', label: 'Seguimientos' },
   { id: 'message-scheduler', icon: 'fas fa-clock', label: 'Programar Envíos' },
   { id: 'templates', icon: 'fas fa-file-alt', label: 'Plantillas' },
   { id: 'bot-config', icon: 'fas fa-robot', label: 'Bot IA' },

@@ -5,6 +5,8 @@ import { AIService } from '../ai/ai.service';
 import { WhatsAppService } from '../whatsapp/whatsapp.service';
 import { ChatWootService } from '../chatwoot/chatwoot.service';
 import { BotTrackingService } from '../bot-tracking/bot-tracking.service';
+import { FollowUpsService } from '../follow-ups/follow-ups.service';
+import { BotConfigService } from '../bot-config/bot-config.service';
 
 @Injectable()
 export class WebhooksService {
@@ -17,6 +19,8 @@ export class WebhooksService {
     private whatsappService: WhatsAppService,
     private chatwootService: ChatWootService,
     private botTrackingService: BotTrackingService,
+    private followUpsService: FollowUpsService,
+    private botConfigService: BotConfigService,
   ) {}
 
   async handleEvolutionWebhook(payload: any) {
@@ -165,17 +169,12 @@ export class WebhooksService {
         return { processed: false, reason: 'not_message_created_event' };
       }
 
-      // Ignore outgoing messages (sent by us or agents)
-      if (payload.message_type === 'outgoing') {
-        this.logger.log('Ignoring outgoing message');
-        return { processed: false, reason: 'outgoing_message' };
-      }
-
       // Extract data from webhook
       const messageContent = payload.content;
       const conversationId = payload.conversation?.id;
       const accountId = payload.account?.id;
       const inboxId = payload.inbox?.id;
+      const contactId = payload.sender?.id;
       const contactPhone = payload.sender?.phone_number || payload.sender?.id;
 
       if (!messageContent || !conversationId || !accountId || !inboxId) {
@@ -183,106 +182,145 @@ export class WebhooksService {
         return { processed: false, reason: 'invalid_payload' };
       }
 
-      this.logger.log(`Message from ChatWoot inbox ${inboxId}, conversation ${conversationId}`);
+      // Get bot config by inbox ID to get organization
+      botConfig = await this.botConfigService.findByInboxId(inboxId.toString());
+      if (!botConfig) {
+        this.logger.warn(`No bot config found for inbox ${inboxId}`);
+        return { processed: false, reason: 'no_bot_config' };
+      }
 
-      // Track inbound message
-      const inboundTracking = await this.botTrackingService.trackMessage({
-        organizationId: 'temp', // Will be updated after we get bot config
-        messageId: payload.id?.toString(),
-        conversationId: conversationId.toString(),
-        inboxId: inboxId.toString(),
-        direction: 'inbound',
-        botEnabled: false, // Will be updated
-        botProcessed: false,
-        botResponded: false,
-        status: 'pending',
-      });
+      organizationId = botConfig.organizationId;
 
-      // Generate AI response using the new handleChatWootMessage method
-      this.logger.log('🤖 Generating AI response via ChatWoot handler...');
-      const aiProcessingStart = Date.now();
+      // ===== INCOMING MESSAGE (from client) =====
+      if (payload.message_type === 'incoming') {
+        this.logger.log(`Incoming message from client in conversation ${conversationId}`);
 
-      const aiResponse = await this.aiService.handleChatWootMessage(payload);
+        // 🔔 IMPORTANT: Cancel follow-ups because client responded
+        await this.followUpsService.cancelFollowUpOnResponse(conversationId.toString());
+        this.logger.log(`✅ Cancelled follow-ups for conversation ${conversationId}`);
 
-      const processingTimeMs = Date.now() - aiProcessingStart;
-
-      if (!aiResponse || aiResponse === 'Bot is disabled') {
-        this.logger.log('Bot disabled or no response generated');
-
-        // Update tracking - bot disabled/skipped
+        // Track inbound message
         await this.botTrackingService.trackMessage({
-          organizationId: inboundTracking.organizationId,
+          organizationId,
           messageId: payload.id?.toString(),
           conversationId: conversationId.toString(),
           inboxId: inboxId.toString(),
           direction: 'inbound',
-          botEnabled: false,
+          botEnabled: botConfig.botEnabled,
           botProcessed: false,
           botResponded: false,
-          status: 'skipped',
+          status: 'pending',
         });
 
-        return { processed: false, reason: 'bot_disabled' };
-      }
+        // Only auto-respond if bot is enabled
+        if (!botConfig.botEnabled) {
+          this.logger.log('Bot is disabled for this organization');
+          return { processed: false, reason: 'bot_disabled' };
+        }
 
-      // Send AI response back to ChatWoot
-      this.logger.log('📤 Sending AI response to ChatWoot...');
-      await this.chatwootService.sendMessage({
-        accountId: accountId.toString(),
-        conversationId: conversationId,
-        content: aiResponse,
-        messageType: 'outgoing',
-        private: false,
-      });
+        // Generate AI response
+        this.logger.log('🤖 Generating AI response...');
+        const aiProcessingStart = Date.now();
 
-      const responseTimeMs = Date.now() - startTime;
+        const aiResponse = await this.aiService.handleChatWootMessage(payload);
+        const processingTimeMs = Date.now() - aiProcessingStart;
 
-      this.logger.log('✅ AI response sent to ChatWoot successfully');
+        if (!aiResponse || aiResponse === 'Bot is disabled') {
+          this.logger.log('No AI response generated');
+          return { processed: false, reason: 'no_ai_response' };
+        }
 
-      // Track successful processing
-      await this.botTrackingService.trackMessage({
-        organizationId: inboundTracking.organizationId,
-        messageId: payload.id?.toString(),
-        conversationId: conversationId.toString(),
-        inboxId: inboxId.toString(),
-        direction: 'outbound',
-        botEnabled: true,
-        botProcessed: true,
-        botResponded: true,
-        processingTimeMs,
-        responseTimeMs,
-        aiProvider: 'flowise',
-        aiModel: 'grok-1',
-        agentType: 'asistente', // Will get from bot config in future
-        status: 'success',
-      });
+        // Send AI response back to ChatWoot
+        this.logger.log('📤 Sending AI response to ChatWoot...');
+        await this.chatwootService.sendMessage({
+          accountId: accountId.toString(),
+          conversationId: conversationId,
+          content: aiResponse,
+          messageType: 'outgoing',
+          private: false,
+        });
 
-      return {
-        processed: true,
-        conversationId,
-        response: aiResponse,
-        metrics: {
+        const responseTimeMs = Date.now() - startTime;
+
+        this.logger.log('✅ AI response sent successfully');
+
+        // Track successful processing
+        await this.botTrackingService.trackMessage({
+          organizationId,
+          messageId: payload.id?.toString(),
+          conversationId: conversationId.toString(),
+          inboxId: inboxId.toString(),
+          direction: 'outbound',
+          botEnabled: true,
+          botProcessed: true,
+          botResponded: true,
           processingTimeMs,
           responseTimeMs,
-        },
-      };
+          aiProvider: 'flowise',
+          aiModel: botConfig.agentType || 'asistente',
+          agentType: botConfig.agentType,
+          status: 'success',
+        });
+
+        // 🎯 IMPORTANT: Track conversation for future follow-up
+        // This will create a pending follow-up if client doesn't respond
+        await this.followUpsService.trackConversationForFollowUp(
+          organizationId,
+          conversationId.toString(),
+          inboxId.toString(),
+          accountId.toString(),
+          contactId?.toString() || contactPhone,
+        );
+        this.logger.log(`📋 Tracked conversation ${conversationId} for follow-up`);
+
+        return {
+          processed: true,
+          conversationId,
+          response: aiResponse,
+          metrics: {
+            processingTimeMs,
+            responseTimeMs,
+          },
+        };
+      }
+
+      // ===== OUTGOING MESSAGE (from bot or agent) =====
+      else if (payload.message_type === 'outgoing') {
+        this.logger.log(`Outgoing message in conversation ${conversationId} - tracking for follow-up`);
+
+        // Track conversation for follow-up (in case client doesn't respond to our message)
+        await this.followUpsService.trackConversationForFollowUp(
+          organizationId,
+          conversationId.toString(),
+          inboxId.toString(),
+          accountId.toString(),
+          contactId?.toString() || contactPhone,
+        );
+
+        return { processed: true, reason: 'outgoing_tracked_for_followup' };
+      }
+
+      return { processed: false, reason: 'unknown_message_type' };
+
     } catch (error) {
       this.logger.error(`Error processing ChatWoot webhook: ${error.message}`);
 
       // Track failed processing
       try {
-        await this.botTrackingService.trackMessage({
-          organizationId: organizationId || 'unknown',
-          conversationId: payload.conversation?.id?.toString(),
-          inboxId: payload.inbox?.id?.toString(),
-          direction: 'inbound',
-          botEnabled: true,
-          botProcessed: true,
-          botResponded: false,
-          status: 'failed',
-          errorMessage: error.message,
-          errorCode: error.code || 'UNKNOWN_ERROR',
-        });
+        if (organizationId) {
+          await this.botTrackingService.trackMessage({
+            organizationId,
+            conversationId: payload.conversation?.id?.toString(),
+            inboxId: payload.inbox?.id?.toString(),
+            direction: 'inbound',
+            botEnabled: botConfig?.botEnabled || false,
+            botProcessed: true,
+            botResponded: false,
+            status: 'failed',
+            errorMessage: error.message,
+            errorCode: error.code || 'UNKNOWN_ERROR',
+          });
+        }
       } catch (trackingError) {
         this.logger.error(`Error tracking failed message: ${trackingError.message}`);
       }

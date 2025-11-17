@@ -10,6 +10,7 @@ import Templates from "@/react-app/pages/Templates";
 import Configuration from "@/react-app/pages/Configuration";
 import CRMSettings from "@/react-app/pages/CRMSettings";
 import Calendar from "@/react-app/pages/Calendar";
+import FollowUps from "@/react-app/pages/FollowUps";
 import { loadConfig, initializeDemoData } from "@/react-app/utils/storage";
 import { ToastContainer, useToast } from "@/react-app/components/Toast";
 
@@ -23,6 +24,7 @@ export type AppSection =
   | 'message-scheduler'
   | 'templates'
   | 'calendar'
+  | 'follow-ups'
   | 'configuration';
 
 export default function App() {
@@ -113,6 +115,8 @@ export default function App() {
         return <Templates />;
       case 'calendar':
         return <Calendar />;
+      case 'follow-ups':
+        return <FollowUps />;
       case 'configuration':
         return <Configuration onConfigUpdate={setConfig} />;
       default:
