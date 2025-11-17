@@ -17,6 +17,10 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import { pdf } from '@react-pdf/renderer';
+import { saveAs } from 'file-saver';
+import { FacturaTemplate, ConfiguracionFacturacion, FacturaData } from '../components/facturacion/FacturaTemplate';
+import ConfiguracionFacturacionModal from '../components/facturacion/ConfiguracionFacturacionModal';
 
 // ==================== INTERFACES ====================
 
@@ -37,6 +41,8 @@ interface Cliente {
   limite_agentes: number;
   notas?: string;
   account_manager?: string;
+  telefono?: string;
+  direccion?: string;
   // Legacy fields for compatibility
   role?: 'admin' | 'user' | 'viewer';
   createdAt?: Date;
@@ -441,6 +447,30 @@ export default function AdminPanel() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'nombre' | 'mrr' | 'fecha_alta' | 'uso'>('nombre');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  // Billing configuration state
+  const [showConfigModal, setShowConfigModal] = useState(false);
+  const [configuracionFacturacion, setConfiguracionFacturacion] = useState<ConfiguracionFacturacion>(() => {
+    const saved = localStorage.getItem('configuracion_facturacion');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+    return {
+      nombre_empresa: 'ChatFlow Pro',
+      direccion: 'Calle Principal 123',
+      ciudad: 'Madrid',
+      codigo_postal: '28001',
+      pais: 'España',
+      telefono: '+34 900 123 456',
+      email: 'info@chatflowpro.com',
+      website: 'www.chatflowpro.com',
+      numero_registro: 'B-12345678',
+      terminos_condiciones: 'Pago a 30 días. Penalización por mora del 5% mensual.',
+      nota_pie: 'Gracias por confiar en ChatFlow Pro para la gestión de tu comunicación empresarial.',
+      color_primario: '#3b82f6',
+      color_secundario: '#10b981',
+    };
+  });
 
   useEffect(() => {
     // Generate demo data on mount
@@ -2199,10 +2229,19 @@ export default function AdminPanel() {
         {/* Facturas Pendientes/Vencidas */}
         {facturasPendientes.length > 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-              <i className="fas fa-file-invoice text-red-600 mr-2"></i>
-              Facturas Pendientes ({facturasPendientes.length})
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
+                <i className="fas fa-file-invoice text-red-600 mr-2"></i>
+                Facturas Pendientes ({facturasPendientes.length})
+              </h3>
+              <button
+                onClick={() => setShowConfigModal(true)}
+                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-medium transition-all transform hover:scale-105 shadow-lg flex items-center"
+              >
+                <i className="fas fa-cog mr-2"></i>
+                Configurar Datos de Facturación
+              </button>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50 dark:bg-gray-700">
@@ -2246,14 +2285,24 @@ export default function AdminPanel() {
                           </select>
                         </td>
                         <td className="px-6 py-4">
-                          <button
-                            onClick={() => updatePaymentStatus(pago.id, 'pagado')}
-                            className="px-3 py-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
-                            title="Marcar como pagado"
-                          >
-                            <i className="fas fa-check mr-1"></i>
-                            Marcar Pagado
-                          </button>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => updatePaymentStatus(pago.id, 'pagado')}
+                              className="px-3 py-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
+                              title="Marcar como pagado"
+                            >
+                              <i className="fas fa-check mr-1"></i>
+                              Marcar Pagado
+                            </button>
+                            <button
+                              onClick={() => generarFacturaPDF(pago.id)}
+                              className="px-3 py-1 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                              title="Generar PDF"
+                            >
+                              <i className="fas fa-file-pdf mr-1"></i>
+                              Generar PDF
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -2371,6 +2420,72 @@ export default function AdminPanel() {
   const updatePaymentStatus = (pagoId: string, nuevoEstado: Pago['estado']) => {
     setPagos(pagos.map(p => p.id === pagoId ? { ...p, estado: nuevoEstado } : p));
     showAlert('success', `Pago actualizado a "${nuevoEstado}" correctamente`);
+  };
+
+  // ==================== BILLING CONFIGURATION ====================
+
+  const handleConfiguracionSave = (config: ConfiguracionFacturacion) => {
+    setConfiguracionFacturacion(config);
+    localStorage.setItem('configuracion_facturacion', JSON.stringify(config));
+    showAlert('success', 'Configuración de facturación guardada correctamente');
+  };
+
+  // ==================== PDF GENERATION ====================
+
+  const generarFacturaPDF = async (pagoId: string) => {
+    try {
+      const pago = pagos.find(p => p.id === pagoId);
+      if (!pago) {
+        showAlert('destructive', 'Pago no encontrado');
+        return;
+      }
+
+      const cliente = clientes.find(c => c.id === pago.cliente_id);
+      if (!cliente) {
+        showAlert('destructive', 'Cliente no encontrado');
+        return;
+      }
+
+      // Construct invoice data
+      const facturaData: FacturaData = {
+        numero_factura: pago.numero_factura,
+        fecha_emision: pago.fecha,
+        fecha_vencimiento: new Date(new Date(pago.fecha).setDate(new Date(pago.fecha).getDate() + 30)),
+        cliente: {
+          nombre: cliente.nombre,
+          empresa: cliente.empresa,
+          email: cliente.email,
+          telefono: cliente.telefono || undefined,
+          direccion: cliente.direccion || undefined,
+        },
+        items: [
+          {
+            descripcion: `Suscripción Plan ${cliente.plan.toUpperCase()} - ${cliente.ciclo_facturacion === 'mensual' ? 'Mensual' : 'Anual'}`,
+            cantidad: 1,
+            precio_unitario: pago.monto,
+            subtotal: pago.monto,
+          },
+        ],
+        subtotal: pago.monto,
+        impuestos: 0,
+        descuentos: 0,
+        total: pago.monto,
+        moneda: 'USD',
+        notas: cliente.notas,
+      };
+
+      // Generate PDF
+      const blob = await pdf(
+        <FacturaTemplate factura={facturaData} configuracion={configuracionFacturacion} />
+      ).toBlob();
+
+      // Download PDF
+      saveAs(blob, `Factura_${pago.numero_factura}.pdf`);
+      showAlert('success', `Factura ${pago.numero_factura} generada correctamente`);
+    } catch (error) {
+      console.error('Error generando PDF:', error);
+      showAlert('destructive', 'Error al generar el PDF. Por favor intenta nuevamente.');
+    }
   };
 
   // Evaluar qué clientes cumplen con cada alerta
@@ -3344,6 +3459,14 @@ export default function AdminPanel() {
             </div>
           </div>
         )}
+
+        {/* Configuración de Facturación Modal */}
+        <ConfiguracionFacturacionModal
+          isOpen={showConfigModal}
+          onClose={() => setShowConfigModal(false)}
+          onSave={handleConfiguracionSave}
+          initialData={configuracionFacturacion}
+        />
       </div>
     </div>
   );
