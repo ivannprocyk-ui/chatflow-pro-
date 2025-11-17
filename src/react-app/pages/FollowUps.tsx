@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, MessageSquare, Zap, Settings, Send, Users, TrendingUp } from 'lucide-react';
+import { Clock, MessageSquare, Zap, Settings, Send, Users, TrendingUp, Timer, Calendar, Info } from 'lucide-react';
 import { useToast } from '../components/Toast';
 
 interface FollowUpConfig {
   enabled: boolean;
   waitTimeMinutes: number;
+  waitTimeUnit: 'minutes' | 'hours' | 'days';
+  intervalMinutes: number;
+  intervalUnit: 'minutes' | 'hours' | 'days';
   maxFollowUps: number;
   messageType: 'template' | 'ai_generated';
   templateMessage: string;
@@ -37,6 +40,9 @@ const FollowUps: React.FC = () => {
   const [config, setConfig] = useState<FollowUpConfig>({
     enabled: false,
     waitTimeMinutes: 60,
+    waitTimeUnit: 'minutes',
+    intervalMinutes: 120,
+    intervalUnit: 'hours',
     maxFollowUps: 3,
     messageType: 'template',
     templateMessage: '',
@@ -108,20 +114,48 @@ const FollowUps: React.FC = () => {
   const toggleEnabled = async () => {
     try {
       const token = localStorage.getItem('chatflow_token');
+      const newEnabled = !config.enabled;
 
-      const response = await fetch('http://localhost:3001/follow-ups/config/toggle', {
-        method: 'PATCH',
+      const response = await fetch('http://localhost:3001/follow-ups/config', {
+        method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ ...config, enabled: newEnabled }),
       });
 
       if (!response.ok) throw new Error('Error al cambiar estado');
 
-      showSuccess(config.enabled ? '⏸️ Follow-ups desactivados' : '▶️ Follow-ups activados');
-      await loadConfig();
+      setConfig({ ...config, enabled: newEnabled });
+      showSuccess(newEnabled ? '▶️ Follow-ups activados' : '⏸️ Follow-ups desactivados');
     } catch (error: any) {
       showError(`Error: ${error.message}`);
+    }
+  };
+
+  // Helper functions for time conversion
+  const getTimeLabel = (unit: 'minutes' | 'hours' | 'days') => {
+    switch (unit) {
+      case 'minutes': return 'minutos';
+      case 'hours': return 'horas';
+      case 'days': return 'días';
+    }
+  };
+
+  const getDisplayTime = (minutes: number, unit: 'minutes' | 'hours' | 'days') => {
+    switch (unit) {
+      case 'minutes': return minutes;
+      case 'hours': return Math.round(minutes / 60);
+      case 'days': return Math.round(minutes / 1440);
+    }
+  };
+
+  const convertToMinutes = (value: number, unit: 'minutes' | 'hours' | 'days') => {
+    switch (unit) {
+      case 'minutes': return value;
+      case 'hours': return value * 60;
+      case 'days': return value * 1440;
     }
   };
 
@@ -216,12 +250,24 @@ const FollowUps: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Tiempo de espera</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Primer seguimiento</p>
                 <p className="text-lg font-bold text-gray-900 dark:text-white">
-                  {config.waitTimeMinutes} min
+                  {getDisplayTime(config.waitTimeMinutes, config.waitTimeUnit)} {getTimeLabel(config.waitTimeUnit)}
                 </p>
               </div>
               <Clock className="text-blue-600 dark:text-blue-400" size={24} />
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Intervalo</p>
+                <p className="text-lg font-bold text-gray-900 dark:text-white">
+                  {getDisplayTime(config.intervalMinutes, config.intervalUnit)} {getTimeLabel(config.intervalUnit)}
+                </p>
+              </div>
+              <Timer className="text-purple-600 dark:text-purple-400" size={24} />
             </div>
           </div>
 
@@ -233,7 +279,7 @@ const FollowUps: React.FC = () => {
                   {config.maxFollowUps}
                 </p>
               </div>
-              <Send className="text-purple-600 dark:text-purple-400" size={24} />
+              <Send className="text-orange-600 dark:text-orange-400" size={24} />
             </div>
           </div>
 
@@ -302,24 +348,84 @@ const FollowUps: React.FC = () => {
                   ⚙️ Configuración General
                 </h3>
 
-                {/* Tiempo de espera */}
+                {/* Tiempo de espera antes del primer seguimiento */}
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    ⏰ Tiempo de espera antes del seguimiento
+                    ⏰ Tiempo de espera antes del primer seguimiento
                   </label>
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3">
                     <input
                       type="number"
-                      min="5"
-                      max="1440"
-                      value={config.waitTimeMinutes}
-                      onChange={(e) => setConfig({ ...config, waitTimeMinutes: parseInt(e.target.value) || 60 })}
+                      min="1"
+                      max="365"
+                      value={getDisplayTime(config.waitTimeMinutes, config.waitTimeUnit)}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value) || 1;
+                        setConfig({ ...config, waitTimeMinutes: convertToMinutes(value, config.waitTimeUnit) });
+                      }}
                       className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
-                    <span className="text-gray-600 dark:text-gray-400">minutos</span>
+                    <select
+                      value={config.waitTimeUnit}
+                      onChange={(e) => {
+                        const newUnit = e.target.value as 'minutes' | 'hours' | 'days';
+                        // Mantener el tiempo equivalente al cambiar la unidad
+                        const displayValue = getDisplayTime(config.waitTimeMinutes, config.waitTimeUnit);
+                        setConfig({
+                          ...config,
+                          waitTimeUnit: newUnit,
+                          waitTimeMinutes: convertToMinutes(displayValue, newUnit)
+                        });
+                      }}
+                      className="px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      <option value="minutes">Minutos</option>
+                      <option value="hours">Horas</option>
+                      <option value="days">Días</option>
+                    </select>
                   </div>
                   <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                    Si el cliente no responde en este tiempo, se enviará el mensaje de seguimiento
+                    Si el cliente no responde en este tiempo, se enviará el primer mensaje de seguimiento
+                  </p>
+                </div>
+
+                {/* Intervalo entre seguimientos */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    🔄 Intervalo entre seguimientos
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="number"
+                      min="1"
+                      max="365"
+                      value={getDisplayTime(config.intervalMinutes, config.intervalUnit)}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value) || 1;
+                        setConfig({ ...config, intervalMinutes: convertToMinutes(value, config.intervalUnit) });
+                      }}
+                      className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                    <select
+                      value={config.intervalUnit}
+                      onChange={(e) => {
+                        const newUnit = e.target.value as 'minutes' | 'hours' | 'days';
+                        const displayValue = getDisplayTime(config.intervalMinutes, config.intervalUnit);
+                        setConfig({
+                          ...config,
+                          intervalUnit: newUnit,
+                          intervalMinutes: convertToMinutes(displayValue, newUnit)
+                        });
+                      }}
+                      className="px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    >
+                      <option value="minutes">Minutos</option>
+                      <option value="hours">Horas</option>
+                      <option value="days">Días</option>
+                    </select>
+                  </div>
+                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                    Tiempo de espera entre cada seguimiento subsecuente
                   </p>
                 </div>
 
@@ -584,7 +690,8 @@ const FollowUps: React.FC = () => {
                     📋 Resumen de configuración:
                   </h4>
                   <ul className="space-y-2 text-sm text-blue-800 dark:text-blue-200">
-                    <li>• Se enviará después de <strong>{config.waitTimeMinutes} minutos</strong> sin respuesta</li>
+                    <li>• Primer seguimiento después de <strong>{getDisplayTime(config.waitTimeMinutes, config.waitTimeUnit)} {getTimeLabel(config.waitTimeUnit)}</strong> sin respuesta</li>
+                    <li>• Seguimientos subsecuentes cada <strong>{getDisplayTime(config.intervalMinutes, config.intervalUnit)} {getTimeLabel(config.intervalUnit)}</strong></li>
                     <li>• Máximo <strong>{config.maxFollowUps} seguimientos</strong> por conversación</li>
                     <li>• Tipo: <strong>{config.messageType === 'template' ? 'Mensaje fijo' : 'Generado con IA'}</strong></li>
                     {config.businessHoursOnly && (

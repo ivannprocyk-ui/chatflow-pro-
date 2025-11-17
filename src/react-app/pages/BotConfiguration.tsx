@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Bot, Smartphone, FileText, MessageCircle, Settings2 } from 'lucide-react';
 import { botConfigAPI } from '@/react-app/services/api';
 import FollowUps from './FollowUps';
 
@@ -217,43 +218,47 @@ export default function BotConfiguration() {
             <div className="flex">
               <button
                 onClick={() => setActiveTab('config')}
-                className={`px-6 py-4 font-medium transition-colors ${
+                className={`px-6 py-4 font-medium transition-colors flex items-center gap-2 ${
                   activeTab === 'config'
                     ? 'border-b-2 border-purple-500 text-purple-600 dark:text-purple-400'
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                 }`}
               >
-                ⚙️ Configuración
+                <Settings2 size={18} />
+                Configuración
               </button>
               <button
                 onClick={() => setActiveTab('connection')}
-                className={`px-6 py-4 font-medium transition-colors ${
+                className={`px-6 py-4 font-medium transition-colors flex items-center gap-2 ${
                   activeTab === 'connection'
                     ? 'border-b-2 border-purple-500 text-purple-600 dark:text-purple-400'
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                 }`}
               >
-                📱 Conexión WhatsApp
+                <Smartphone size={18} />
+                Conexión WhatsApp
               </button>
               <button
                 onClick={() => setActiveTab('prompt')}
-                className={`px-6 py-4 font-medium transition-colors ${
+                className={`px-6 py-4 font-medium transition-colors flex items-center gap-2 ${
                   activeTab === 'prompt'
                     ? 'border-b-2 border-purple-500 text-purple-600 dark:text-purple-400'
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                 }`}
               >
-                💬 Prompt Personalizado
+                <FileText size={18} />
+                Prompt Personalizado
               </button>
               <button
                 onClick={() => setActiveTab('followups')}
-                className={`px-6 py-4 font-medium transition-colors ${
+                className={`px-6 py-4 font-medium transition-colors flex items-center gap-2 ${
                   activeTab === 'followups'
                     ? 'border-b-2 border-purple-500 text-purple-600 dark:text-purple-400'
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                 }`}
               >
-                📬 Seguimientos
+                <MessageCircle size={18} />
+                Seguimientos
               </button>
             </div>
           </div>
