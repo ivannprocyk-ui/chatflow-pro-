@@ -33,7 +33,6 @@ const menuItems = [
 
   // Bot e IA
   { id: 'bot-config', icon: 'fas fa-robot', label: 'Bot IA', group: 'bot' },
-  { id: 'follow-ups', icon: 'fas fa-comment-dots', label: 'Seguimientos', group: 'bot' },
   { id: 'bot-analytics', icon: 'fas fa-brain', label: 'Analytics Bot', group: 'bot' },
 
   // Administración

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { botConfigAPI } from '@/react-app/services/api';
+import FollowUps from './FollowUps';
 
 interface BotConfig {
   id?: string;
@@ -24,7 +25,7 @@ interface BotConfig {
 }
 
 export default function BotConfiguration() {
-  const [activeTab, setActiveTab] = useState<'config' | 'connection' | 'prompt'>('config');
+  const [activeTab, setActiveTab] = useState<'config' | 'connection' | 'prompt' | 'followups'>('config');
   const [config, setConfig] = useState<BotConfig>({
     connectionType: 'evolution_api',
     connectionStatus: 'disconnected',
@@ -243,6 +244,16 @@ export default function BotConfiguration() {
                 }`}
               >
                 💬 Prompt Personalizado
+              </button>
+              <button
+                onClick={() => setActiveTab('followups')}
+                className={`px-6 py-4 font-medium transition-colors ${
+                  activeTab === 'followups'
+                    ? 'border-b-2 border-purple-500 text-purple-600 dark:text-purple-400'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                }`}
+              >
+                📬 Seguimientos
               </button>
             </div>
           </div>
@@ -525,6 +536,13 @@ export default function BotConfiguration() {
                 >
                   {isSaving ? '⏳ Guardando...' : '💾 Guardar Prompt'}
                 </button>
+              </div>
+            )}
+
+            {/* Follow-ups Tab */}
+            {activeTab === 'followups' && (
+              <div className="-m-6">
+                <FollowUps />
               </div>
             )}
           </div>
