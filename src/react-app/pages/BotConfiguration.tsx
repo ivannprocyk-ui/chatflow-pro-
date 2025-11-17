@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { botConfigAPI, followUpsAPI } from '@/react-app/services/api';
-import { MessageSquare, Plus, Edit2, Trash2, Play, Pause, TrendingUp } from 'lucide-react';
 import FollowUpSequenceEditor from '@/react-app/components/FollowUpSequenceEditor';
 
 interface BotConfig {
@@ -58,7 +57,11 @@ interface FollowUpSequence {
   successful_conversions?: number;
 }
 
-export default function BotConfiguration() {
+interface BotConfigurationProps {
+  darkMode?: boolean;
+}
+
+export default function BotConfiguration({ darkMode = false }: BotConfigurationProps = {}) {
   const [activeTab, setActiveTab] = useState<'config' | 'connection' | 'prompt' | 'followups'>('config');
   const [config, setConfig] = useState<BotConfig>({
     connectionType: 'evolution_api',
@@ -298,16 +301,16 @@ export default function BotConfiguration() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-6">
+    <div className={`min-h-screen p-6 transition-colors ${darkMode ? 'bg-gradient-to-br from-gray-900 to-gray-800' : 'bg-gradient-to-br from-purple-50 to-blue-50'}`}>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+        <div className={`rounded-xl shadow-lg p-6 mb-6 transition-colors ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">
                 🤖 Configuración del Bot IA
               </h1>
-              <p className="text-gray-600 mt-2">
+              <p className={`mt-2 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                 Configura tu asistente virtual inteligente con IA y seguimientos automáticos
               </p>
             </div>
@@ -318,7 +321,7 @@ export default function BotConfiguration() {
                   config.connectionStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' :
                   'bg-gray-400'
                 }`} />
-                <span className="text-sm text-gray-600">
+                <span className={`text-sm transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                   {config.connectionStatus === 'connected' ? 'Conectado' :
                    config.connectionStatus === 'connecting' ? 'Conectando...' :
                    'Desconectado'}
@@ -350,15 +353,15 @@ export default function BotConfiguration() {
         )}
 
         {/* Tabs */}
-        <div className="bg-white rounded-xl shadow-lg mb-6">
-          <div className="border-b border-gray-200">
+        <div className={`rounded-xl shadow-lg mb-6 transition-colors ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+          <div className={`border-b transition-colors ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
             <div className="flex">
               <button
                 onClick={() => setActiveTab('config')}
                 className={`px-6 py-4 font-medium transition-colors ${
                   activeTab === 'config'
                     ? 'border-b-2 border-purple-500 text-purple-600'
-                    : 'text-gray-500 hover:text-gray-700'
+                    : darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
                 ⚙️ Configuración
@@ -368,7 +371,7 @@ export default function BotConfiguration() {
                 className={`px-6 py-4 font-medium transition-colors ${
                   activeTab === 'connection'
                     ? 'border-b-2 border-purple-500 text-purple-600'
-                    : 'text-gray-500 hover:text-gray-700'
+                    : darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
                 📱 Conexión WhatsApp
@@ -378,7 +381,7 @@ export default function BotConfiguration() {
                 className={`px-6 py-4 font-medium transition-colors ${
                   activeTab === 'prompt'
                     ? 'border-b-2 border-purple-500 text-purple-600'
-                    : 'text-gray-500 hover:text-gray-700'
+                    : darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
                 💬 Prompt Personalizado
@@ -391,7 +394,7 @@ export default function BotConfiguration() {
                 className={`px-6 py-4 font-medium transition-colors ${
                   activeTab === 'followups'
                     ? 'border-b-2 border-purple-500 text-purple-600'
-                    : 'text-gray-500 hover:text-gray-700'
+                    : darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
                 🔄 Seguimientos Automáticos
@@ -686,8 +689,8 @@ export default function BotConfiguration() {
                 {/* Header */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900">Secuencias de Seguimiento</h2>
-                    <p className="text-gray-600 mt-1">
+                    <h2 className={`text-2xl font-bold transition-colors ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>Secuencias de Seguimiento</h2>
+                    <p className={`mt-1 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                       Crea secuencias inteligentes para recuperar conversaciones y aumentar conversiones
                     </p>
                   </div>
@@ -695,26 +698,26 @@ export default function BotConfiguration() {
                     onClick={createNewSequence}
                     className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg transition-colors shadow-lg"
                   >
-                    <Plus size={20} />
+                    <i className="fas fa-plus"></i>
                     Nueva Secuencia
                   </button>
                 </div>
 
                 {/* Sequences List */}
                 {sequences.length === 0 ? (
-                  <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg p-12 text-center border-2 border-dashed border-purple-300">
-                    <MessageSquare size={64} className="mx-auto text-purple-400 mb-4" />
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  <div className={`rounded-lg p-12 text-center border-2 border-dashed transition-colors ${darkMode ? 'bg-gradient-to-br from-gray-700 to-gray-600 border-purple-500' : 'bg-gradient-to-br from-purple-50 to-blue-50 border-purple-300'}`}>
+                    <i className={`fas fa-comments text-6xl mb-4 transition-colors ${darkMode ? 'text-purple-300' : 'text-purple-400'}`}></i>
+                    <h3 className={`text-xl font-semibold mb-2 transition-colors ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>
                       No hay secuencias creadas
                     </h3>
-                    <p className="text-gray-600 mb-6">
+                    <p className={`mb-6 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                       Crea tu primera secuencia de seguimiento para recuperar clientes automáticamente
                     </p>
                     <button
                       onClick={createNewSequence}
                       className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg transition-colors inline-flex items-center gap-2"
                     >
-                      <Plus size={20} />
+                      <i className="fas fa-plus"></i>
                       Crear Primera Secuencia
                     </button>
                   </div>
@@ -729,12 +732,12 @@ export default function BotConfiguration() {
                       return (
                         <div
                           key={sequence.id}
-                          className="bg-white border-2 border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow"
+                          className={`border-2 rounded-lg p-6 hover:shadow-lg transition-all ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}
                         >
                           <div className="flex items-start justify-between">
                             <div className="flex-1">
                               <div className="flex items-center gap-3 mb-2">
-                                <h3 className="text-xl font-semibold text-gray-900">{sequence.name}</h3>
+                                <h3 className={`text-xl font-semibold transition-colors ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>{sequence.name}</h3>
                                 <span className={`px-3 py-1 rounded-full text-xs font-medium ${strategyInfo.color}`}>
                                   {strategyInfo.label}
                                 </span>
@@ -749,31 +752,31 @@ export default function BotConfiguration() {
                                   {sequence.enabled ? '✅ Activa' : '⏸️ Pausada'}
                                 </button>
                               </div>
-                              <p className="text-gray-600 mb-4">{sequence.description}</p>
+                              <p className={`mb-4 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{sequence.description}</p>
 
                               {/* Stats */}
                               <div className="grid grid-cols-4 gap-4 mb-4">
                                 <div className="flex items-center gap-2">
-                                  <MessageSquare size={16} className="text-blue-500" />
-                                  <span className="text-sm text-gray-600">
+                                  <i className="fas fa-comments text-blue-500"></i>
+                                  <span className={`text-sm transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                                     {sequence.messages?.length || 0} mensajes
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <Play size={16} className="text-purple-500" />
-                                  <span className="text-sm text-gray-600">
+                                  <i className="fas fa-play text-purple-500"></i>
+                                  <span className={`text-sm transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                                     {sequence.total_executions || 0} ejecuciones
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <TrendingUp size={16} className="text-green-500" />
-                                  <span className="text-sm text-gray-600">
+                                  <i className="fas fa-chart-line text-green-500"></i>
+                                  <span className={`text-sm transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                                     {sequence.successful_conversions || 0} conversiones
                                   </span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <Clock size={16} className="text-orange-500" />
-                                  <span className="text-sm text-gray-600">
+                                  <i className="fas fa-percentage text-orange-500"></i>
+                                  <span className={`text-sm transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                                     {conversionRate}% tasa
                                   </span>
                                 </div>
@@ -784,17 +787,17 @@ export default function BotConfiguration() {
                             <div className="flex items-center gap-2 ml-4">
                               <button
                                 onClick={() => setEditingSequence(sequence)}
-                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                className={`p-2 text-blue-600 rounded-lg transition-colors ${darkMode ? 'hover:bg-blue-900/30' : 'hover:bg-blue-50'}`}
                                 title="Editar"
                               >
-                                <Edit2 size={18} />
+                                <i className="fas fa-edit"></i>
                               </button>
                               <button
                                 onClick={() => deleteSequence(sequence.id!)}
-                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                className={`p-2 text-red-600 rounded-lg transition-colors ${darkMode ? 'hover:bg-red-900/30' : 'hover:bg-red-50'}`}
                                 title="Eliminar"
                               >
-                                <Trash2 size={18} />
+                                <i className="fas fa-trash"></i>
                               </button>
                             </div>
                           </div>
@@ -815,6 +818,7 @@ export default function BotConfiguration() {
             onSave={saveSequence}
             onCancel={() => setEditingSequence(null)}
             businessName={config.businessName}
+            darkMode={darkMode}
           />
         )}
       </div>

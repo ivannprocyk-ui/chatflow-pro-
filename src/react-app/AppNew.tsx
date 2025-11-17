@@ -396,7 +396,7 @@ export default function App() {
       case 'admin-panel':
         return <AdminPanel />;
       case 'bot-config':
-        return <BotConfiguration />;
+        return <BotConfiguration darkMode={darkMode} />;
       case 'bot-analytics':
         return <BotAnalytics />;
       default:
