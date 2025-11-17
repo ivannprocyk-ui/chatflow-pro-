@@ -23,6 +23,7 @@ const menuItems = [
   { id: 'templates', icon: 'fas fa-file-alt', label: 'Plantillas', group: 'messaging' },
   { id: 'message-scheduler', icon: 'fas fa-clock', label: 'Programar Envíos', group: 'messaging' },
   { id: 'campaign-history', icon: 'fas fa-bullhorn', label: 'Historial de Campañas', group: 'messaging' },
+  { id: 'analytics', icon: 'fas fa-chart-bar', label: 'Analytics de Campañas', group: 'messaging' },
 
   // Contactos y CRM
   { id: 'contact-lists', icon: 'fas fa-address-book', label: 'Listas de Contactos', group: 'crm' },
