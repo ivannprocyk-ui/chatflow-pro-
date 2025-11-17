@@ -19,6 +19,7 @@ import {
 } from 'recharts';
 import type { ConfiguracionFacturacion, FacturaData } from '../components/facturacion/FacturaTemplate';
 import ConfiguracionFacturacionModal from '../components/facturacion/ConfiguracionFacturacionModal';
+import FacturaEditorModal from '../components/facturacion/FacturaEditorModal';
 
 // ==================== INTERFACES ====================
 
@@ -469,6 +470,10 @@ export default function AdminPanel() {
       color_secundario: '#10b981',
     };
   });
+
+  // Invoice editor state
+  const [showEditorModal, setShowEditorModal] = useState(false);
+  const [editingFactura, setEditingFactura] = useState<FacturaData | null>(null);
 
   useEffect(() => {
     // Generate demo data on mount
@@ -2285,6 +2290,14 @@ export default function AdminPanel() {
                         <td className="px-6 py-4">
                           <div className="flex items-center space-x-2">
                             <button
+                              onClick={() => openFacturaEditor(pago.id)}
+                              className="px-3 py-1 text-xs font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
+                              title="Editar factura"
+                            >
+                              <i className="fas fa-edit mr-1"></i>
+                              Editar
+                            </button>
+                            <button
                               onClick={() => updatePaymentStatus(pago.id, 'pagado')}
                               className="px-3 py-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
                               title="Marcar como pagado"
@@ -2490,6 +2503,85 @@ export default function AdminPanel() {
     } catch (error) {
       console.error('Error generando PDF:', error);
       showAlert('destructive', 'Error al generar el PDF. Por favor intenta nuevamente.');
+    }
+  };
+
+  // ==================== INVOICE EDITOR ====================
+
+  const openFacturaEditor = (pagoId: string) => {
+    const pago = pagos.find(p => p.id === pagoId);
+    if (!pago) {
+      showAlert('destructive', 'Pago no encontrado');
+      return;
+    }
+
+    const cliente = clientes.find(c => c.id === pago.cliente_id);
+    if (!cliente) {
+      showAlert('destructive', 'Cliente no encontrado');
+      return;
+    }
+
+    // Construct invoice data for editing
+    const facturaData: FacturaData = {
+      numero_factura: pago.numero_factura,
+      fecha_emision: pago.fecha,
+      fecha_vencimiento: new Date(new Date(pago.fecha).setDate(new Date(pago.fecha).getDate() + 30)),
+      cliente: {
+        nombre: cliente.nombre,
+        empresa: cliente.empresa,
+        email: cliente.email,
+        telefono: cliente.telefono || undefined,
+        direccion: cliente.direccion || undefined,
+      },
+      items: [
+        {
+          descripcion: `Suscripción Plan ${cliente.plan.toUpperCase()} - ${cliente.ciclo_facturacion === 'mensual' ? 'Mensual' : 'Anual'}`,
+          cantidad: 1,
+          precio_unitario: pago.monto,
+          subtotal: pago.monto,
+        },
+      ],
+      subtotal: pago.monto,
+      impuestos: 0,
+      descuentos: 0,
+      total: pago.monto,
+      moneda: 'USD',
+      notas: cliente.notas,
+    };
+
+    setEditingFactura(facturaData);
+    setShowEditorModal(true);
+  };
+
+  const handleFacturaSave = (factura: FacturaData) => {
+    // Find and update the payment
+    const pagoToUpdate = pagos.find(p => p.numero_factura === factura.numero_factura);
+    if (pagoToUpdate) {
+      // Update payment amount with new total
+      setPagos(pagos.map(p =>
+        p.numero_factura === factura.numero_factura
+          ? { ...p, monto: factura.total, fecha: factura.fecha_emision }
+          : p
+      ));
+
+      // Update client information
+      const clienteToUpdate = clientes.find(c => c.email === factura.cliente.email);
+      if (clienteToUpdate) {
+        setClientes(clientes.map(c =>
+          c.email === factura.cliente.email
+            ? {
+                ...c,
+                nombre: factura.cliente.nombre,
+                empresa: factura.cliente.empresa,
+                telefono: factura.cliente.telefono,
+                direccion: factura.cliente.direccion,
+                notas: factura.notas,
+              }
+            : c
+        ));
+      }
+
+      showAlert('success', 'Factura actualizada correctamente');
     }
   };
 
@@ -3472,6 +3564,16 @@ export default function AdminPanel() {
           onSave={handleConfiguracionSave}
           configuracion={configuracionFacturacion}
         />
+
+        {/* Editor de Facturas Modal */}
+        {editingFactura && (
+          <FacturaEditorModal
+            isOpen={showEditorModal}
+            onClose={() => setShowEditorModal(false)}
+            onSave={handleFacturaSave}
+            factura={editingFactura}
+          />
+        )}
       </div>
     </div>
   );
