@@ -746,7 +746,7 @@ export default function BulkMessaging() {
             ) : (
               <>
                 <Send className="w-5 h-5" />
-                <span>🚀 Iniciar Envío</span>
+                <span>Iniciar Envío</span>
               </>
             )}
           </button>
