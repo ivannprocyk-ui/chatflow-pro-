@@ -14,6 +14,49 @@ import { useToast } from '@/react-app/components/Toast';
 import { format, isToday, isBefore, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import {
+  Send,
+  CheckCircle,
+  MessagesSquare,
+  DollarSign,
+  FileText,
+  BookUser,
+  Users,
+  Phone,
+  RefreshCw,
+  AlertTriangle,
+  Settings,
+  CalendarDays,
+  Calendar,
+  Tag,
+  Clock,
+  ChevronRight,
+  CalendarCheck,
+  PlusCircle,
+  List,
+  Image,
+  MousePointer,
+  TrendingUp,
+  FileSpreadsheet,
+  Database,
+  Filter,
+  X,
+  UserCheck,
+  Mail,
+  Inbox,
+  Users2,
+  MessageCircle,
+  BarChart3,
+  Info,
+  Check,
+  Download,
+  DownloadCloud,
+  Upload,
+  UploadCloud,
+  PieChart as LucidePieChart,
+  CheckCircle2,
+  XCircle
+} from 'lucide-react';
 
 interface MetaInsightsData {
   phone_numbers: Array<{
@@ -730,28 +773,28 @@ export default function Dashboard() {
     {
       title: 'Mensajes Enviados',
       value: metaData.analytics.sent,
-      icon: 'fas fa-paper-plane',
+      icon: 'Send',
       color: 'from-green-500 to-green-600',
       description: 'Últimos 7 días'
     },
     {
       title: 'Mensajes Entregados',
       value: metaData.analytics.delivered,
-      icon: 'fas fa-check-circle',
+      icon: 'CheckCircle',
       color: 'from-blue-500 to-blue-600',
       description: 'Últimos 7 días'
     },
     {
       title: 'Conversaciones',
       value: metaData.conversations?.conversation_analytics?.reduce((sum: number, item: any) => sum + item.count, 0) || 0,
-      icon: 'fas fa-comments',
+      icon: 'MessagesSquare',
       color: 'from-purple-500 to-purple-600',
       description: 'Últimos 7 días'
     },
     {
       title: 'Costo Total',
       value: `$${(metaData.conversations?.cost || 0).toFixed(2)}`,
-      icon: 'fas fa-dollar-sign',
+      icon: 'DollarSign',
       color: 'from-orange-500 to-orange-600',
       description: 'Últimos 7 días'
     }
@@ -759,28 +802,28 @@ export default function Dashboard() {
     {
       title: 'Plantillas Aprobadas',
       value: localStats.totalTemplates,
-      icon: 'fas fa-file-alt',
+      icon: 'FileText',
       color: 'from-green-500 to-green-600',
       description: 'Plantillas de Meta'
     },
     {
       title: 'Listas de Contactos',
       value: localStats.totalContactLists,
-      icon: 'fas fa-address-book',
+      icon: 'BookUser',
       color: 'from-purple-500 to-purple-600',
       description: 'Listas creadas'
     },
     {
       title: 'Contactos CRM',
       value: localStats.totalCRMContacts,
-      icon: 'fas fa-users',
+      icon: 'Users',
       color: 'from-blue-500 to-blue-600',
       description: 'En tu CRM'
     },
     {
       title: 'Números de Teléfono',
       value: metaData?.phone_numbers.length || 0,
-      icon: 'fas fa-phone',
+      icon: 'Phone',
       color: 'from-orange-500 to-orange-600',
       description: 'Conectados a WABA'
     }
@@ -802,7 +845,7 @@ export default function Dashboard() {
             disabled={isLoading}
             className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
           >
-            <i className={`fas fa-sync ${isLoading ? 'fa-spin' : ''}`}></i>
+            <RefreshCw className={isLoading ? 'animate-spin' : ''} size={18} />
             <span>{isLoading ? 'Actualizando...' : 'Actualizar Métricas'}</span>
           </button>
         )}
@@ -813,7 +856,7 @@ export default function Dashboard() {
         <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-2xl p-6 mb-8 transition-colors duration-300">
           <div className="flex items-start space-x-4">
             <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-800 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors duration-300">
-              <i className="fas fa-exclamation-triangle text-yellow-600 dark:text-yellow-300"></i>
+              <AlertTriangle className="text-yellow-600 dark:text-yellow-300" size={20} />
             </div>
             <div className="flex-1">
               <h3 className="text-lg font-medium text-yellow-900 dark:text-yellow-100 mb-2">API de Meta no configurada</h3>
@@ -822,10 +865,10 @@ export default function Dashboard() {
               </p>
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent('navigate-to', { detail: 'configuration' }))}
-                className="bg-yellow-600 dark:bg-yellow-700 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-yellow-700 dark:hover:bg-yellow-800 transition-all"
+                className="bg-yellow-600 dark:bg-yellow-700 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-yellow-700 dark:hover:bg-yellow-800 transition-all flex items-center space-x-2"
               >
-                <i className="fas fa-cog mr-2"></i>
-                Ir a Configuración
+                <Settings size={16} />
+                <span>Ir a Configuración</span>
               </button>
             </div>
           </div>
@@ -836,15 +879,15 @@ export default function Dashboard() {
       <div className="mb-8">
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-6 shadow-xl">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-white flex items-center">
-              <i className="fas fa-calendar-day mr-3"></i>
-              Eventos de Hoy
+            <h2 className="text-2xl font-bold text-white flex items-center space-x-3">
+              <CalendarDays size={28} />
+              <span>Eventos de Hoy</span>
             </h2>
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('navigate-to', { detail: 'calendar' }))}
               className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all backdrop-blur-sm flex items-center space-x-2"
             >
-              <i className="fas fa-calendar"></i>
+              <Calendar size={16} />
               <span>Ver Calendario</span>
             </button>
           </div>
@@ -872,31 +915,31 @@ export default function Dashboard() {
                         )}
                         <div className="flex items-center gap-3 mt-2">
                           <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-                            <i className="fas fa-tag mr-1"></i>
+                            <Tag size={12} className="mr-1" />
                             {event.type}
                           </span>
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            <i className="fas fa-clock mr-1"></i>
+                          <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center">
+                            <Clock size={12} className="mr-1" />
                             {format(new Date(event.start), 'HH:mm', { locale: es })} - {format(new Date(event.end), 'HH:mm', { locale: es })}
                           </span>
                         </div>
                       </div>
                     </div>
-                    <i className="fas fa-chevron-right text-gray-400 dark:text-gray-500 ml-3"></i>
+                    <ChevronRight className="text-gray-400 dark:text-gray-500 ml-3" size={16} />
                   </div>
                 </div>
               ))}
             </div>
           ) : (
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-8 text-center">
-              <i className="fas fa-calendar-check text-white/60 text-4xl mb-3"></i>
+              <CalendarCheck className="text-white/60 mx-auto mb-3" size={48} />
               <p className="text-white text-lg font-medium mb-1">No hay eventos programados para hoy</p>
               <p className="text-white/80 text-sm mb-4">¡Perfecto día para relajarse o planificar nuevas campañas!</p>
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent('navigate-to', { detail: 'calendar' }))}
                 className="bg-white text-blue-600 px-5 py-2 rounded-lg text-sm font-medium hover:bg-blue-50 transition-all inline-flex items-center space-x-2"
               >
-                <i className="fas fa-plus-circle"></i>
+                <PlusCircle size={16} />
                 <span>Crear Evento</span>
               </button>
             </div>
@@ -908,15 +951,15 @@ export default function Dashboard() {
       <div className="mb-8">
         <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-6 shadow-xl">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-white flex items-center">
-              <i className="fas fa-file-alt mr-3"></i>
-              Plantillas Disponibles
+            <h2 className="text-2xl font-bold text-white flex items-center space-x-3">
+              <FileText size={28} />
+              <span>Plantillas Disponibles</span>
             </h2>
             <button
               onClick={() => window.dispatchEvent(new CustomEvent('navigate-to', { detail: 'templates' }))}
               className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all backdrop-blur-sm flex items-center space-x-2"
             >
-              <i className="fas fa-th-list"></i>
+              <List size={16} />
               <span>Ver Todas</span>
             </button>
           </div>
@@ -929,19 +972,19 @@ export default function Dashboard() {
                   APPROVED: {
                     bg: 'bg-emerald-100 dark:bg-emerald-900/30',
                     text: 'text-emerald-800 dark:text-emerald-400',
-                    icon: 'fa-check-circle',
+                    Icon: CheckCircle2,
                     label: 'Aprobada'
                   },
                   PENDING: {
                     bg: 'bg-amber-100 dark:bg-amber-900/30',
                     text: 'text-amber-800 dark:text-amber-400',
-                    icon: 'fa-clock',
+                    Icon: Clock,
                     label: 'Pendiente'
                   },
                   REJECTED: {
                     bg: 'bg-red-100 dark:bg-red-900/30',
                     text: 'text-red-800 dark:text-red-400',
-                    icon: 'fa-times-circle',
+                    Icon: XCircle,
                     label: 'Rechazada'
                   }
                 };
@@ -963,7 +1006,7 @@ export default function Dashboard() {
                             ? 'bg-gradient-to-br from-amber-500 to-orange-500'
                             : 'bg-gradient-to-br from-red-500 to-red-600'
                         } flex items-center justify-center text-white flex-shrink-0`}>
-                          <i className="fas fa-file-alt text-lg"></i>
+                          <FileText size={20} />
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate">{template.name}</h3>
@@ -971,7 +1014,7 @@ export default function Dashboard() {
                         </div>
                       </div>
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${status.bg} ${status.text}`}>
-                        <i className={`fas ${status.icon} mr-1`}></i>
+                        <status.Icon size={12} className="mr-1" />
                         {status.label}
                       </span>
                     </div>
@@ -985,19 +1028,19 @@ export default function Dashboard() {
                     <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-gray-700">
                       <div className="flex items-center gap-2">
                         {template.components?.some((c: any) => c.type === 'HEADER' && c.format === 'IMAGE') && (
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            <i className="fas fa-image mr-1"></i>
+                          <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center">
+                            <Image size={12} className="mr-1" />
                             Imagen
                           </span>
                         )}
                         {template.components?.some((c: any) => c.type === 'BUTTONS') && (
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            <i className="fas fa-hand-pointer mr-1"></i>
+                          <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center">
+                            <MousePointer size={12} className="mr-1" />
                             Botones
                           </span>
                         )}
                       </div>
-                      <i className="fas fa-chevron-right text-gray-400 dark:text-gray-500"></i>
+                      <ChevronRight className="text-gray-400 dark:text-gray-500" size={16} />
                     </div>
                   </div>
                 );
@@ -1005,14 +1048,14 @@ export default function Dashboard() {
             </div>
           ) : (
             <div className="bg-white/10 backdrop-blur-sm rounded-xl p-8 text-center">
-              <i className="fas fa-file-alt text-white/60 text-4xl mb-3"></i>
+              <FileText className="text-white/60 mx-auto mb-3" size={48} />
               <p className="text-white text-lg font-medium mb-1">No hay plantillas disponibles</p>
               <p className="text-white/80 text-sm mb-4">Sincroniza tus plantillas de Meta para verlas aquí</p>
               <button
                 onClick={() => window.dispatchEvent(new CustomEvent('navigate-to', { detail: 'templates' }))}
                 className="bg-white text-emerald-600 px-5 py-2 rounded-lg text-sm font-medium hover:bg-emerald-50 transition-all inline-flex items-center space-x-2"
               >
-                <i className="fas fa-sync-alt"></i>
+                <RefreshCw size={16} />
                 <span>Ir a Plantillas</span>
               </button>
             </div>
@@ -1027,9 +1070,9 @@ export default function Dashboard() {
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg mb-6">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
-                  <i className="fas fa-chart-line text-indigo-600 dark:text-indigo-400 mr-3"></i>
-                  Analíticas Avanzadas
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-3">
+                  <TrendingUp className="text-indigo-600 dark:text-indigo-400" size={28} />
+                  <span>Analíticas Avanzadas</span>
                 </h2>
                 <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
                   Análisis completo de rendimiento y métricas
@@ -1041,7 +1084,7 @@ export default function Dashboard() {
                   onClick={() => setShowExportModal(true)}
                   className="bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg font-medium hover:from-green-600 hover:to-green-700 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
                 >
-                  <i className="fas fa-file-excel"></i>
+                  <FileSpreadsheet size={18} />
                   <span>Exportar Excel</span>
                 </button>
 
@@ -1049,7 +1092,7 @@ export default function Dashboard() {
                   onClick={() => setShowBackupModal(true)}
                   className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
                 >
-                  <i className="fas fa-database"></i>
+                  <Database size={18} />
                   <span>Backup</span>
                 </button>
               </div>
@@ -1087,7 +1130,7 @@ export default function Dashboard() {
                   disabled={!analyticsDateStart || !analyticsDateEnd}
                   className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center space-x-2"
                 >
-                  <i className="fas fa-filter"></i>
+                  <Filter size={16} />
                   <span>Aplicar</span>
                 </button>
 
@@ -1096,7 +1139,7 @@ export default function Dashboard() {
                     onClick={handleDateFilterClear}
                     className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-all"
                   >
-                    <i className="fas fa-times"></i>
+                    <X size={16} />
                   </button>
                 )}
               </div>
@@ -1109,7 +1152,7 @@ export default function Dashboard() {
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
               <div className="flex items-center justify-between mb-4">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white">
-                  <i className="fas fa-users"></i>
+                  <Users size={20} />
                 </div>
                 {analytics.kpis.contactsGrowth !== 0 && (
                   <span className={`text-xs font-bold px-2 py-1 rounded-full ${analytics.kpis.contactsGrowth > 0 ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'}`}>
@@ -1126,7 +1169,7 @@ export default function Dashboard() {
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
               <div className="flex items-center justify-between mb-4">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white">
-                  <i className="fas fa-paper-plane"></i>
+                  <Send size={20} />
                 </div>
               </div>
               <h3 className="text-gray-600 dark:text-gray-300 text-sm font-medium mb-1">Mensajes Hoy</h3>
@@ -1138,7 +1181,7 @@ export default function Dashboard() {
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
               <div className="flex items-center justify-between mb-4">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white">
-                  <i className="fas fa-user-check"></i>
+                  <UserCheck size={20} />
                 </div>
               </div>
               <h3 className="text-gray-600 dark:text-gray-300 text-sm font-medium mb-1">Contactos Activos</h3>
@@ -1150,7 +1193,7 @@ export default function Dashboard() {
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
               <div className="flex items-center justify-between mb-4">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white">
-                  <i className="fas fa-chart-pie"></i>
+                  <LucidePieChart size={20} />
                 </div>
               </div>
               <h3 className="text-gray-600 dark:text-gray-300 text-sm font-medium mb-1">Tasa de Respuesta</h3>
@@ -1163,9 +1206,9 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             {/* Contact Growth Chart */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                <i className="fas fa-chart-line text-blue-500 mr-2"></i>
-                Crecimiento de Contactos (30 días)
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center space-x-2">
+                <TrendingUp className="text-blue-500" size={20} />
+                <span>Crecimiento de Contactos (30 días)</span>
               </h3>
               <ResponsiveContainer width="100%" height={250}>
                 <LineChart data={analytics.contactGrowth}>
@@ -1206,9 +1249,9 @@ export default function Dashboard() {
 
             {/* Messages by Day Chart */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                <i className="fas fa-envelope text-green-500 mr-2"></i>
-                Mensajes por Día (14 días)
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center space-x-2">
+                <Mail className="text-green-500" size={20} />
+                <span>Mensajes por Día (14 días)</span>
               </h3>
               <ResponsiveContainer width="100%" height={250}>
                 <BarChart data={analytics.messagesByDay}>
@@ -1247,9 +1290,9 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             {/* Status Distribution Pie Chart */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                <i className="fas fa-chart-pie text-purple-500 mr-2"></i>
-                Distribución por Estado
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center space-x-2">
+                <LucidePieChart className="text-purple-500" size={20} />
+                <span>Distribución por Estado</span>
               </h3>
               <ResponsiveContainer width="100%" height={250}>
                 <PieChart>
@@ -1281,9 +1324,9 @@ export default function Dashboard() {
 
             {/* Best Hours Chart */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                <i className="fas fa-clock text-indigo-500 mr-2"></i>
-                Mejores Horarios de Envío
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center space-x-2">
+                <Clock className="text-indigo-500" size={20} />
+                <span>Mejores Horarios de Envío</span>
               </h3>
               <ResponsiveContainer width="100%" height={250}>
                 <BarChart data={analytics.bestHours} layout="vertical">
@@ -1313,9 +1356,9 @@ export default function Dashboard() {
           {/* Charts Grid - Row 3: Best Days */}
           <div className="grid grid-cols-1 gap-6 mb-6">
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                <i className="fas fa-calendar-alt text-teal-500 mr-2"></i>
-                Mejores Días de la Semana
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center space-x-2">
+                <Calendar className="text-teal-500" size={20} />
+                <span>Mejores Días de la Semana</span>
               </h3>
               <ResponsiveContainer width="100%" height={250}>
                 <BarChart data={analytics.bestDays}>
@@ -1340,9 +1383,9 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Template Performance Table */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                <i className="fas fa-file-alt text-emerald-500 mr-2"></i>
-                Rendimiento de Plantillas (Top 10)
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center space-x-2">
+                <FileText className="text-emerald-500" size={20} />
+                <span>Rendimiento de Plantillas (Top 10)</span>
               </h3>
               <div className="overflow-x-auto">
                 {analytics.templatePerformance.length > 0 ? (
@@ -1368,7 +1411,7 @@ export default function Dashboard() {
                   </table>
                 ) : (
                   <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                    <i className="fas fa-inbox text-3xl mb-2"></i>
+                    <Inbox size={32} className="mx-auto mb-2" />
                     <p className="text-sm">No hay datos de plantillas aún</p>
                   </div>
                 )}
@@ -1377,9 +1420,9 @@ export default function Dashboard() {
 
             {/* Top Contacts Table */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                <i className="fas fa-user-friends text-pink-500 mr-2"></i>
-                Top Contactos (Top 10)
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center space-x-2">
+                <Users2 className="text-pink-500" size={20} />
+                <span>Top Contactos (Top 10)</span>
               </h3>
               <div className="overflow-x-auto">
                 {analytics.topContacts.length > 0 ? (
@@ -1405,7 +1448,7 @@ export default function Dashboard() {
                   </table>
                 ) : (
                   <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                    <i className="fas fa-inbox text-3xl mb-2"></i>
+                    <Inbox size={32} className="mx-auto mb-2" />
                     <p className="text-sm">No hay datos de contactos aún</p>
                   </div>
                 )}
@@ -1418,9 +1461,9 @@ export default function Dashboard() {
       {/* Meta WhatsApp Insights Stats */}
       {hasMetaConnection && (
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-            <i className="fas fa-comment-dots text-blue-600 dark:text-blue-400 mr-3"></i>
-            Meta WhatsApp Insights
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center space-x-3">
+            <MessageCircle className="text-blue-600 dark:text-blue-400" size={28} />
+            <span>Meta WhatsApp Insights</span>
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {stats.map((stat, index) => (
@@ -1430,7 +1473,14 @@ export default function Dashboard() {
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center text-white`}>
-                    <i className={stat.icon}></i>
+                    {stat.icon === 'Send' && <Send size={20} />}
+                    {stat.icon === 'CheckCircle' && <CheckCircle size={20} />}
+                    {stat.icon === 'MessagesSquare' && <MessagesSquare size={20} />}
+                    {stat.icon === 'DollarSign' && <DollarSign size={20} />}
+                    {stat.icon === 'FileText' && <FileText size={20} />}
+                    {stat.icon === 'BookUser' && <BookUser size={20} />}
+                    {stat.icon === 'Users' && <Users size={20} />}
+                    {stat.icon === 'Phone' && <Phone size={20} />}
                   </div>
                 </div>
                 <h3 className="text-gray-600 dark:text-gray-300 text-sm font-medium mb-1">{stat.title}</h3>
@@ -1445,15 +1495,15 @@ export default function Dashboard() {
       {/* CRM Stats */}
       {contacts.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-            <i className="fas fa-users text-purple-600 dark:text-purple-400 mr-3"></i>
-            Estadísticas CRM
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center space-x-3">
+            <Users className="text-purple-600 dark:text-purple-400" size={28} />
+            <span>Estadísticas CRM</span>
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
               <div className="flex items-center justify-between mb-4">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center text-white">
-                  <i className="fas fa-users"></i>
+                  <Users size={20} />
                 </div>
               </div>
               <h3 className="text-gray-600 dark:text-gray-300 text-sm font-medium mb-1">Total Contactos</h3>
@@ -1462,7 +1512,7 @@ export default function Dashboard() {
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
               <div className="flex items-center justify-between mb-4">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center text-white">
-                  <i className="fas fa-dollar-sign"></i>
+                  <DollarSign size={20} />
                 </div>
               </div>
               <h3 className="text-gray-600 dark:text-gray-300 text-sm font-medium mb-1">Revenue Total</h3>
@@ -1471,7 +1521,7 @@ export default function Dashboard() {
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
               <div className="flex items-center justify-between mb-4">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-purple-700 flex items-center justify-center text-white">
-                  <i className="fas fa-chart-line"></i>
+                  <TrendingUp size={20} />
                 </div>
               </div>
               <h3 className="text-gray-600 dark:text-gray-300 text-sm font-medium mb-1">Revenue Promedio</h3>
@@ -1480,7 +1530,7 @@ export default function Dashboard() {
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
               <div className="flex items-center justify-between mb-4">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-cyan-600 flex items-center justify-center text-white">
-                  <i className="fas fa-envelope"></i>
+                  <Mail size={20} />
                 </div>
               </div>
               <h3 className="text-gray-600 dark:text-gray-300 text-sm font-medium mb-1">Mensajes Totales</h3>
@@ -1493,9 +1543,9 @@ export default function Dashboard() {
       {/* Meta Charts */}
       {hasMetaConnection && (
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-            <i className="fas fa-chart-bar text-blue-600 dark:text-blue-400 mr-3"></i>
-            Gráficos Meta Insights
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center space-x-3">
+            <BarChart3 className="text-blue-600 dark:text-blue-400" size={28} />
+            <span>Gráficos Meta Insights</span>
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Bar Chart - Messages */}
@@ -1516,7 +1566,7 @@ export default function Dashboard() {
               ) : (
                 <div className="h-64 flex items-center justify-center text-gray-400 dark:text-gray-500">
                   <div className="text-center">
-                    <i className="fas fa-chart-pie text-4xl mb-2"></i>
+                    <LucidePieChart size={48} className="mx-auto mb-2" />
                     <p>No hay datos disponibles</p>
                   </div>
                 </div>
@@ -1565,7 +1615,7 @@ export default function Dashboard() {
                     className="mt-5 px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-300"
                     title="Limpiar filtros"
                   >
-                    <i className="fas fa-times"></i>
+                    <X size={16} />
                   </button>
                 )}
               </div>
@@ -1577,9 +1627,9 @@ export default function Dashboard() {
       {/* CRM Charts */}
       {contacts.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-            <i className="fas fa-chart-line text-purple-600 dark:text-purple-400 mr-3"></i>
-            Gráficos CRM
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center space-x-3">
+            <TrendingUp className="text-purple-600 dark:text-purple-400" size={28} />
+            <span>Gráficos CRM</span>
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg transition-colors duration-300">
@@ -1667,7 +1717,7 @@ export default function Dashboard() {
       <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-2xl p-6 transition-colors duration-300">
         <div className="flex items-start space-x-4">
           <div className="w-10 h-10 bg-blue-100 dark:bg-blue-800 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors duration-300">
-            <i className="fas fa-info-circle text-blue-600 dark:text-blue-300"></i>
+            <Info className="text-blue-600 dark:text-blue-300" size={20} />
           </div>
           <div>
             <h3 className="text-lg font-medium text-blue-900 dark:text-blue-100 mb-2">Acerca de las Métricas</h3>
@@ -1686,15 +1736,15 @@ export default function Dashboard() {
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
-                <i className="fas fa-file-excel text-green-500 mr-3"></i>
-                Exportar Analíticas a Excel
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-3">
+                <FileSpreadsheet className="text-green-500" size={24} />
+                <span>Exportar Analíticas a Excel</span>
               </h3>
               <button
                 onClick={() => setShowExportModal(false)}
                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
               >
-                <i className="fas fa-times text-xl"></i>
+                <X size={24} />
               </button>
             </div>
 
@@ -1704,31 +1754,31 @@ export default function Dashboard() {
               </p>
               <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
                 <li className="flex items-start">
-                  <i className="fas fa-check text-green-500 mr-2 mt-1"></i>
+                  <Check className="text-green-500 mr-2 mt-1 flex-shrink-0" size={16} />
                   <span>KPIs principales y métricas clave</span>
                 </li>
                 <li className="flex items-start">
-                  <i className="fas fa-check text-green-500 mr-2 mt-1"></i>
+                  <Check className="text-green-500 mr-2 mt-1 flex-shrink-0" size={16} />
                   <span>Crecimiento de contactos (30 días)</span>
                 </li>
                 <li className="flex items-start">
-                  <i className="fas fa-check text-green-500 mr-2 mt-1"></i>
+                  <Check className="text-green-500 mr-2 mt-1 flex-shrink-0" size={16} />
                   <span>Mensajes por día con estados</span>
                 </li>
                 <li className="flex items-start">
-                  <i className="fas fa-check text-green-500 mr-2 mt-1"></i>
+                  <Check className="text-green-500 mr-2 mt-1 flex-shrink-0" size={16} />
                   <span>Distribución por estado</span>
                 </li>
                 <li className="flex items-start">
-                  <i className="fas fa-check text-green-500 mr-2 mt-1"></i>
+                  <Check className="text-green-500 mr-2 mt-1 flex-shrink-0" size={16} />
                   <span>Rendimiento de plantillas</span>
                 </li>
                 <li className="flex items-start">
-                  <i className="fas fa-check text-green-500 mr-2 mt-1"></i>
+                  <Check className="text-green-500 mr-2 mt-1 flex-shrink-0" size={16} />
                   <span>Mejores horarios y días</span>
                 </li>
                 <li className="flex items-start">
-                  <i className="fas fa-check text-green-500 mr-2 mt-1"></i>
+                  <Check className="text-green-500 mr-2 mt-1 flex-shrink-0" size={16} />
                   <span>Top contactos más activos</span>
                 </li>
               </ul>
@@ -1745,7 +1795,7 @@ export default function Dashboard() {
                 onClick={handleExportExcel}
                 className="flex-1 bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg font-medium hover:from-green-600 hover:to-green-700 transition-all shadow-lg flex items-center justify-center space-x-2"
               >
-                <i className="fas fa-download"></i>
+                <Download size={18} />
                 <span>Exportar</span>
               </button>
             </div>
@@ -1758,15 +1808,15 @@ export default function Dashboard() {
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
-                <i className="fas fa-database text-blue-500 mr-3"></i>
-                Backup y Restauración
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center space-x-3">
+                <Database className="text-blue-500" size={24} />
+                <span>Backup y Restauración</span>
               </h3>
               <button
                 onClick={() => setShowBackupModal(false)}
                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
               >
-                <i className="fas fa-times text-xl"></i>
+                <X size={24} />
               </button>
             </div>
 
@@ -1778,9 +1828,9 @@ export default function Dashboard() {
               <div className="space-y-4">
                 {/* Export Backup */}
                 <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center">
-                    <i className="fas fa-cloud-download-alt text-blue-500 mr-2"></i>
-                    Exportar Backup
+                  <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center space-x-2">
+                    <DownloadCloud className="text-blue-500" size={20} />
+                    <span>Exportar Backup</span>
                   </h4>
                   <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
                     Descarga un archivo JSON con todos tus datos: contactos, mensajes, configuración, plantillas y eventos.
@@ -1789,16 +1839,16 @@ export default function Dashboard() {
                     onClick={handleExportBackup}
                     className="w-full bg-blue-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-600 transition-all flex items-center justify-center space-x-2"
                   >
-                    <i className="fas fa-download"></i>
+                    <Download size={18} />
                     <span>Descargar Backup</span>
                   </button>
                 </div>
 
                 {/* Import Backup */}
                 <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                  <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center">
-                    <i className="fas fa-cloud-upload-alt text-green-500 mr-2"></i>
-                    Restaurar Backup
+                  <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-2 flex items-center space-x-2">
+                    <UploadCloud className="text-green-500" size={20} />
+                    <span>Restaurar Backup</span>
                   </h4>
                   <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
                     Importa un archivo de backup previo. ⚠️ Esto sobrescribirá todos los datos actuales.
@@ -1814,7 +1864,7 @@ export default function Dashboard() {
                     onClick={() => fileInputRef.current?.click()}
                     className="w-full bg-green-500 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-600 transition-all flex items-center justify-center space-x-2"
                   >
-                    <i className="fas fa-upload"></i>
+                    <Upload size={18} />
                     <span>Seleccionar Archivo</span>
                   </button>
                 </div>
