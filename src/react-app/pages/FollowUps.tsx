@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, MessageSquare, Zap, Settings, Send, Users, TrendingUp, Timer, Calendar, Info } from 'lucide-react';
+import { Clock, MessageSquare, Zap, Settings, Send, Users, TrendingUp, Timer, Calendar, Info, List } from 'lucide-react';
 import { useToast } from '../components/Toast';
 
 interface FollowUpConfig {
@@ -52,7 +52,7 @@ const FollowUps: React.FC = () => {
     businessDaysOnly: false,
   });
 
-  const [activeTab, setActiveTab] = useState<'config' | 'message' | 'preview'>('config');
+  const [activeTab, setActiveTab] = useState<'config' | 'message' | 'preview' | 'timeline'>('config');
   const [cursorPosition, setCursorPosition] = useState(0);
   const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
@@ -334,6 +334,17 @@ const FollowUps: React.FC = () => {
             >
               <TrendingUp className="inline-block mr-2" size={18} />
               Vista Previa
+            </button>
+            <button
+              onClick={() => setActiveTab('timeline')}
+              className={`flex-1 px-6 py-4 text-sm font-medium transition-colors ${
+                activeTab === 'timeline'
+                  ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-b-2 border-blue-600'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+              }`}
+            >
+              <List className="inline-block mr-2" size={18} />
+              Timeline
             </button>
           </div>
         </div>
@@ -699,6 +710,128 @@ const FollowUps: React.FC = () => {
                     )}
                     {config.businessDaysOnly && (
                       <li>• Solo <strong>días laborables</strong> (Lun-Vie)</li>
+                    )}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TIMELINE */}
+          {activeTab === 'timeline' && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  📅 Timeline de Seguimientos
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                  Así se enviarán los mensajes de seguimiento según tu configuración
+                </p>
+
+                {/* Timeline visualization */}
+                <div className="relative pl-8">
+                  {/* Vertical line */}
+                  <div className="absolute left-2 top-0 bottom-0 w-0.5 bg-gray-300 dark:bg-gray-600"></div>
+
+                  {/* Generate timeline items */}
+                  {Array.from({ length: config.maxFollowUps }, (_, index) => {
+                    const followUpNumber = index + 1;
+                    let totalMinutes = 0;
+
+                    if (index === 0) {
+                      // First follow-up
+                      totalMinutes = config.waitTimeMinutes;
+                    } else {
+                      // Subsequent follow-ups
+                      totalMinutes = config.waitTimeMinutes + (config.intervalMinutes * index);
+                    }
+
+                    // Calculate display time
+                    const days = Math.floor(totalMinutes / 1440);
+                    const remainingAfterDays = totalMinutes % 1440;
+                    const hours = Math.floor(remainingAfterDays / 60);
+                    const minutes = remainingAfterDays % 60;
+
+                    let timeDisplay = '';
+                    if (days > 0) timeDisplay += `${days}d `;
+                    if (hours > 0) timeDisplay += `${hours}h `;
+                    if (minutes > 0 || timeDisplay === '') timeDisplay += `${minutes}m`;
+
+                    return (
+                      <div key={index} className="relative pb-8 last:pb-0">
+                        {/* Timeline dot */}
+                        <div className={`absolute left-[-1.75rem] w-6 h-6 rounded-full flex items-center justify-center ${
+                          index === 0 ? 'bg-blue-500' :
+                          index === config.maxFollowUps - 1 ? 'bg-red-500' :
+                          'bg-purple-500'
+                        }`}>
+                          <span className="text-white text-xs font-bold">{followUpNumber}</span>
+                        </div>
+
+                        {/* Content card */}
+                        <div className="bg-white dark:bg-gray-700 rounded-lg p-4 shadow border border-gray-200 dark:border-gray-600">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-semibold text-gray-900 dark:text-white">
+                                Seguimiento #{followUpNumber}
+                              </h4>
+                              {index === 0 && (
+                                <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs rounded-full">
+                                  Primero
+                                </span>
+                              )}
+                              {index === config.maxFollowUps - 1 && (
+                                <span className="px-2 py-0.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 text-xs rounded-full">
+                                  Último
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400">
+                              <Clock size={14} />
+                              <span className="font-mono">{timeDisplay}</span>
+                            </div>
+                          </div>
+
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+                            {index === 0
+                              ? `Se enviará después de ${getDisplayTime(config.waitTimeMinutes, config.waitTimeUnit)} ${getTimeLabel(config.waitTimeUnit)} sin respuesta`
+                              : `Se enviará ${getDisplayTime(config.intervalMinutes, config.intervalUnit)} ${getTimeLabel(config.intervalUnit)} después del seguimiento #${index}`
+                            }
+                          </p>
+
+                          <div className="bg-gray-50 dark:bg-gray-800 rounded p-3 border-l-4 border-purple-500">
+                            <p className="text-sm text-gray-700 dark:text-gray-300 italic">
+                              {config.messageType === 'template'
+                                ? (config.templateMessage || 'Mensaje no configurado')
+                                : 'Mensaje generado automáticamente por IA'
+                              }
+                            </p>
+                          </div>
+
+                          {config.businessHoursOnly && (
+                            <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                              <Info size={12} />
+                              Solo entre {config.businessHoursStart} - {config.businessHoursEnd}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Summary info */}
+                <div className="mt-6 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-4">
+                  <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
+                    <Info size={18} />
+                    Información importante
+                  </h4>
+                  <ul className="space-y-1 text-sm text-blue-800 dark:text-blue-200">
+                    <li>• Los tiempos son acumulativos desde el último mensaje del cliente</li>
+                    <li>• Si el cliente responde en cualquier momento, se cancelan todos los seguimientos</li>
+                    <li>• El mismo mensaje se enviará en todos los seguimientos (o generado por IA si está configurado)</li>
+                    {config.businessDaysOnly && (
+                      <li>• No se enviarán seguimientos los fines de semana</li>
                     )}
                   </ul>
                 </div>
