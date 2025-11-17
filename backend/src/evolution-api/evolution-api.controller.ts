@@ -41,8 +41,8 @@ export class EvolutionApiController {
         evolutionApiUrl: dto.apiUrl,
         evolutionInstanceName: dto.instanceName,
         evolutionApiKey: dto.apiKey,
-        connectionStatus: 'connecting',
       });
+      await this.botConfigService.updateConnectionStatus(organizationId, 'connecting');
     }
 
     return {
@@ -177,8 +177,8 @@ export class EvolutionApiController {
       evolutionApiUrl: undefined,
       evolutionInstanceName: undefined,
       evolutionApiKey: undefined,
-      connectionStatus: 'disconnected',
     });
+    await this.botConfigService.updateConnectionStatus(organizationId, 'disconnected');
 
     return {
       success: true,

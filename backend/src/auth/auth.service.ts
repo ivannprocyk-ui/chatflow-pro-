@@ -1,33 +1,28 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, Inject } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { SupabaseClient } from '@supabase/supabase-js';
 import * as bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import { User, Organization, JwtPayload } from '../common/types';
 import { OrganizationsService } from '../organizations/organizations.service';
+import { SUPABASE_CLIENT } from '../database/database.module';
 
 @Injectable()
 export class AuthService {
-  // Mock data storage (in-memory)
-  private users: User[] = [
-    {
-      id: '1',
-      organizationId: '1',
-      email: 'demo@pizzeria.com',
-      passwordHash: '$2b$10$8V8BlIVzRjqh5h3QXj.v2eHlUG4/qN7fpNtNeW5Be2wEupXfYfOiu', // password: demo123
-      role: 'admin',
-      isActive: true,
-      createdAt: new Date('2024-01-01'),
-    },
-  ];
-
   constructor(
+    @Inject(SUPABASE_CLIENT) private supabase: SupabaseClient,
     private jwtService: JwtService,
     private organizationsService: OrganizationsService,
   ) {}
 
   async register(email: string, password: string, organizationName: string) {
     // Check if user already exists
-    const existingUser = this.users.find((u) => u.email === email);
+    const { data: existingUser } = await this.supabase
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .single();
+
     if (existingUser) {
       throw new ConflictException('User with this email already exists');
     }
@@ -42,23 +37,34 @@ export class AuthService {
     const passwordHash = await bcrypt.hash(password, 10);
 
     // Create user
-    const newUser: User = {
+    const newUser = {
       id: uuidv4(),
-      organizationId: organization.id,
+      organization_id: organization.id,
       email,
-      passwordHash,
+      password_hash: passwordHash,
       role: 'admin',
-      isActive: true,
-      createdAt: new Date(),
+      is_active: true,
+      created_at: new Date().toISOString(),
     };
 
-    this.users.push(newUser);
+    const { data: createdUser, error } = await this.supabase
+      .from('users')
+      .insert(newUser)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to create user: ${error.message}`);
+    }
 
     // Generate tokens
-    const tokens = await this.generateTokens(newUser, organization);
+    const tokens = await this.generateTokens(
+      this.mapDbUserToUser(createdUser),
+      organization,
+    );
 
     return {
-      user: this.sanitizeUser(newUser),
+      user: this.sanitizeUser(this.mapDbUserToUser(createdUser)),
       organization: organization,
       ...tokens,
     };
@@ -73,7 +79,10 @@ export class AuthService {
     const organization = await this.organizationsService.findOne(user.organizationId);
 
     // Update last login
-    user.lastLoginAt = new Date();
+    await this.supabase
+      .from('users')
+      .update({ last_login_at: new Date().toISOString() })
+      .eq('id', user.id);
 
     const tokens = await this.generateTokens(user, organization);
 
@@ -85,25 +94,36 @@ export class AuthService {
   }
 
   async validateUser(email: string, password: string): Promise<User | null> {
-    const user = this.users.find((u) => u.email === email);
-    if (!user) {
+    const { data: dbUser, error } = await this.supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .single();
+
+    if (error || !dbUser) {
       return null;
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    const isPasswordValid = await bcrypt.compare(password, dbUser.password_hash);
     if (!isPasswordValid) {
       return null;
     }
 
-    return user;
+    return this.mapDbUserToUser(dbUser);
   }
 
   async validateToken(payload: JwtPayload): Promise<User | null> {
-    const user = this.users.find((u) => u.id === payload.sub);
-    if (!user || !user.isActive) {
+    const { data: dbUser, error } = await this.supabase
+      .from('users')
+      .select('*')
+      .eq('id', payload.sub)
+      .single();
+
+    if (error || !dbUser || !dbUser.is_active) {
       return null;
     }
-    return user;
+
+    return this.mapDbUserToUser(dbUser);
   }
 
   private async generateTokens(user: User, organization: Organization) {
@@ -131,11 +151,33 @@ export class AuthService {
     return name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '') + '-' + Date.now();
+      .replace(/(^-|-$)/g, '') +
+      '-' +
+      Date.now();
+  }
+
+  /**
+   * Map database user (snake_case) to application User (camelCase)
+   */
+  private mapDbUserToUser(dbUser: any): User {
+    return {
+      id: dbUser.id,
+      organizationId: dbUser.organization_id,
+      email: dbUser.email,
+      passwordHash: dbUser.password_hash,
+      role: dbUser.role,
+      isActive: dbUser.is_active,
+      lastLoginAt: dbUser.last_login_at ? new Date(dbUser.last_login_at) : undefined,
+      createdAt: new Date(dbUser.created_at),
+    };
   }
 
   // For testing/development
-  getAllUsers() {
-    return this.users.map(u => this.sanitizeUser(u));
+  async getAllUsers() {
+    const { data: users } = await this.supabase
+      .from('users')
+      .select('*');
+
+    return (users || []).map(u => this.sanitizeUser(this.mapDbUserToUser(u)));
   }
 }
