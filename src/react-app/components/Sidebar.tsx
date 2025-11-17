@@ -27,6 +27,7 @@ const menuItems = [
   { id: 'templates', icon: 'fas fa-file-alt', label: 'Plantillas' },
   { id: 'bot-config', icon: 'fas fa-robot', label: 'Bot IA Config' },
   { id: 'bot-analytics', icon: 'fas fa-brain', label: 'Bot Analytics' },
+  { id: 'follow-ups', icon: 'fas fa-comments-alt', label: 'Seguimientos' },
   { id: 'admin-panel', icon: 'fas fa-user-shield', label: 'Panel Admin' },
   { id: 'configuration', icon: 'fas fa-cog', label: 'Configuración' },
 ] as const;

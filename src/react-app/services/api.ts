@@ -104,4 +104,23 @@ export const aiAPI = {
   testConnection: () => api.post('/ai/test'),
 };
 
+export const followUpsAPI = {
+  // Secuencias
+  getAllSequences: () => api.get('/follow-ups/sequences').then(res => res.data),
+  getSequence: (id: string) => api.get(`/follow-ups/sequences/${id}`).then(res => res.data),
+  createSequence: (data: any) => api.post('/follow-ups/sequences', data).then(res => res.data),
+  updateSequence: (id: string, data: any) => api.put(`/follow-ups/sequences/${id}`, data).then(res => res.data),
+  deleteSequence: (id: string) => api.delete(`/follow-ups/sequences/${id}`).then(res => res.data),
+  getSequenceStats: (id: string) => api.get(`/follow-ups/sequences/${id}/stats`).then(res => res.data),
+
+  // Ejecuciones
+  startExecution: (data: any) => api.post('/follow-ups/executions/start', data).then(res => res.data),
+  getAllExecutions: (filters?: any) => api.get('/follow-ups/executions', { params: filters }).then(res => res.data),
+  cancelExecution: (id: string) => api.put(`/follow-ups/executions/${id}/cancel`).then(res => res.data),
+  markAsConverted: (id: string) => api.put(`/follow-ups/executions/${id}/convert`).then(res => res.data),
+
+  // Procesamiento
+  processPending: () => api.post('/follow-ups/process-pending').then(res => res.data),
+};
+
 export default api;
