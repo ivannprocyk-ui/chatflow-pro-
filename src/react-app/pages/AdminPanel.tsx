@@ -17,9 +17,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { pdf } from '@react-pdf/renderer';
-import { saveAs } from 'file-saver';
-import { FacturaTemplate, ConfiguracionFacturacion, FacturaData } from '../components/facturacion/FacturaTemplate';
+import type { ConfiguracionFacturacion, FacturaData } from '../components/facturacion/FacturaTemplate';
 import ConfiguracionFacturacionModal from '../components/facturacion/ConfiguracionFacturacionModal';
 
 // ==================== INTERFACES ====================
@@ -2474,6 +2472,13 @@ export default function AdminPanel() {
         notas: cliente.notas,
       };
 
+      // Dynamic imports to avoid loading PDF library on page load
+      const [{ pdf }, { FacturaTemplate }, { saveAs }] = await Promise.all([
+        import('@react-pdf/renderer'),
+        import('../components/facturacion/FacturaTemplate'),
+        import('file-saver'),
+      ]);
+
       // Generate PDF
       const blob = await pdf(
         <FacturaTemplate factura={facturaData} configuracion={configuracionFacturacion} />
@@ -3465,7 +3470,7 @@ export default function AdminPanel() {
           isOpen={showConfigModal}
           onClose={() => setShowConfigModal(false)}
           onSave={handleConfiguracionSave}
-          initialData={configuracionFacturacion}
+          configuracion={configuracionFacturacion}
         />
       </div>
     </div>
