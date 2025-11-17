@@ -1,4 +1,24 @@
 import React, { useState, useEffect } from 'react';
+import {
+  Loader2,
+  TrendingUp,
+  BarChart3 as BarChartIcon,
+  PieChart as PieChartIcon,
+  Flame,
+  Filter,
+  Trophy,
+  CheckCircle,
+  XCircle,
+  Users,
+  GripVertical,
+  Info,
+  Megaphone,
+  Send,
+  CheckCheck,
+  Eye,
+  Undo2,
+  RefreshCw
+} from 'lucide-react';
 import AnalyticsCard from '@/react-app/components/AnalyticsCard';
 import LineChart from '@/react-app/components/charts/LineChart';
 import BarChart from '@/react-app/components/charts/BarChart';
@@ -108,7 +128,7 @@ export default function Analytics() {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <i className="fas fa-spinner fa-spin text-4xl text-blue-500 mb-4"></i>
+          <Loader2 className="animate-spin text-blue-500 mb-4" size={48} />
           <p className="text-gray-600 dark:text-gray-400">Cargando analytics...</p>
         </div>
       </div>
@@ -125,7 +145,7 @@ export default function Analytics() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
-                <i className="fas fa-chart-line text-blue-600 mr-2"></i>
+                <TrendingUp className="text-blue-600 mr-2" size={20} />
                 Tendencia de Mensajes
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -149,7 +169,7 @@ export default function Analytics() {
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
             <div className="mb-6">
               <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
-                <i className="fas fa-chart-bar text-green-600 mr-2"></i>
+                <BarChartIcon className="text-green-600 mr-2" size={20} />
                 Comparación de Campañas
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -169,7 +189,7 @@ export default function Analytics() {
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
             <div className="mb-6">
               <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
-                <i className="fas fa-chart-pie text-orange-600 mr-2"></i>
+                <PieChartIcon className="text-orange-600 mr-2" size={20} />
                 Distribución de Estados
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -184,7 +204,7 @@ export default function Analytics() {
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
           <div className="mb-6">
             <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
-              <i className="fas fa-fire text-red-600 mr-2"></i>
+              <Flame className="text-red-600 mr-2" size={20} />
               Mejores Horarios para Enviar
             </h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -198,7 +218,7 @@ export default function Analytics() {
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-8">
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center mb-2">
-              <i className="fas fa-filter text-purple-600 mr-3"></i>
+              <Filter className="text-purple-600 mr-3" size={24} />
               Embudo de Conversión
             </h2>
             <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -214,7 +234,7 @@ export default function Analytics() {
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
           <div className="mb-6">
             <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
-              <i className="fas fa-trophy text-yellow-600 mr-2"></i>
+              <Trophy className="text-yellow-600 mr-2" size={20} />
               Top 5 Campañas con Mejor Rendimiento
             </h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -269,7 +289,7 @@ export default function Analytics() {
           <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-2xl p-6 border border-green-200 dark:border-green-800 min-h-[180px] flex flex-col">
             <div className="flex items-center space-x-3 mb-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white">
-                <i className="fas fa-check-circle text-xl"></i>
+                <CheckCircle size={20} />
               </div>
               <h3 className="font-semibold text-green-900 dark:text-green-100">Tasa de Éxito</h3>
             </div>
@@ -282,7 +302,7 @@ export default function Analytics() {
           <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-2xl p-6 border border-red-200 dark:border-red-800 min-h-[180px] flex flex-col">
             <div className="flex items-center space-x-3 mb-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white">
-                <i className="fas fa-times-circle text-xl"></i>
+                <XCircle size={20} />
               </div>
               <h3 className="font-semibold text-red-900 dark:text-red-100">Mensajes Fallidos</h3>
             </div>
@@ -295,7 +315,7 @@ export default function Analytics() {
           <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-2xl p-6 border border-blue-200 dark:border-blue-800 min-h-[180px] flex flex-col">
             <div className="flex items-center space-x-3 mb-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white">
-                <i className="fas fa-users text-xl"></i>
+                <Users size={20} />
               </div>
               <h3 className="font-semibold text-blue-900 dark:text-blue-100">Total Contactos</h3>
             </div>
@@ -322,7 +342,7 @@ export default function Analytics() {
       >
         {/* Drag Handle Indicator */}
         <div className="absolute top-4 right-4 z-10 bg-gray-100 dark:bg-gray-700 rounded-lg p-2 cursor-move hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-          <i className="fas fa-grip-vertical text-gray-400 dark:text-gray-500"></i>
+          <GripVertical className="text-gray-400 dark:text-gray-500" size={16} />
         </div>
 
         {chartComponents[chartId]}
@@ -336,7 +356,7 @@ export default function Analytics() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2 flex items-center">
-            <i className="fas fa-chart-line text-blue-600 mr-3"></i>
+            <TrendingUp className="text-blue-600 mr-3" size={28} />
             Analytics Dashboard
           </h1>
           <p className="text-gray-600 dark:text-gray-300">
@@ -350,7 +370,7 @@ export default function Analytics() {
             className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-3 rounded-xl font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-all shadow hover:shadow-lg flex items-center space-x-2"
             title="Restaurar orden por defecto"
           >
-            <i className="fas fa-undo"></i>
+            <Undo2 size={16} />
             <span>Resetear</span>
           </button>
 
@@ -358,7 +378,7 @@ export default function Analytics() {
             onClick={loadAnalyticsData}
             className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
           >
-            <i className="fas fa-sync-alt"></i>
+            <RefreshCw size={16} />
             <span>Actualizar</span>
           </button>
         </div>
@@ -367,10 +387,10 @@ export default function Analytics() {
       {/* Drag & Drop Instructions */}
       <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
         <div className="flex items-start space-x-3">
-          <i className="fas fa-info-circle text-blue-600 dark:text-blue-400 mt-1"></i>
+          <Info className="text-blue-600 dark:text-blue-400 mt-1" size={16} />
           <div className="flex-1">
             <p className="text-sm text-blue-800 dark:text-blue-300">
-              <strong>Personaliza tu vista:</strong> Arrastra los gráficos usando el ícono <i className="fas fa-grip-vertical"></i> para reordenarlos según tu preferencia. El orden se guarda automáticamente.
+              <strong>Personaliza tu vista:</strong> Arrastra los gráficos usando el ícono <GripVertical className="inline" size={14} /> para reordenarlos según tu preferencia. El orden se guarda automáticamente.
             </p>
           </div>
         </div>

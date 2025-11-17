@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Send, AlertCircle, CheckCircle } from 'lucide-react';
+import { Send, AlertCircle, CheckCircle, Users, Trash2, Info, X, Filter, Search, SlidersHorizontal, Check } from 'lucide-react';
 import { loadContactLists, loadSendLog, appendToSendLog, loadConfig, loadCRMData, loadCRMConfig, addMessageToHistory } from '@/react-app/utils/storage';
 import { useToast } from '@/react-app/components/Toast';
 
@@ -585,7 +585,7 @@ export default function BulkMessaging() {
                   disabled={loading}
                   className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 text-white px-6 py-3 rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-800 dark:hover:to-blue-900 transition-all shadow-lg hover:shadow-xl flex items-center justify-center space-x-2"
                 >
-                  <i className="fas fa-users"></i>
+                  <Users className="w-5 h-5" />
                   <span>Seleccionar del CRM</span>
                 </button>
                 {manualSelectedContacts.length > 0 && (
@@ -600,7 +600,7 @@ export default function BulkMessaging() {
                     disabled={loading}
                     className="px-4 py-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg font-medium hover:bg-red-100 dark:hover:bg-red-900/30 transition-all flex items-center space-x-2"
                   >
-                    <i className="fas fa-trash"></i>
+                    <Trash2 className="w-5 h-5" />
                     <span>Limpiar</span>
                   </button>
                 )}
@@ -662,8 +662,8 @@ export default function BulkMessaging() {
                   disabled={loading || manualSelectedContacts.length > 0}
                 />
                 {manualSelectedContacts.length > 0 && (
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                    <i className="fas fa-info-circle mr-1"></i>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 flex items-center">
+                    <Info className="w-4 h-4 mr-1" />
                     Tienes contactos del CRM seleccionados. Elimina la selección para ingresar números manualmente.
                   </p>
                 )}
@@ -762,7 +762,7 @@ export default function BulkMessaging() {
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
-                    <i className="fas fa-users text-blue-600 dark:text-blue-400 mr-3"></i>
+                    <Users className="w-7 h-7 text-blue-600 dark:text-blue-400 mr-3" />
                     Seleccionar Contactos del CRM
                   </h2>
                   <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
@@ -773,7 +773,7 @@ export default function BulkMessaging() {
                   onClick={() => setShowCRMModal(false)}
                   className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 >
-                  <i className="fas fa-times text-2xl"></i>
+                  <X className="w-6 h-6" />
                 </button>
               </div>
             </div>
@@ -793,7 +793,7 @@ export default function BulkMessaging() {
                           : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-300 dark:border-gray-600'
                       }`}
                     >
-                      <i className="fas fa-filter"></i>
+                      <Filter className="w-4 h-4" />
                       <span>Avanzados</span>
                       {hasActiveFilters && !showFilters && (
                         <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">●</span>
@@ -804,7 +804,7 @@ export default function BulkMessaging() {
                         onClick={clearAllFilters}
                         className="px-3 py-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg font-medium hover:bg-red-100 dark:hover:bg-red-900/30 transition-all flex items-center space-x-2 text-sm"
                       >
-                        <i className="fas fa-times"></i>
+                        <X className="w-4 h-4" />
                         <span>Limpiar</span>
                       </button>
                     )}
@@ -821,7 +821,7 @@ export default function BulkMessaging() {
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-colors duration-300"
                     />
-                    <i className="fas fa-search absolute left-3 top-3 text-gray-400 dark:text-gray-500"></i>
+                    <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400 dark:text-gray-500" />
                   </div>
                   <select
                     value={statusFilter}
@@ -839,7 +839,7 @@ export default function BulkMessaging() {
                 {showFilters && (
                   <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700 transition-colors duration-300">
                     <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-3 flex items-center uppercase">
-                      <i className="fas fa-sliders-h mr-2"></i>
+                      <SlidersHorizontal className="w-4 h-4 mr-2" />
                       Filtros por Campo
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -1003,8 +1003,8 @@ export default function BulkMessaging() {
 
               {getFilteredCRMContacts().length === 0 && (
                 <div className="text-center py-12">
-                  <div className="w-24 h-24 mx-auto mb-4 text-gray-300 dark:text-gray-600">
-                    <i className="fas fa-users text-8xl"></i>
+                  <div className="w-24 h-24 mx-auto mb-4 text-gray-300 dark:text-gray-600 flex items-center justify-center">
+                    <Users className="w-20 h-20" />
                   </div>
                   <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No hay contactos que coincidan</h3>
                   <p className="text-gray-600 dark:text-gray-400">Prueba ajustando los filtros</p>
@@ -1035,7 +1035,7 @@ export default function BulkMessaging() {
                     disabled={selectedCRMContacts.size === 0}
                     className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 text-white rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-800 dark:hover:to-blue-900 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                   >
-                    <i className="fas fa-check"></i>
+                    <Check className="w-5 h-5" />
                     <span>Confirmar Selección ({selectedCRMContacts.size})</span>
                   </button>
                 </div>

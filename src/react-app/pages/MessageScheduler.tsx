@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { loadScheduledMessages, saveScheduledMessages, loadContactLists, loadConfig, loadCRMData, saveCampaigns, loadCampaigns, addMessageToHistory } from '@/react-app/utils/storage';
 import { useToast } from '@/react-app/components/Toast';
 import ContactSelector from '@/react-app/components/ContactSelector';
+import { Clock, Check, X, Edit, Ban, Trash2, Calendar, List, Users, CheckCircle, AlertTriangle, Image, Info } from 'lucide-react';
 
 interface ScheduledMessage {
   id: string;
@@ -236,15 +237,16 @@ export default function MessageScheduler() {
 
   const getStatusBadge = (status: ScheduledMessage['status']) => {
     const statusConfig = {
-      pending: { color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300', label: 'Pendiente', icon: 'fas fa-clock' },
-      sent: { color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300', label: 'Enviado', icon: 'fas fa-check' },
-      cancelled: { color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300', label: 'Cancelado', icon: 'fas fa-times' }
+      pending: { color: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300', label: 'Pendiente', icon: Clock },
+      sent: { color: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300', label: 'Enviado', icon: Check },
+      cancelled: { color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300', label: 'Cancelado', icon: X }
     };
 
     const config = statusConfig[status];
+    const IconComponent = config.icon;
     return (
       <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium transition-colors duration-300 ${config.color}`}>
-        <i className={`${config.icon} mr-1`}></i>
+        <IconComponent className="w-3 h-3 mr-1" />
         {config.label}
       </span>
     );
@@ -271,7 +273,7 @@ export default function MessageScheduler() {
           onClick={() => setShowModal(true)}
           className="bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-600 dark:hover:to-blue-700 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
         >
-          <i className="fas fa-clock"></i>
+          <Clock className="w-5 h-5" />
           <span>Programar Envío</span>
         </button>
       </div>
@@ -281,7 +283,7 @@ export default function MessageScheduler() {
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-colors duration-300 hover:-translate-y-1">
           <div className="flex items-center justify-between mb-4">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-500 to-yellow-600 flex items-center justify-center text-white">
-              <i className="fas fa-clock"></i>
+              <Clock className="w-6 h-6" />
             </div>
           </div>
           <h3 className="text-gray-600 dark:text-gray-300 text-sm font-medium mb-1">Mensajes Pendientes</h3>
@@ -291,7 +293,7 @@ export default function MessageScheduler() {
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-colors duration-300 hover:-translate-y-1">
           <div className="flex items-center justify-between mb-4">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center text-white">
-              <i className="fas fa-check"></i>
+              <Check className="w-6 h-6" />
             </div>
           </div>
           <h3 className="text-gray-600 dark:text-gray-300 text-sm font-medium mb-1">Mensajes Enviados</h3>
@@ -301,7 +303,7 @@ export default function MessageScheduler() {
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-colors duration-300 hover:-translate-y-1">
           <div className="flex items-center justify-between mb-4">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white">
-              <i className="fas fa-times"></i>
+              <X className="w-6 h-6" />
             </div>
           </div>
           <h3 className="text-gray-600 dark:text-gray-300 text-sm font-medium mb-1">Mensajes Cancelados</h3>
@@ -353,7 +355,7 @@ export default function MessageScheduler() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
                     <div className="flex items-center">
-                      <i className="fas fa-calendar mr-2 text-gray-400 dark:text-gray-500"></i>
+                      <Calendar className="w-4 h-4 mr-2 text-gray-400 dark:text-gray-500" />
                       {new Date(message.scheduledDate).toLocaleDateString('es-ES', {
                         year: 'numeric',
                         month: 'short',
@@ -363,7 +365,7 @@ export default function MessageScheduler() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
                     <div className="flex items-center">
-                      <i className="fas fa-clock mr-2 text-gray-400 dark:text-gray-500"></i>
+                      <Clock className="w-4 h-4 mr-2 text-gray-400 dark:text-gray-500" />
                       {message.scheduledTime}
                     </div>
                   </td>
@@ -385,14 +387,14 @@ export default function MessageScheduler() {
                             className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 p-1 rounded"
                             title="Editar"
                           >
-                            <i className="fas fa-edit"></i>
+                            <Edit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => handleCancelMessage(message.id)}
                             className="text-yellow-600 dark:text-yellow-400 hover:text-yellow-900 dark:hover:text-yellow-300 p-1 rounded"
                             title="Cancelar"
                           >
-                            <i className="fas fa-ban"></i>
+                            <Ban className="w-4 h-4" />
                           </button>
                         </>
                       )}
@@ -401,7 +403,7 @@ export default function MessageScheduler() {
                         className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 p-1 rounded"
                         title="Eliminar"
                       >
-                        <i className="fas fa-trash"></i>
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </td>
@@ -413,8 +415,8 @@ export default function MessageScheduler() {
 
         {scheduledMessages.length === 0 && (
           <div className="text-center py-16">
-            <div className="w-24 h-24 mx-auto mb-6 text-gray-300 dark:text-gray-600">
-              <i className="fas fa-clock text-8xl"></i>
+            <div className="w-24 h-24 mx-auto mb-6 text-gray-300 dark:text-gray-600 flex items-center justify-center">
+              <Clock className="w-20 h-20" />
             </div>
             <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-2">No hay mensajes programados</h3>
             <p className="text-gray-600 dark:text-gray-300 mb-6">Programa tu primer mensaje para enviarlo automáticamente</p>
@@ -490,25 +492,25 @@ export default function MessageScheduler() {
                   <button
                     type="button"
                     onClick={() => setNewSchedule({ ...newSchedule, selectionMode: 'list', contactIds: [] })}
-                    className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+                    className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all flex items-center justify-center ${
                       newSchedule.selectionMode === 'list'
                         ? 'bg-blue-600 text-white shadow-md'
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                     }`}
                   >
-                    <i className="fas fa-list mr-2"></i>
+                    <List className="w-4 h-4 mr-2" />
                     Lista Existente
                   </button>
                   <button
                     type="button"
                     onClick={() => setNewSchedule({ ...newSchedule, selectionMode: 'contacts', contactListId: '' })}
-                    className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+                    className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all flex items-center justify-center ${
                       newSchedule.selectionMode === 'contacts'
                         ? 'bg-blue-600 text-white shadow-md'
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                     }`}
                   >
-                    <i className="fas fa-user-friends mr-2"></i>
+                    <Users className="w-4 h-4 mr-2" />
                     Selección Avanzada
                   </button>
                 </div>
@@ -535,8 +537,8 @@ export default function MessageScheduler() {
                     {newSchedule.contactIds.length > 0 ? (
                       <div>
                         <div className="flex items-center justify-between mb-3">
-                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                            <i className="fas fa-check-circle text-green-600 mr-2"></i>
+                          <span className="text-sm font-medium text-gray-900 dark:text-gray-100 flex items-center">
+                            <CheckCircle className="w-4 h-4 text-green-600 mr-2" />
                             {newSchedule.contactIds.length} contacto(s) seleccionado(s)
                           </span>
                           <button
@@ -550,9 +552,9 @@ export default function MessageScheduler() {
                         <button
                           type="button"
                           onClick={() => setNewSchedule({ ...newSchedule, contactIds: [] })}
-                          className="text-sm text-red-600 dark:text-red-400 hover:underline"
+                          className="text-sm text-red-600 dark:text-red-400 hover:underline flex items-center"
                         >
-                          <i className="fas fa-times mr-1"></i>
+                          <X className="w-3 h-3 mr-1" />
                           Limpiar selección
                         </button>
                       </div>
@@ -562,7 +564,7 @@ export default function MessageScheduler() {
                         onClick={() => setShowContactSelector(true)}
                         className="w-full py-3 px-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 transition-all flex items-center justify-center space-x-2"
                       >
-                        <i className="fas fa-users"></i>
+                        <Users className="w-5 h-5" />
                         <span>Seleccionar Contactos</span>
                       </button>
                     )}
@@ -587,8 +589,8 @@ export default function MessageScheduler() {
                   ))}
                 </select>
                 {templates.length === 0 && (
-                  <p className="mt-2 text-sm text-amber-600 dark:text-amber-400">
-                    <i className="fas fa-exclamation-triangle mr-1"></i>
+                  <p className="mt-2 text-sm text-amber-600 dark:text-amber-400 flex items-center">
+                    <AlertTriangle className="w-4 h-4 mr-1" />
                     No hay plantillas disponibles. Sincroniza plantillas desde la sección Plantillas.
                   </p>
                 )}
@@ -597,8 +599,8 @@ export default function MessageScheduler() {
               {/* Image URL field - only show if template has image header */}
               {newSchedule.template && templates.find(t => t.name === newSchedule.template)?.components?.some((c: any) => c.type === 'HEADER' && c.format === 'IMAGE') && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    <i className="fas fa-image mr-1"></i>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center">
+                    <Image className="w-4 h-4 mr-1" />
                     URL de Imagen
                   </label>
                   <input
@@ -608,8 +610,8 @@ export default function MessageScheduler() {
                     placeholder="https://ejemplo.com/imagen.jpg"
                     className="w-full p-3 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-colors duration-300"
                   />
-                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                    <i className="fas fa-info-circle mr-1"></i>
+                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 flex items-center">
+                    <Info className="w-4 h-4 mr-1" />
                     La plantilla seleccionada incluye una imagen en el encabezado. Proporciona la URL de la imagen que deseas enviar.
                   </p>
                 </div>

@@ -167,7 +167,7 @@ export default function BotConfiguration() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent flex items-center">
-                <i className="fas fa-robot text-purple-600 dark:text-purple-400 mr-3"></i>
+                <Bot className="text-purple-600 dark:text-purple-400 mr-3" size={32} />
                 Bot IA
               </h1>
               <p className="text-gray-600 dark:text-gray-300 mt-2">

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { loadContactLists, saveContactLists, formatArgentinaPhone } from '@/react-app/utils/storage';
 import { useToast } from '@/react-app/components/Toast';
+import { Plus, Users, Calendar, Send, Eye, Edit, Trash2, BookUser, X, Phone, User, Mail, Inbox } from 'lucide-react';
 
 interface ContactList {
   id: string;
@@ -205,7 +206,7 @@ export default function ContactLists() {
           onClick={openModal}
           className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
         >
-          <i className="fas fa-plus"></i>
+          <Plus className="w-5 h-5" />
           <span>Nueva Lista</span>
         </button>
       </div>
@@ -224,11 +225,11 @@ export default function ContactLists() {
                   <p className="text-gray-600 dark:text-gray-300 text-sm mb-3">{list.description}</p>
                   <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
                     <span className="flex items-center space-x-1">
-                      <i className="fas fa-users"></i>
+                      <Users className="w-4 h-4" />
                       <span>{list.contacts.length} contactos</span>
                     </span>
                     <span className="flex items-center space-x-1">
-                      <i className="fas fa-calendar"></i>
+                      <Calendar className="w-4 h-4" />
                       <span>{new Date(list.createdAt).toLocaleDateString()}</span>
                     </span>
                   </div>
@@ -240,32 +241,32 @@ export default function ContactLists() {
                 <div className="flex space-x-2">
                   <button
                     onClick={() => handleUseList(list)}
-                    className="flex-1 bg-gradient-to-r from-green-500 to-green-600 dark:from-green-600 dark:to-green-700 text-white py-2 px-4 rounded-lg text-sm font-medium hover:from-green-600 hover:to-green-700 dark:hover:from-green-700 dark:hover:to-green-800 transition-all"
+                    className="flex-1 bg-gradient-to-r from-green-500 to-green-600 dark:from-green-600 dark:to-green-700 text-white py-2 px-4 rounded-lg text-sm font-medium hover:from-green-600 hover:to-green-700 dark:hover:from-green-700 dark:hover:to-green-800 transition-all flex items-center justify-center"
                   >
-                    <i className="fas fa-paper-plane mr-2"></i>
+                    <Send className="w-4 h-4 mr-2" />
                     Usar
                   </button>
                   <button
                     onClick={() => handleViewContacts(list)}
-                    className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-700 text-white py-2 px-4 rounded-lg text-sm font-medium hover:from-purple-600 hover:to-purple-700 dark:hover:from-purple-700 dark:hover:to-purple-800 transition-all"
+                    className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-700 text-white py-2 px-4 rounded-lg text-sm font-medium hover:from-purple-600 hover:to-purple-700 dark:hover:from-purple-700 dark:hover:to-purple-800 transition-all flex items-center justify-center"
                   >
-                    <i className="fas fa-eye mr-2"></i>
+                    <Eye className="w-4 h-4 mr-2" />
                     Ver
                   </button>
                 </div>
                 <div className="flex space-x-2">
                   <button
                     onClick={() => handleEditList(list)}
-                    className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white py-2 px-4 rounded-lg text-sm font-medium hover:from-blue-600 hover:to-blue-700 dark:hover:from-blue-700 dark:hover:to-blue-800 transition-all"
+                    className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white py-2 px-4 rounded-lg text-sm font-medium hover:from-blue-600 hover:to-blue-700 dark:hover:from-blue-700 dark:hover:to-blue-800 transition-all flex items-center justify-center"
                   >
-                    <i className="fas fa-edit mr-2"></i>
+                    <Edit className="w-4 h-4 mr-2" />
                     Editar
                   </button>
                   <button
                     onClick={() => handleDeleteList(list.id)}
-                    className="flex-1 bg-gradient-to-r from-red-500 to-red-600 dark:from-red-600 dark:to-red-700 text-white py-2 px-4 rounded-lg text-sm font-medium hover:from-red-600 hover:to-red-700 dark:hover:from-red-700 dark:hover:to-red-800 transition-all"
+                    className="flex-1 bg-gradient-to-r from-red-500 to-red-600 dark:from-red-600 dark:to-red-700 text-white py-2 px-4 rounded-lg text-sm font-medium hover:from-red-600 hover:to-red-700 dark:hover:from-red-700 dark:hover:to-red-800 transition-all flex items-center justify-center"
                   >
-                    <i className="fas fa-trash mr-2"></i>
+                    <Trash2 className="w-4 h-4 mr-2" />
                     Eliminar
                   </button>
                 </div>
@@ -275,8 +276,8 @@ export default function ContactLists() {
         </div>
       ) : (
         <div className="text-center py-16">
-          <div className="w-24 h-24 mx-auto mb-6 text-gray-300 dark:text-gray-600">
-            <i className="fas fa-address-book text-8xl"></i>
+          <div className="w-24 h-24 mx-auto mb-6 text-gray-300 dark:text-gray-600 flex items-center justify-center">
+            <BookUser className="w-20 h-20" />
           </div>
           <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-2">No hay listas de contactos</h3>
           <p className="text-gray-600 dark:text-gray-300 mb-6">Crea tu primera lista para organizar tus contactos</p>
@@ -380,7 +381,7 @@ export default function ContactLists() {
                 }}
                 className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
               >
-                <i className="fas fa-times text-2xl"></i>
+                <X className="w-6 h-6" />
               </button>
             </div>
 
@@ -394,14 +395,14 @@ export default function ContactLists() {
                     >
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-2">
-                          <i className="fas fa-phone text-blue-600 dark:text-blue-400"></i>
+                          <Phone className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                           <span className="font-mono text-gray-900 dark:text-gray-100 font-medium">
                             {contact.phone_number}
                           </span>
                         </div>
                         {(contact.first_name || contact.last_name) && (
                           <div className="flex items-center space-x-3 mb-1">
-                            <i className="fas fa-user text-gray-400 text-sm"></i>
+                            <User className="w-3 h-3 text-gray-400" />
                             <span className="text-gray-700 dark:text-gray-300 text-sm">
                               {[contact.first_name, contact.last_name].filter(Boolean).join(' ')}
                             </span>
@@ -409,7 +410,7 @@ export default function ContactLists() {
                         )}
                         {contact.email && (
                           <div className="flex items-center space-x-3">
-                            <i className="fas fa-envelope text-gray-400 text-sm"></i>
+                            <Mail className="w-3 h-3 text-gray-400" />
                             <span className="text-gray-700 dark:text-gray-300 text-sm">{contact.email}</span>
                           </div>
                         )}
@@ -420,14 +421,14 @@ export default function ContactLists() {
                           className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
                           title="Editar contacto"
                         >
-                          <i className="fas fa-edit"></i>
+                          <Edit className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDeleteContact(index)}
                           className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                           title="Eliminar contacto"
                         >
-                          <i className="fas fa-trash"></i>
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
@@ -435,7 +436,7 @@ export default function ContactLists() {
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <i className="fas fa-inbox text-gray-300 dark:text-gray-600 text-6xl mb-4"></i>
+                  <Inbox className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
                   <p className="text-gray-600 dark:text-gray-400">No hay contactos en esta lista</p>
                 </div>
               )}

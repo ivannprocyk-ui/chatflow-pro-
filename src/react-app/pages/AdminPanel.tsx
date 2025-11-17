@@ -1,4 +1,47 @@
 import { useState, useEffect } from 'react';
+import {
+  DollarSign,
+  Users,
+  TrendingUp,
+  Percent,
+  PieChart as PieChartIcon,
+  Layers,
+  Download,
+  Plus,
+  Search,
+  Filter,
+  ArrowUpDown,
+  X,
+  AlertTriangle,
+  Eye,
+  Pencil,
+  Trash2,
+  AreaChart as AreaChartIcon,
+  Sparkles,
+  Banknote,
+  Trophy,
+  Scale,
+  MessageSquare,
+  Database,
+  Bot,
+  Star,
+  Server,
+  UserX,
+  Heart,
+  Gem,
+  BarChart3 as BarChartIcon,
+  Lightbulb,
+  CalendarCheck,
+  CreditCard,
+  FileText,
+  Settings,
+  Check,
+  Info,
+  Bell,
+  CheckCircle,
+  BellOff,
+  Shield
+} from 'lucide-react';
 import { Alert } from '../components/ui/Alert';
 import {
   LineChart as RechartsLineChart,
@@ -584,7 +627,7 @@ export default function AdminPanel() {
           <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-2xl p-6 border border-blue-200 dark:border-blue-800">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white">
-                <i className="fas fa-dollar-sign text-xl"></i>
+                <DollarSign size={20} />
               </div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">MRR Actual</p>
@@ -600,7 +643,7 @@ export default function AdminPanel() {
           <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-2xl p-6 border border-green-200 dark:border-green-800">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white">
-                <i className="fas fa-users text-xl"></i>
+                <Users size={20} />
               </div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Clientes Activos</p>
@@ -613,7 +656,7 @@ export default function AdminPanel() {
           <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-2xl p-6 border border-red-200 dark:border-red-800">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white">
-                <i className="fas fa-chart-line text-xl"></i>
+                <TrendingUp size={20} />
               </div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Churn Rate</p>
@@ -624,7 +667,7 @@ export default function AdminPanel() {
           <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-2xl p-6 border border-purple-200 dark:border-purple-800">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white">
-                <i className="fas fa-percent text-xl"></i>
+                <Percent size={20} />
               </div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Margen de Ganancia</p>
@@ -638,7 +681,7 @@ export default function AdminPanel() {
           {/* MRR Trend */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
             <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-              <i className="fas fa-chart-line text-blue-600 mr-2"></i>
+              <TrendingUp className="text-blue-600 mr-2" size={20} />
               MRR Últimos 12 Meses
             </h3>
             <ResponsiveContainer width="100%" height={300}>
@@ -661,7 +704,7 @@ export default function AdminPanel() {
           {/* Plan Distribution */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
             <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-              <i className="fas fa-chart-pie text-purple-600 mr-2"></i>
+              <PieChartIcon className="text-purple-600 mr-2" size={20} />
               Distribución de Planes
             </h3>
             <ResponsiveContainer width="100%" height={300}>
@@ -699,7 +742,7 @@ export default function AdminPanel() {
         {/* MRR Breakdown */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
           <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-            <i className="fas fa-layer-group text-green-600 mr-2"></i>
+            <Layers className="text-green-600 mr-2" size={20} />
             Desglose de MRR
           </h3>
           <ResponsiveContainer width="100%" height={300}>
@@ -842,14 +885,14 @@ export default function AdminPanel() {
               }}
               className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all flex items-center gap-2"
             >
-              <i className="fas fa-download"></i>
+              <Download size={16} />
               Exportar CSV
             </button>
             <button
               onClick={openCreateModal}
               className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-3 rounded-xl font-medium transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
             >
-              <i className="fas fa-plus"></i>
+              <Plus size={16} />
               Nuevo Cliente
             </button>
           </div>
@@ -861,7 +904,7 @@ export default function AdminPanel() {
             {/* Search */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                <i className="fas fa-search mr-2"></i>
+                <Search className="mr-2" size={16} />
                 Buscar
               </label>
               <input
@@ -876,7 +919,7 @@ export default function AdminPanel() {
             {/* Plan Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                <i className="fas fa-layer-group mr-2"></i>
+                <Layers className="mr-2" size={16} />
                 Plan
               </label>
               <select
@@ -895,7 +938,7 @@ export default function AdminPanel() {
             {/* Status Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                <i className="fas fa-filter mr-2"></i>
+                <Filter className="mr-2" size={16} />
                 Estado
               </label>
               <select
@@ -914,7 +957,7 @@ export default function AdminPanel() {
             {/* Sort */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                <i className="fas fa-sort mr-2"></i>
+                <ArrowUpDown className="mr-2" size={16} />
                 Ordenar por
               </label>
               <select
@@ -949,7 +992,7 @@ export default function AdminPanel() {
                 }}
                 className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
               >
-                <i className="fas fa-times mr-1"></i>
+                <X className="mr-1" size={12} />
                 Limpiar filtros
               </button>
             </div>
@@ -1001,7 +1044,7 @@ export default function AdminPanel() {
                 {filteredClientes.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
-                      <i className="fas fa-search text-4xl mb-4"></i>
+                      <Search size={48} className="mb-4" />
                       <p className="text-lg font-medium">No se encontraron clientes</p>
                       <p className="text-sm">Intenta ajustar los filtros de búsqueda</p>
                     </td>
@@ -1028,7 +1071,7 @@ export default function AdminPanel() {
                               <div className="text-sm text-gray-500 dark:text-gray-400">{cliente.empresa}</div>
                               {clientAlertas.length > 0 && (
                                 <div className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1 mt-1">
-                                  <i className="fas fa-exclamation-triangle"></i>
+                                  <AlertTriangle size={16} />
                                   {clientAlertas.length} alerta{clientAlertas.length > 1 ? 's' : ''}
                                 </div>
                               )}
@@ -1095,21 +1138,21 @@ export default function AdminPanel() {
                               className="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-300 p-2"
                               title="Ver detalle"
                             >
-                              <i className="fas fa-eye"></i>
+                              <Eye size={16} />
                             </button>
                             <button
                               onClick={() => openEditModal(cliente)}
                               className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 p-2"
                               title="Editar"
                             >
-                              <i className="fas fa-edit"></i>
+                              <Pencil size={16} />
                             </button>
                             <button
                               onClick={() => handleDeleteCliente(cliente)}
                               className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 p-2"
                               title="Eliminar"
                             >
-                              <i className="fas fa-trash"></i>
+                              <Trash2 size={16} />
                             </button>
                           </div>
                         </td>
@@ -1126,7 +1169,7 @@ export default function AdminPanel() {
         <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border border-purple-200 dark:border-purple-800 rounded-2xl p-6">
           <div className="flex items-start space-x-4">
             <div className="w-10 h-10 bg-purple-100 dark:bg-purple-800 rounded-lg flex items-center justify-center flex-shrink-0">
-              <i className="fas fa-chart-line text-purple-600 dark:text-purple-400"></i>
+              <TrendingUp className="text-purple-600 dark:text-purple-400" size={20} />
             </div>
             <div>
               <h3 className="text-lg font-medium text-purple-900 dark:text-purple-100 mb-2">CRM Insights</h3>
@@ -1179,7 +1222,7 @@ export default function AdminPanel() {
           <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-2xl p-6 border border-green-200 dark:border-green-800">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white">
-                <i className="fas fa-dollar-sign text-xl"></i>
+                <DollarSign size={20} />
               </div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">MRR</p>
@@ -1195,7 +1238,7 @@ export default function AdminPanel() {
           <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-2xl p-6 border border-blue-200 dark:border-blue-800">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white">
-                <i className="fas fa-chart-line text-xl"></i>
+                <TrendingUp size={20} />
               </div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">ARR</p>
@@ -1206,7 +1249,7 @@ export default function AdminPanel() {
           <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-2xl p-6 border border-purple-200 dark:border-purple-800">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white">
-                <i className="fas fa-user-circle text-xl"></i>
+                <Users size={20} />
               </div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">ARPU</p>
@@ -1217,7 +1260,7 @@ export default function AdminPanel() {
           <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 rounded-2xl p-6 border border-yellow-200 dark:border-yellow-800">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-500 to-yellow-600 flex items-center justify-center text-white">
-                <i className="fas fa-trending-up text-xl"></i>
+                <TrendingUp size={20} />
               </div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Revenue Growth</p>
@@ -1231,7 +1274,7 @@ export default function AdminPanel() {
           {/* MRR/ARR Trend */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
             <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-              <i className="fas fa-chart-area text-green-600 mr-2"></i>
+              <AreaChartIcon className="text-green-600 mr-2" size={20} />
               MRR/ARR Últimos 12 Meses
             </h3>
             <ResponsiveContainer width="100%" height={300}>
@@ -1250,7 +1293,7 @@ export default function AdminPanel() {
           {/* Ingresos por Plan */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
             <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-              <i className="fas fa-layer-group text-blue-600 mr-2"></i>
+              <Layers className="text-blue-600 mr-2" size={20} />
               Ingresos por Plan
             </h3>
             <ResponsiveContainer width="100%" height={300}>
@@ -1270,7 +1313,7 @@ export default function AdminPanel() {
         {/* Proyección */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
           <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-            <i className="fas fa-crystal-ball text-purple-600 mr-2"></i>
+            <Sparkles className="text-purple-600 mr-2" size={20} />
             Proyección de Ingresos (Próximos 3 Meses)
           </h3>
           <ResponsiveContainer width="100%" height={250}>
@@ -1389,7 +1432,7 @@ export default function AdminPanel() {
           <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-2xl p-6 border border-red-200 dark:border-red-800">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white">
-                <i className="fas fa-money-bill-wave text-xl"></i>
+                <Banknote size={20} />
               </div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Costos Totales</p>
@@ -1400,7 +1443,7 @@ export default function AdminPanel() {
           <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-2xl p-6 border border-green-200 dark:border-green-800">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white">
-                <i className="fas fa-percentage text-xl"></i>
+                <Percent size={20} />
               </div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Margen Bruto</p>
@@ -1411,7 +1454,7 @@ export default function AdminPanel() {
           <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-2xl p-6 border border-blue-200 dark:border-blue-800">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white">
-                <i className="fas fa-chart-line text-xl"></i>
+                <TrendingUp size={20} />
               </div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Ganancia Neta</p>
@@ -1422,7 +1465,7 @@ export default function AdminPanel() {
           <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-2xl p-6 border border-purple-200 dark:border-purple-800">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white">
-                <i className="fas fa-trophy text-xl"></i>
+                <Trophy size={20} />
               </div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">ROI</p>
@@ -1436,7 +1479,7 @@ export default function AdminPanel() {
           {/* Desglose de Costos */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
             <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-              <i className="fas fa-chart-pie text-red-600 mr-2"></i>
+              <PieChartIcon className="text-red-600 mr-2" size={20} />
               Desglose de Costos
             </h3>
             <ResponsiveContainer width="100%" height={300}>
@@ -1463,7 +1506,7 @@ export default function AdminPanel() {
           {/* Ingresos vs Costos */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
             <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-              <i className="fas fa-balance-scale text-green-600 mr-2"></i>
+              <Scale className="text-green-600 mr-2" size={20} />
               Ingresos vs Costos
             </h3>
             <ResponsiveContainer width="100%" height={300}>
@@ -1552,7 +1595,7 @@ export default function AdminPanel() {
         <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-2xl p-6">
           <div className="flex items-start space-x-4">
             <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-800 rounded-lg flex items-center justify-center flex-shrink-0">
-              <i className="fas fa-exclamation-triangle text-yellow-600 dark:text-yellow-400"></i>
+              <AlertTriangle className="text-yellow-600 dark:text-yellow-400" size={20} />
             </div>
             <div>
               <h3 className="text-lg font-medium text-yellow-900 dark:text-yellow-100 mb-2">Alertas de Costos</h3>
@@ -1622,7 +1665,7 @@ export default function AdminPanel() {
           <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-2xl p-6 border border-purple-200 dark:border-purple-800">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white">
-                <i className="fas fa-comments text-xl"></i>
+                <MessageSquare size={20} />
               </div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Mensajes</p>
@@ -1633,7 +1676,7 @@ export default function AdminPanel() {
           <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-2xl p-6 border border-blue-200 dark:border-blue-800">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white">
-                <i className="fas fa-database text-xl"></i>
+                <Database size={20} />
               </div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Tokens</p>
@@ -1644,7 +1687,7 @@ export default function AdminPanel() {
           <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-2xl p-6 border border-green-200 dark:border-green-800">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white">
-                <i className="fas fa-robot text-xl"></i>
+                <Bot size={20} />
               </div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Tasa Automatización</p>
@@ -1655,7 +1698,7 @@ export default function AdminPanel() {
           <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 rounded-2xl p-6 border border-yellow-200 dark:border-yellow-800">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-500 to-yellow-600 flex items-center justify-center text-white">
-                <i className="fas fa-star text-xl"></i>
+                <Star size={20} />
               </div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">CSAT Promedio</p>
@@ -1669,7 +1712,7 @@ export default function AdminPanel() {
           {/* Usuarios Activos Diarios */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
             <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-              <i className="fas fa-chart-line text-purple-600 mr-2"></i>
+              <TrendingUp className="text-purple-600 mr-2" size={20} />
               Actividad Últimos 30 Días
             </h3>
             <ResponsiveContainer width="100%" height={300}>
@@ -1694,7 +1737,7 @@ export default function AdminPanel() {
           {/* Tokens Consumidos */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
             <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-              <i className="fas fa-server text-blue-600 mr-2"></i>
+              <Server className="text-blue-600 mr-2" size={20} />
               Tokens Consumidos por Día
             </h3>
             <ResponsiveContainer width="100%" height={300}>
@@ -1841,7 +1884,7 @@ export default function AdminPanel() {
           <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-2xl p-6 border border-red-200 dark:border-red-800">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white">
-                <i className="fas fa-user-times text-xl"></i>
+                <UserX size={20} />
               </div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Churn Rate</p>
@@ -1852,7 +1895,7 @@ export default function AdminPanel() {
           <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-2xl p-6 border border-green-200 dark:border-green-800">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white">
-                <i className="fas fa-heart text-xl"></i>
+                <Heart size={20} />
               </div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Retention Rate</p>
@@ -1863,7 +1906,7 @@ export default function AdminPanel() {
           <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-2xl p-6 border border-blue-200 dark:border-blue-800">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white">
-                <i className="fas fa-gem text-xl"></i>
+                <Gem size={20} />
               </div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">LTV Promedio</p>
@@ -1874,7 +1917,7 @@ export default function AdminPanel() {
           <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-2xl p-6 border border-purple-200 dark:border-purple-800">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white">
-                <i className="fas fa-balance-scale text-xl"></i>
+                <Scale size={20} />
               </div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">LTV:CAC Ratio</p>
@@ -1888,7 +1931,7 @@ export default function AdminPanel() {
           {/* Churn Mensual */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
             <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-              <i className="fas fa-chart-bar text-red-600 mr-2"></i>
+              <BarChartIcon className="text-red-600 mr-2" size={20} />
               Churn Mensual (Últimos 12 Meses)
             </h3>
             <ResponsiveContainer width="100%" height={300}>
@@ -1906,7 +1949,7 @@ export default function AdminPanel() {
           {/* LTV Trend */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
             <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-              <i className="fas fa-chart-line text-blue-600 mr-2"></i>
+              <TrendingUp className="text-blue-600 mr-2" size={20} />
               LTV Promedio en el Tiempo
             </h3>
             <ResponsiveContainer width="100%" height={300}>
@@ -2016,7 +2059,7 @@ export default function AdminPanel() {
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-6">
           <div className="flex items-start space-x-4">
             <div className="w-10 h-10 bg-blue-100 dark:bg-blue-800 rounded-lg flex items-center justify-center flex-shrink-0">
-              <i className="fas fa-lightbulb text-blue-600 dark:text-blue-400"></i>
+              <Lightbulb className="text-blue-600 dark:text-blue-400" size={20} />
             </div>
             <div>
               <h3 className="text-lg font-medium text-blue-900 dark:text-blue-100 mb-2">Insights de Retención</h3>
@@ -2084,7 +2127,7 @@ export default function AdminPanel() {
           <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-2xl p-6 border border-green-200 dark:border-green-800">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white">
-                <i className="fas fa-calendar-check text-xl"></i>
+                <CalendarCheck size={20} />
               </div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Próximos Pagos (30d)</p>
@@ -2095,7 +2138,7 @@ export default function AdminPanel() {
           <div className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 rounded-2xl p-6 border border-red-200 dark:border-red-800">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center text-white">
-                <i className="fas fa-exclamation-triangle text-xl"></i>
+                <AlertTriangle size={20} />
               </div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Facturas Pendientes</p>
@@ -2106,7 +2149,7 @@ export default function AdminPanel() {
           <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-2xl p-6 border border-blue-200 dark:border-blue-800">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white">
-                <i className="fas fa-money-check-alt text-xl"></i>
+                <CreditCard size={20} />
               </div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Pagos Mes Actual</p>
@@ -2117,7 +2160,7 @@ export default function AdminPanel() {
           <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 rounded-2xl p-6 border border-yellow-200 dark:border-yellow-800">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-500 to-yellow-600 flex items-center justify-center text-white">
-                <i className="fas fa-file-invoice-dollar text-xl"></i>
+                <FileText size={20} />
               </div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">AR Balance</p>
@@ -2186,7 +2229,7 @@ export default function AdminPanel() {
           {/* Pagos Recibidos */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
             <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-              <i className="fas fa-chart-bar text-green-600 mr-2"></i>
+              <BarChartIcon className="text-green-600 mr-2" size={20} />
               Pagos Recibidos por Mes
             </h3>
             <ResponsiveContainer width="100%" height={300}>
@@ -2203,7 +2246,7 @@ export default function AdminPanel() {
           {/* Métodos de Pago */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
             <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-              <i className="fas fa-credit-card text-blue-600 mr-2"></i>
+              <CreditCard className="text-blue-600 mr-2" size={20} />
               Métodos de Pago Más Usados
             </h3>
             <ResponsiveContainer width="100%" height={300}>
@@ -2234,14 +2277,14 @@ export default function AdminPanel() {
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
-                <i className="fas fa-file-invoice text-red-600 mr-2"></i>
+                <FileText className="text-red-600 mr-2" size={16} />
                 Facturas Pendientes ({facturasPendientes.length})
               </h3>
               <button
                 onClick={() => setShowConfigModal(true)}
                 className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-medium transition-all transform hover:scale-105 shadow-lg flex items-center"
               >
-                <i className="fas fa-cog mr-2"></i>
+                <Settings className="mr-2" size={16} />
                 Configurar Datos de Facturación
               </button>
             </div>
@@ -2294,7 +2337,7 @@ export default function AdminPanel() {
                               className="px-3 py-1 text-xs font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
                               title="Editar factura"
                             >
-                              <i className="fas fa-edit mr-1"></i>
+                              <Pencil className="mr-1" size={12} />
                               Editar
                             </button>
                             <button
@@ -2302,7 +2345,7 @@ export default function AdminPanel() {
                               className="px-3 py-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
                               title="Marcar como pagado"
                             >
-                              <i className="fas fa-check mr-1"></i>
+                              <Check className="mr-1" size={12} />
                               Marcar Pagado
                             </button>
                             <button
@@ -2310,7 +2353,7 @@ export default function AdminPanel() {
                               className="px-3 py-1 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
                               title="Generar PDF"
                             >
-                              <i className="fas fa-file-pdf mr-1"></i>
+                              <FileText className="mr-1" size={12} />
                               Generar PDF
                             </button>
                           </div>
@@ -2329,7 +2372,7 @@ export default function AdminPanel() {
           <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 border border-green-200 dark:border-green-800 rounded-2xl p-6">
             <div className="flex items-start space-x-4">
               <div className="w-10 h-10 bg-green-100 dark:bg-green-800 rounded-lg flex items-center justify-center flex-shrink-0">
-                <i className="fas fa-chart-pie text-green-600 dark:text-green-400"></i>
+                <PieChartIcon className="text-green-600 dark:text-green-400" size={20} />
               </div>
               <div>
                 <h3 className="text-lg font-medium text-green-900 dark:text-green-100 mb-2">Resumen de Facturación</h3>
@@ -2346,7 +2389,7 @@ export default function AdminPanel() {
           <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-6">
             <div className="flex items-start space-x-4">
               <div className="w-10 h-10 bg-blue-100 dark:bg-blue-800 rounded-lg flex items-center justify-center flex-shrink-0">
-                <i className="fas fa-info-circle text-blue-600 dark:text-blue-400"></i>
+                <Info className="text-blue-600 dark:text-blue-400" size={20} />
               </div>
               <div>
                 <h3 className="text-lg font-medium text-blue-900 dark:text-blue-100 mb-2">Origen de Datos de Facturación</h3>
@@ -2674,7 +2717,7 @@ export default function AdminPanel() {
             onClick={openCreateAlertaModal}
             className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-3 rounded-xl font-medium transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
           >
-            <i className="fas fa-plus"></i>
+            <Plus size={16} />
             Nueva Alerta
           </button>
         </div>
@@ -2684,7 +2727,7 @@ export default function AdminPanel() {
           <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-2xl p-6 border border-blue-200 dark:border-blue-800">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white">
-                <i className="fas fa-bell text-xl"></i>
+                <Bell size={20} />
               </div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Alertas</p>
@@ -2694,7 +2737,7 @@ export default function AdminPanel() {
           <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-2xl p-6 border border-green-200 dark:border-green-800">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white">
-                <i className="fas fa-check-circle text-xl"></i>
+                <CheckCircle size={20} />
               </div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Activas</p>
@@ -2704,7 +2747,7 @@ export default function AdminPanel() {
           <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20 rounded-2xl p-6 border border-gray-200 dark:border-gray-800">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-500 to-gray-600 flex items-center justify-center text-white">
-                <i className="fas fa-bell-slash text-xl"></i>
+                <BellOff size={20} />
               </div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Inactivas</p>
@@ -2714,7 +2757,7 @@ export default function AdminPanel() {
           <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 rounded-2xl p-6 border border-yellow-200 dark:border-yellow-800">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-500 to-yellow-600 flex items-center justify-center text-white">
-                <i className="fas fa-users text-xl"></i>
+                <Users size={20} />
               </div>
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Clientes con Alertas</p>
@@ -2789,13 +2832,13 @@ export default function AdminPanel() {
                         onClick={() => openEditAlertaModal(alerta)}
                         className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                       >
-                        <i className="fas fa-edit"></i>
+                        <Pencil size={16} />
                       </button>
                       <button
                         onClick={() => deleteAlerta(alerta.id)}
                         className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
                       >
-                        <i className="fas fa-trash"></i>
+                        <Trash2 size={16} />
                       </button>
                     </td>
                   </tr>
@@ -2809,7 +2852,7 @@ export default function AdminPanel() {
         {totalClientesConAlertas > 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
             <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-              <i className="fas fa-exclamation-triangle text-yellow-600 mr-2"></i>
+              <AlertTriangle className="text-yellow-600 mr-2" size={16} />
               Clientes con Alertas Activas ({totalClientesConAlertas})
             </h3>
             <div className="space-y-3">
@@ -2858,7 +2901,7 @@ export default function AdminPanel() {
         <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800 rounded-2xl p-6">
           <div className="flex items-start space-x-4">
             <div className="w-10 h-10 bg-blue-100 dark:bg-blue-800 rounded-lg flex items-center justify-center flex-shrink-0">
-              <i className="fas fa-lightbulb text-blue-600 dark:text-blue-400"></i>
+              <Lightbulb className="text-blue-600 dark:text-blue-400" size={20} />
             </div>
             <div>
               <h3 className="text-lg font-medium text-blue-900 dark:text-blue-100 mb-2">Sistema de Alertas</h3>
@@ -2883,7 +2926,7 @@ export default function AdminPanel() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2 flex items-center">
-            <i className="fas fa-shield-alt text-blue-600 mr-3"></i>
+            <Shield className="text-blue-600 mr-3" size={28} />
             Panel de Administración SaaS
           </h1>
           <p className="text-gray-600 dark:text-gray-300">
@@ -2960,7 +3003,7 @@ export default function AdminPanel() {
                     onClick={() => setShowClienteModal(false)}
                     className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
                   >
-                    <i className="fas fa-times text-xl"></i>
+                    <X size={20} />
                   </button>
                 </div>
               </div>
@@ -3164,7 +3207,7 @@ export default function AdminPanel() {
                     onClick={() => setShowDetailModal(false)}
                     className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
                   >
-                    <i className="fas fa-times text-xl"></i>
+                    <X size={20} />
                   </button>
                 </div>
               </div>
@@ -3374,7 +3417,7 @@ export default function AdminPanel() {
                     onClick={() => setShowAlertaModal(false)}
                     className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
                   >
-                    <i className="fas fa-times text-xl"></i>
+                    <X size={20} />
                   </button>
                 </div>
               </div>
@@ -3533,7 +3576,7 @@ export default function AdminPanel() {
 
                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
                   <p className="text-sm text-blue-800 dark:text-blue-200">
-                    <i className="fas fa-info-circle mr-2"></i>
+                    <Info className="mr-2" size={16} />
                     Esta alerta se evaluará automáticamente para cada cliente que cumpla con las condiciones especificadas.
                   </p>
                 </div>

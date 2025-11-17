@@ -1,4 +1,16 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import {
+  ArrowLeft,
+  Save,
+  Info,
+  Zap,
+  Send,
+  GitBranch,
+  Clock,
+  Trash2,
+  X,
+  MousePointer2
+} from 'lucide-react';
 import ReactFlow, {
   Node,
   Edge,
@@ -246,7 +258,7 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ onNavigate, automationId }) =
               onClick={() => onNavigate('automations')}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
-              <i className="fas fa-arrow-left text-gray-700 dark:text-gray-300"></i>
+              <ArrowLeft className="text-gray-700 dark:text-gray-300" size={20} />
             </button>
             <div>
               <input
@@ -269,7 +281,7 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ onNavigate, automationId }) =
             onClick={handleSave}
             className="px-6 py-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg hover:from-purple-700 hover:to-blue-700 transition-all duration-200 flex items-center gap-2"
           >
-            <i className="fas fa-save"></i>
+            <Save size={16} />
             Guardar
           </button>
         </div>
@@ -279,12 +291,14 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ onNavigate, automationId }) =
         {/* Sidebar - Node Palette */}
         <div className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-4 overflow-y-auto">
           <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-            <p className="text-xs text-blue-800 dark:text-blue-300">
-              <i className="fas fa-info-circle mr-1"></i>
-              <strong>Instrucciones:</strong>
-              <br/>1. Añade nodos al canvas
-              <br/>2. Conecta arrastrando desde el punto derecho al izquierdo
-              <br/>3. Haz clic en un nodo para configurarlo
+            <p className="text-xs text-blue-800 dark:text-blue-300 flex items-start gap-1">
+              <Info size={14} className="mt-0.5 flex-shrink-0" />
+              <span>
+                <strong>Instrucciones:</strong>
+                <br/>1. Añade nodos al canvas
+                <br/>2. Conecta arrastrando desde el punto derecho al izquierdo
+                <br/>3. Haz clic en un nodo para configurarlo
+              </span>
             </p>
           </div>
 
@@ -295,28 +309,28 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ onNavigate, automationId }) =
               onClick={() => addNode('trigger')}
               className="w-full p-3 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/30 transition-colors flex items-center gap-2"
             >
-              <i className="fas fa-bolt"></i>
+              <Zap size={16} />
               Trigger
             </button>
             <button
               onClick={() => addNode('action')}
               className="w-full p-3 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors flex items-center gap-2"
             >
-              <i className="fas fa-paper-plane"></i>
+              <Send size={16} />
               Acción
             </button>
             <button
               onClick={() => addNode('condition')}
               className="w-full p-3 bg-orange-100 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400 rounded-lg hover:bg-orange-200 dark:hover:bg-orange-900/30 transition-colors flex items-center gap-2"
             >
-              <i className="fas fa-code-branch"></i>
+              <GitBranch size={16} />
               Condición
             </button>
             <button
               onClick={() => addNode('delay')}
               className="w-full p-3 bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/30 transition-colors flex items-center gap-2"
             >
-              <i className="fas fa-clock"></i>
+              <Clock size={16} />
               Delay
             </button>
           </div>
@@ -328,7 +342,7 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ onNavigate, automationId }) =
                 onClick={deleteSelectedNode}
                 className="w-full p-3 bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/30 transition-colors flex items-center justify-center gap-2"
               >
-                <i className="fas fa-trash"></i>
+                <Trash2 size={16} />
                 Eliminar Nodo
               </button>
             </div>
@@ -378,17 +392,19 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ onNavigate, automationId }) =
                 onClick={() => setShowNodeConfig(false)}
                 className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
               >
-                <i className="fas fa-times text-gray-600 dark:text-gray-400"></i>
+                <X className="text-gray-600 dark:text-gray-400" size={20} />
               </button>
             </div>
 
             {selectedNode.type === 'trigger' && (
               <div className="space-y-4">
                 <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800 mb-4">
-                  <p className="text-sm text-green-800 dark:text-green-300">
-                    <i className="fas fa-info-circle mr-1"></i>
-                    <strong>Nodo Trigger (Disparador)</strong><br/>
-                    Define CUÁNDO se ejecuta esta automatización. Sin un trigger, el flujo no puede iniciar.
+                  <p className="text-sm text-green-800 dark:text-green-300 flex items-start gap-2">
+                    <Info size={16} className="flex-shrink-0 mt-0.5" />
+                    <span>
+                      <strong>Nodo Trigger (Disparador)</strong><br/>
+                      Define CUÁNDO se ejecuta esta automatización. Sin un trigger, el flujo no puede iniciar.
+                    </span>
                   </p>
                 </div>
 
@@ -500,10 +516,12 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ onNavigate, automationId }) =
                 {selectedNode.data.actionType === 'send_message' && (
                   <div className="space-y-4">
                     <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                      <p className="text-sm text-blue-800 dark:text-blue-300">
-                        <i className="fas fa-info-circle mr-1"></i>
-                        <strong>Enviar Mensaje de WhatsApp</strong><br/>
-                        Esta acción enviará un mensaje usando una plantilla aprobada de WhatsApp Business.
+                      <p className="text-sm text-blue-800 dark:text-blue-300 flex items-start gap-2">
+                        <Info size={16} className="flex-shrink-0 mt-0.5" />
+                        <span>
+                          <strong>Enviar Mensaje de WhatsApp</strong><br/>
+                          Esta acción enviará un mensaje usando una plantilla aprobada de WhatsApp Business.
+                        </span>
                       </p>
                     </div>
 
@@ -762,10 +780,12 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ onNavigate, automationId }) =
             {selectedNode.type === 'delay' && (
               <div className="space-y-4">
                 <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800 mb-4">
-                  <p className="text-sm text-purple-800 dark:text-purple-300">
-                    <i className="fas fa-info-circle mr-1"></i>
-                    <strong>Nodo Delay (Espera)</strong><br/>
-                    Pausa la ejecución del flujo por el tiempo especificado. Útil para espaciar mensajes y no bombardear al contacto.
+                  <p className="text-sm text-purple-800 dark:text-purple-300 flex items-start gap-2">
+                    <Info size={16} className="flex-shrink-0 mt-0.5" />
+                    <span>
+                      <strong>Nodo Delay (Espera)</strong><br/>
+                      Pausa la ejecución del flujo por el tiempo especificado. Útil para espaciar mensajes y no bombardear al contacto.
+                    </span>
                   </p>
                 </div>
 
@@ -820,10 +840,12 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ onNavigate, automationId }) =
             {selectedNode.type === 'condition' && (
               <div className="space-y-4">
                 <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800 mb-4">
-                  <p className="text-sm text-orange-800 dark:text-orange-300">
-                    <i className="fas fa-info-circle mr-1"></i>
-                    <strong>Nodo Condition (Condición)</strong><br/>
-                    Divide el flujo en 2 caminos según si la condición es verdadera o falsa. Conecta el handle verde (TRUE) y rojo (FALSE) a diferentes nodos.
+                  <p className="text-sm text-orange-800 dark:text-orange-300 flex items-start gap-2">
+                    <Info size={16} className="flex-shrink-0 mt-0.5" />
+                    <span>
+                      <strong>Nodo Condition (Condición)</strong><br/>
+                      Divide el flujo en 2 caminos según si la condición es verdadera o falsa. Conecta el handle verde (TRUE) y rojo (FALSE) a diferentes nodos.
+                    </span>
                   </p>
                 </div>
 
@@ -934,7 +956,7 @@ const FlowBuilder: React.FC<FlowBuilderProps> = ({ onNavigate, automationId }) =
           <div className="w-80 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 p-4 flex items-center justify-center">
             <div className="text-center">
               <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i className="fas fa-mouse-pointer text-2xl text-gray-400 dark:text-gray-500"></i>
+                <MousePointer2 className="text-gray-400 dark:text-gray-500" size={32} />
               </div>
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-2">
                 Selecciona un nodo

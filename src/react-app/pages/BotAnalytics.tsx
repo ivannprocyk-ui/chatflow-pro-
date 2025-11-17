@@ -1,4 +1,20 @@
 import { useState, useEffect } from 'react';
+import {
+  Brain,
+  TrendingUp,
+  Flame,
+  PieChart as PieChartIcon,
+  HelpCircle,
+  UserCog,
+  Zap,
+  Reply,
+  ListChecks,
+  AlertTriangle,
+  MessageSquare,
+  CheckCircle,
+  Clock,
+  Users
+} from 'lucide-react';
 import { botTrackingAPI } from '@/react-app/services/api';
 import LineChart from '@/react-app/components/charts/LineChart';
 import BarChart from '@/react-app/components/charts/BarChart';
@@ -161,7 +177,7 @@ export default function BotAnalytics() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent flex items-center">
-              <i className="fas fa-brain text-purple-600 dark:text-purple-400 mr-3"></i>
+              <Brain className="text-purple-600 dark:text-purple-400 mr-3" size={28} />
               Analytics Bot IA
             </h1>
             <p className="text-gray-600 dark:text-gray-300 mt-2">
@@ -245,7 +261,7 @@ export default function BotAnalytics() {
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
             <div className="mb-6">
               <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
-                <i className="fas fa-chart-line text-purple-600 dark:text-purple-400 mr-2"></i>
+                <TrendingUp className="text-purple-600 dark:text-purple-400 mr-2" size={20} />
                 Evolución de Mensajes del Bot
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -265,7 +281,7 @@ export default function BotAnalytics() {
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
             <div className="mb-6">
               <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
-                <i className="fas fa-fire text-red-600 dark:text-red-400 mr-2"></i>
+                <Flame className="text-red-600 dark:text-red-400 mr-2" size={20} />
                 Actividad del Bot por Horario
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -281,7 +297,7 @@ export default function BotAnalytics() {
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
               <div className="mb-6">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
-                  <i className="fas fa-chart-pie text-blue-600 dark:text-blue-400 mr-2"></i>
+                  <PieChartIcon className="text-blue-600 dark:text-blue-400 mr-2" size={20} />
                   Estado de Conversaciones
                 </h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -295,7 +311,7 @@ export default function BotAnalytics() {
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
               <div className="mb-6">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
-                  <i className="fas fa-question-circle text-purple-600 dark:text-purple-400 mr-2"></i>
+                  <HelpCircle className="text-purple-600 dark:text-purple-400 mr-2" size={20} />
                   Tipos de Consultas
                 </h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -311,7 +327,7 @@ export default function BotAnalytics() {
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
               <div className="mb-6">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
-                  <i className="fas fa-users-cog text-indigo-600 dark:text-indigo-400 mr-2"></i>
+                  <UserCog className="text-indigo-600 dark:text-indigo-400 mr-2" size={20} />
                   Comparación por Tipo de Agente
                 </h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -338,7 +354,7 @@ export default function BotAnalytics() {
             <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-2xl p-6 border border-purple-200 dark:border-purple-800">
               <div className="flex items-center space-x-3 mb-4">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white">
-                  <i className="fas fa-bolt text-xl"></i>
+                  <Zap size={20} />
                 </div>
                 <h3 className="font-semibold text-purple-900 dark:text-purple-100">Procesamiento IA</h3>
               </div>
@@ -351,7 +367,7 @@ export default function BotAnalytics() {
             <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-2xl p-6 border border-blue-200 dark:border-blue-800">
               <div className="flex items-center space-x-3 mb-4">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white">
-                  <i className="fas fa-reply text-xl"></i>
+                  <Reply size={20} />
                 </div>
                 <h3 className="font-semibold text-blue-900 dark:text-blue-100">Tasa Respuesta</h3>
               </div>
@@ -364,7 +380,7 @@ export default function BotAnalytics() {
             <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-2xl p-6 border border-green-200 dark:border-green-800">
               <div className="flex items-center space-x-3 mb-4">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white">
-                  <i className="fas fa-chart-line text-xl"></i>
+                  <TrendingUp size={20} />
                 </div>
                 <h3 className="font-semibold text-green-900 dark:text-green-100">Eficiencia</h3>
               </div>
@@ -378,7 +394,7 @@ export default function BotAnalytics() {
           {/* Message Status Breakdown */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
             <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center">
-              <i className="fas fa-list-check text-blue-600 dark:text-blue-400 mr-2"></i>
+              <ListChecks className="text-blue-600 dark:text-blue-400 mr-2" size={20} />
               Desglose de Estados
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -425,7 +441,7 @@ export default function BotAnalytics() {
           {metrics.errorCount > 0 && (
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
               <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                <i className="fas fa-exclamation-triangle text-red-600 dark:text-red-400 mr-2"></i>
+                <AlertTriangle className="text-red-600 dark:text-red-400 mr-2" size={20} />
                 Errores Principales
               </h2>
               <div className="space-y-2">

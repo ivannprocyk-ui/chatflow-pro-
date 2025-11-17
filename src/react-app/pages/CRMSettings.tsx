@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { loadCRMConfig, saveCRMConfig, CRMConfig, CRMFieldConfig, CRMStatusConfig } from '@/react-app/utils/storage';
 import { useToast } from '@/react-app/components/Toast';
+import { Plus, ArrowUp, ArrowDown, Edit, Trash2, X } from 'lucide-react';
 
 export default function CRMSettings() {
   const [config, setConfig] = useState<CRMConfig>(loadCRMConfig());
@@ -218,7 +219,7 @@ export default function CRMSettings() {
             }}
             className="bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 dark:hover:from-blue-700 dark:hover:to-blue-800 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
           >
-            <i className="fas fa-plus"></i>
+            <Plus size={16} />
             <span>Nuevo Campo</span>
           </button>
         </div>
@@ -241,7 +242,7 @@ export default function CRMSettings() {
                     className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 p-1 disabled:opacity-30 disabled:cursor-not-allowed"
                     title="Mover arriba"
                   >
-                    <i className="fas fa-arrow-up"></i>
+                    <ArrowUp size={14} />
                   </button>
                   <button
                     onClick={() => handleMoveFieldDown(field.id)}
@@ -249,21 +250,21 @@ export default function CRMSettings() {
                     className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 p-1 disabled:opacity-30 disabled:cursor-not-allowed"
                     title="Mover abajo"
                   >
-                    <i className="fas fa-arrow-down"></i>
+                    <ArrowDown size={14} />
                   </button>
                   <button
                     onClick={() => handleEditField(field)}
                     className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 p-1"
                     title="Editar"
                   >
-                    <i className="fas fa-edit"></i>
+                    <Edit size={14} />
                   </button>
                   <button
                     onClick={() => handleDeleteField(field.id)}
                     className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 p-1"
                     title="Eliminar"
                   >
-                    <i className="fas fa-trash"></i>
+                    <Trash2 size={14} />
                   </button>
                 </div>
               </div>
@@ -297,7 +298,7 @@ export default function CRMSettings() {
             }}
             className="bg-gradient-to-r from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-700 text-white px-6 py-3 rounded-xl font-medium hover:from-purple-600 hover:to-purple-700 dark:hover:from-purple-700 dark:hover:to-purple-800 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
           >
-            <i className="fas fa-plus"></i>
+            <Plus size={16} />
             <span>Nuevo Estado</span>
           </button>
         </div>
@@ -316,14 +317,14 @@ export default function CRMSettings() {
                     className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 p-1"
                     title="Editar"
                   >
-                    <i className="fas fa-edit"></i>
+                    <Edit size={14} />
                   </button>
                   <button
                     onClick={() => handleDeleteStatus(status.id)}
                     className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 p-1"
                     title="Eliminar"
                   >
-                    <i className="fas fa-trash"></i>
+                    <Trash2 size={14} />
                   </button>
                 </div>
               </div>
@@ -442,7 +443,7 @@ export default function CRMSettings() {
                       }}
                       className="bg-blue-500 dark:bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-600 dark:hover:bg-blue-700 transition-all"
                     >
-                      <i className="fas fa-plus"></i>
+                      <Plus size={16} />
                     </button>
                   </div>
                   <div className="space-y-2">
@@ -458,7 +459,7 @@ export default function CRMSettings() {
                           }}
                           className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 p-1"
                         >
-                          <i className="fas fa-times"></i>
+                          <X size={14} />
                         </button>
                       </div>
                     ))}

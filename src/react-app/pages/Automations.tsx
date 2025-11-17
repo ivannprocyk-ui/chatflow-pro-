@@ -1,5 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import {
+  Wand2,
+  TrendingUp,
+  Plus,
+  Search,
+  Zap,
+  GitBranch,
+  PlayCircle,
+  CheckCircle,
+  PauseCircle,
+  Play,
+  Pause,
+  Pencil,
+  Copy,
+  Trash2,
+  X,
+  UserX,
+  Check,
+  User,
+  XCircle,
+  AlertTriangle,
+  Loader2
+} from 'lucide-react';
+import {
   loadAutomations,
   deleteAutomation,
   toggleAutomationStatus,
@@ -149,7 +172,7 @@ const Automations: React.FC<AutomationsProps> = ({ onNavigate }) => {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-              <i className="fas fa-magic text-purple-600 dark:text-purple-400"></i>
+              <Wand2 className="text-purple-600 dark:text-purple-400" size={28} />
               Automatizaciones
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
@@ -161,14 +184,14 @@ const Automations: React.FC<AutomationsProps> = ({ onNavigate }) => {
               onClick={() => setShowTrackingPanel(true)}
               className="px-6 py-3 bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-xl hover:from-orange-700 hover:to-red-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2"
             >
-              <i className="fas fa-chart-line"></i>
+              <TrendingUp size={16} />
               Seguimiento de Mensajes
             </button>
             <button
               onClick={handleCreateNew}
               className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl flex items-center gap-2"
             >
-              <i className="fas fa-plus"></i>
+              <Plus size={16} />
               Crear Automatización
             </button>
           </div>
@@ -183,7 +206,7 @@ const Automations: React.FC<AutomationsProps> = ({ onNavigate }) => {
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">{automations.length}</p>
               </div>
               <div className="w-12 h-12 rounded-lg bg-purple-100 dark:bg-purple-900/20 flex items-center justify-center">
-                <i className="fas fa-magic text-purple-600 dark:text-purple-400"></i>
+                <Wand2 className="text-purple-600 dark:text-purple-400" size={20} />
               </div>
             </div>
           </div>
@@ -197,7 +220,7 @@ const Automations: React.FC<AutomationsProps> = ({ onNavigate }) => {
                 </p>
               </div>
               <div className="w-12 h-12 rounded-lg bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
-                <i className="fas fa-check-circle text-green-600 dark:text-green-400"></i>
+                <CheckCircle className="text-green-600 dark:text-green-400" size={20} />
               </div>
             </div>
           </div>
@@ -211,7 +234,7 @@ const Automations: React.FC<AutomationsProps> = ({ onNavigate }) => {
                 </p>
               </div>
               <div className="w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-                <i className="fas fa-pause-circle text-gray-600 dark:text-gray-400"></i>
+                <PauseCircle className="text-gray-600 dark:text-gray-400" size={20} />
               </div>
             </div>
           </div>
@@ -225,7 +248,7 @@ const Automations: React.FC<AutomationsProps> = ({ onNavigate }) => {
                 </p>
               </div>
               <div className="w-12 h-12 rounded-lg bg-blue-100 dark:bg-blue-900/20 flex items-center justify-center">
-                <i className="fas fa-play-circle text-blue-600 dark:text-blue-400"></i>
+                <PlayCircle className="text-blue-600 dark:text-blue-400" size={20} />
               </div>
             </div>
           </div>
@@ -235,7 +258,7 @@ const Automations: React.FC<AutomationsProps> = ({ onNavigate }) => {
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
-              <i className="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
               <input
                 type="text"
                 placeholder="Buscar automatizaciones..."
@@ -285,7 +308,7 @@ const Automations: React.FC<AutomationsProps> = ({ onNavigate }) => {
       {filteredAutomations.length === 0 ? (
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-12 text-center border border-gray-200 dark:border-gray-700">
           <div className="w-20 h-20 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-            <i className="fas fa-magic text-4xl text-purple-600 dark:text-purple-400"></i>
+            <Wand2 className="text-purple-600 dark:text-purple-400" size={48} />
           </div>
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
             No hay automatizaciones
@@ -297,9 +320,9 @@ const Automations: React.FC<AutomationsProps> = ({ onNavigate }) => {
           </p>
           <button
             onClick={handleCreateNew}
-            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all duration-200"
+            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all duration-200 flex items-center gap-2"
           >
-            <i className="fas fa-plus mr-2"></i>
+            <Plus size={16} />
             Crear Primera Automatización
           </button>
         </div>
@@ -330,20 +353,20 @@ const Automations: React.FC<AutomationsProps> = ({ onNavigate }) => {
 
                   <div className="flex items-center gap-6 text-sm">
                     <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                      <i className="fas fa-bolt text-purple-600 dark:text-purple-400"></i>
+                      <Zap className="text-purple-600 dark:text-purple-400" size={16} />
                       <span>Trigger: {getTriggerFromAutomation(automation)}</span>
                     </div>
                     <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                      <i className="fas fa-code-branch text-blue-600 dark:text-blue-400"></i>
+                      <GitBranch className="text-blue-600 dark:text-blue-400" size={16} />
                       <span>{automation.nodes.length} nodos</span>
                     </div>
                     <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                      <i className="fas fa-play-circle text-green-600 dark:text-green-400"></i>
+                      <PlayCircle className="text-green-600 dark:text-green-400" size={16} />
                       <span>{automation.stats.totalExecutions} ejecuciones</span>
                     </div>
                     {automation.stats.totalExecutions > 0 && (
                       <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                        <i className="fas fa-check-circle text-green-600 dark:text-green-400"></i>
+                        <CheckCircle className="text-green-600 dark:text-green-400" size={16} />
                         <span>
                           {Math.round(
                             (automation.stats.successfulExecutions / automation.stats.totalExecutions) * 100
@@ -361,7 +384,7 @@ const Automations: React.FC<AutomationsProps> = ({ onNavigate }) => {
                     className="p-3 bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 rounded-lg hover:bg-orange-200 dark:hover:bg-orange-900/30 transition-colors"
                     title="Ejecutar Ahora"
                   >
-                    <i className="fas fa-bolt"></i>
+                    <Zap size={16} />
                   </button>
                   <button
                     onClick={() => handleToggleStatus(automation.id)}
@@ -372,28 +395,28 @@ const Automations: React.FC<AutomationsProps> = ({ onNavigate }) => {
                     }`}
                     title={automation.active ? 'Desactivar' : 'Activar'}
                   >
-                    <i className={`fas fa-${automation.active ? 'pause' : 'play'}`}></i>
+                    {automation.active ? <Pause size={16} /> : <Play size={16} />}
                   </button>
                   <button
                     onClick={() => handleEdit(automation)}
                     className="p-3 bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/30 transition-colors"
                     title="Editar"
                   >
-                    <i className="fas fa-edit"></i>
+                    <Pencil size={16} />
                   </button>
                   <button
                     onClick={() => handleDuplicate(automation.id)}
                     className="p-3 bg-purple-100 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/30 transition-colors"
                     title="Duplicar"
                   >
-                    <i className="fas fa-copy"></i>
+                    <Copy size={16} />
                   </button>
                   <button
                     onClick={() => handleDelete(automation.id)}
                     className="p-3 bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/30 transition-colors"
                     title="Eliminar"
                   >
-                    <i className="fas fa-trash"></i>
+                    <Trash2 size={16} />
                   </button>
                 </div>
               </div>
@@ -410,14 +433,14 @@ const Automations: React.FC<AutomationsProps> = ({ onNavigate }) => {
             <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  <i className="fas fa-bolt text-orange-600 dark:text-orange-400"></i>
+                  <Zap className="text-orange-600 dark:text-orange-400" size={24} />
                   Ejecutar Automatización
                 </h3>
                 <button
                   onClick={() => setShowExecuteModal(false)}
                   className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                 >
-                  <i className="fas fa-times text-gray-600 dark:text-gray-400"></i>
+                  <X className="text-gray-600 dark:text-gray-400" size={20} />
                 </button>
               </div>
               <p className="text-gray-600 dark:text-gray-400">
@@ -443,7 +466,7 @@ const Automations: React.FC<AutomationsProps> = ({ onNavigate }) => {
 
                   {contacts.length === 0 ? (
                     <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                      <i className="fas fa-user-slash text-4xl mb-2"></i>
+                      <UserX size={48} className="mx-auto mb-2" />
                       <p>No hay contactos disponibles</p>
                     </div>
                   ) : (
@@ -466,9 +489,9 @@ const Automations: React.FC<AutomationsProps> = ({ onNavigate }) => {
                                   : 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
                               }`}>
                                 {selectedContacts.has(contact.id) ? (
-                                  <i className="fas fa-check"></i>
+                                  <Check size={16} />
                                 ) : (
-                                  <i className="fas fa-user"></i>
+                                  <User size={16} />
                                 )}
                               </div>
                               <div>
@@ -506,8 +529,8 @@ const Automations: React.FC<AutomationsProps> = ({ onNavigate }) => {
 
                   {executionResult.error && (
                     <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-200 dark:border-red-700">
-                      <p className="text-red-600 dark:text-red-400 text-sm">
-                        <i className="fas fa-exclamation-triangle mr-2"></i>
+                      <p className="text-red-600 dark:text-red-400 text-sm flex items-center gap-2">
+                        <AlertTriangle size={16} />
                         {executionResult.error}
                       </p>
                     </div>
@@ -525,7 +548,11 @@ const Automations: React.FC<AutomationsProps> = ({ onNavigate }) => {
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <i className={`fas fa-${result.success ? 'check-circle text-green-600 dark:text-green-400' : 'times-circle text-red-600 dark:text-red-400'}`}></i>
+                            {result.success ? (
+                              <CheckCircle className="text-green-600 dark:text-green-400" size={16} />
+                            ) : (
+                              <XCircle className="text-red-600 dark:text-red-400" size={16} />
+                            )}
                             <span className={`text-sm ${
                               result.success
                                 ? 'text-green-600 dark:text-green-400'
@@ -566,12 +593,12 @@ const Automations: React.FC<AutomationsProps> = ({ onNavigate }) => {
                   >
                     {isExecuting ? (
                       <>
-                        <i className="fas fa-spinner fa-spin"></i>
+                        <Loader2 className="animate-spin" size={16} />
                         Ejecutando...
                       </>
                     ) : (
                       <>
-                        <i className="fas fa-bolt"></i>
+                        <Zap size={16} />
                         Ejecutar ({selectedContacts.size})
                       </>
                     )}

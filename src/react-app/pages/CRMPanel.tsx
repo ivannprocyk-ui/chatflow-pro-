@@ -4,6 +4,7 @@ import { es } from 'date-fns/locale';
 import { loadCRMData, saveCRMData, loadCRMConfig, loadContactLists, saveContactLists, CRMFieldConfig, CRMConfig, loadTags, saveTags, createTag, updateTag, deleteTag, Tag, TAG_COLORS, ValidationIssue, validateContactData, findDuplicateContacts, applyDataCleaning, mergeContacts, exportContacts, ExportOptions, MessageHistory, MessageStats, MessageFilter, getContactMessageHistory, getContactMessageStats, filterMessageHistory, formatArgentinaPhone } from '@/react-app/utils/storage';
 import { useToast } from '@/react-app/components/Toast';
 import ImportWizard from '@/react-app/components/ImportWizard';
+import { BookUser, FileUp, FileDown, Sparkles, Tags, Plus, Table, List, Grid3x3, Filter, X, Search, SlidersHorizontal, Check, AlertTriangle, Clock, Eye, Edit, Trash2, CreditCard, PlusCircle, UserPlus, UserCircle, Info, Calendar, Repeat, CalendarOff, MessageCircle, Send, FileText, Megaphone, Phone, ArrowDown, MessageSquare, Star, PieChart, Copy, AlertCircle, Wand2, Users, CheckCircle, PhoneOff, MailOpen, Mail, Minimize2, Lightbulb, FileSpreadsheet, ArrowRight, User, MinusCircle, Minus } from 'lucide-react';
 
 type ViewMode = 'table' | 'list' | 'cards' | 'kanban';
 
@@ -799,7 +800,7 @@ export default function CRMPanel() {
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2 flex items-center">
-            <i className="fas fa-address-book text-blue-600 mr-3"></i>
+            <BookUser className="text-blue-600 mr-3" size={28} />
             Contactos
           </h1>
           <p className="text-gray-600 dark:text-gray-300">Gestiona tus contactos de forma eficiente</p>
@@ -809,28 +810,28 @@ export default function CRMPanel() {
             onClick={() => setShowImportWizard(true)}
             className="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white px-6 py-3 rounded-xl font-medium hover:from-indigo-600 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
           >
-            <i className="fas fa-file-import"></i>
+            <FileUp size={16} />
             <span>Importar</span>
           </button>
           <button
             onClick={() => setShowExportModal(true)}
             className="bg-gradient-to-r from-cyan-500 to-cyan-600 text-white px-6 py-3 rounded-xl font-medium hover:from-cyan-600 hover:to-cyan-700 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
           >
-            <i className="fas fa-file-export"></i>
+            <FileDown size={16} />
             <span>Exportar</span>
           </button>
           <button
             onClick={handleOpenDataCleaning}
             className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-6 py-3 rounded-xl font-medium hover:from-emerald-600 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
           >
-            <i className="fas fa-broom"></i>
+            <Sparkles size={16} />
             <span>Limpiar Datos</span>
           </button>
           <button
             onClick={handleOpenTagManager}
             className="bg-gradient-to-r from-purple-500 to-purple-600 text-white px-6 py-3 rounded-xl font-medium hover:from-purple-600 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
           >
-            <i className="fas fa-tags"></i>
+            <Tags size={16} />
             <span>Etiquetas</span>
           </button>
           <button
@@ -841,7 +842,7 @@ export default function CRMPanel() {
             }}
             className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
           >
-            <i className="fas fa-plus"></i>
+            <Plus size={16} />
             <span>Nuevo Contacto</span>
           </button>
         </div>
@@ -867,7 +868,7 @@ export default function CRMPanel() {
                     }`}
                     title="Vista de Tabla"
                   >
-                    <i className="fas fa-table"></i>
+                    <Table size={16} />
                     <span className="hidden sm:inline">Tabla</span>
                   </button>
                   <button
@@ -879,7 +880,7 @@ export default function CRMPanel() {
                     }`}
                     title="Vista de Lista"
                   >
-                    <i className="fas fa-list"></i>
+                    <List size={16} />
                     <span className="hidden sm:inline">Lista</span>
                   </button>
                   <button
@@ -891,7 +892,7 @@ export default function CRMPanel() {
                     }`}
                     title="Vista de Tarjetas"
                   >
-                    <i className="fas fa-th-large"></i>
+                    <Grid3x3 size={16} />
                     <span className="hidden sm:inline">Tarjetas</span>
                   </button>
                 </div>
@@ -906,7 +907,7 @@ export default function CRMPanel() {
                       : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
                 >
-                  <i className="fas fa-filter"></i>
+                  <Filter size={16} />
                   <span>Filtros Avanzados</span>
                   {hasActiveFilters && !showFilters && (
                     <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full">●</span>
@@ -917,7 +918,7 @@ export default function CRMPanel() {
                     onClick={clearAllFilters}
                     className="px-4 py-2 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg font-medium hover:bg-red-100 dark:hover:bg-red-900/50 transition-all flex items-center space-x-2"
                   >
-                    <i className="fas fa-times"></i>
+                    <X size={16} />
                     <span>Limpiar</span>
                   </button>
                 )}
@@ -934,7 +935,7 @@ export default function CRMPanel() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-colors duration-300"
                 />
-                <i className="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                <Search className="absolute left-3 top-3 text-gray-400" size={16} />
               </div>
               <select
                 value={statusFilter}
@@ -952,7 +953,7 @@ export default function CRMPanel() {
             {showFilters && (
               <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800 transition-colors duration-300">
                 <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-200 mb-3 flex items-center">
-                  <i className="fas fa-sliders-h mr-2"></i>
+                  <SlidersHorizontal className="mr-2" size={16} />
                   Filtros por Campo
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1038,7 +1039,7 @@ export default function CRMPanel() {
                 {tags.length > 0 && (
                   <div className="mt-4 pt-4 border-t border-blue-300 dark:border-blue-700">
                     <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-200 mb-3 flex items-center">
-                      <i className="fas fa-tags mr-2"></i>
+                      <Tags className="mr-2" size={16} />
                       Filtrar por Etiquetas
                     </h4>
                     <div className="flex flex-wrap gap-2">
@@ -1061,7 +1062,7 @@ export default function CRMPanel() {
                             }`}
                             style={{ backgroundColor: tag.color }}
                           >
-                            {isSelected && <i className="fas fa-check mr-1.5"></i>}
+                            {isSelected && <Check className="mr-1.5" size={14} />}
                             {tag.name}
                           </button>
                         );
@@ -1090,14 +1091,14 @@ export default function CRMPanel() {
                 onClick={() => setShowAddToListModal(true)}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-sm"
               >
-                <i className="fas fa-list-ul mr-2"></i>
+                <List className="mr-2" size={16} />
                 Agregar a Lista
               </button>
               <button
                 onClick={() => setShowMassTagModal(true)}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-purple-600 hover:bg-purple-700 transition-all shadow-sm"
               >
-                <i className="fas fa-tags mr-2"></i>
+                <Tags className="mr-2" size={16} />
                 Asignar Etiquetas
               </button>
               <button
@@ -1180,7 +1181,7 @@ export default function CRMPanel() {
                         {renderTagBadges(contact, 2)}
                         {duplicateContactIds.has(contact.id) && (
                           <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">
-                            <i className="fas fa-exclamation-triangle mr-1"></i>
+                            <AlertTriangle className="mr-1" size={14} />
                             Duplicado
                           </span>
                         )}
@@ -1242,7 +1243,7 @@ export default function CRMPanel() {
                           {getStatusBadge(contact.status)}
                           {duplicateContactIds.has(contact.id) && (
                             <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">
-                              <i className="fas fa-exclamation-triangle mr-1"></i>
+                              <AlertTriangle className="mr-1" size={14} />
                               Duplicado
                             </span>
                           )}
@@ -1297,7 +1298,7 @@ export default function CRMPanel() {
                   {/* Last Interaction */}
                   {contact.lastInteraction && (
                     <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-100 dark:border-gray-700">
-                      <i className="fas fa-clock mr-2"></i>
+                      <Clock className="mr-2" size={16} />
                       <span>Última interacción: {new Date(contact.lastInteraction).toLocaleDateString()}</span>
                     </div>
                   )}
@@ -1309,21 +1310,21 @@ export default function CRMPanel() {
                     onClick={() => handleViewContact(contact)}
                     className="flex-1 px-3 py-2 text-xs font-medium text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors flex items-center justify-center space-x-1"
                   >
-                    <i className="fas fa-eye"></i>
+                    <Eye size={16} />
                     <span>Ver</span>
                   </button>
                   <button
                     onClick={() => handleEditContact(contact)}
                     className="flex-1 px-3 py-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors flex items-center justify-center space-x-1 mx-1"
                   >
-                    <i className="fas fa-edit"></i>
+                    <Edit size={16} />
                     <span>Editar</span>
                   </button>
                   <button
                     onClick={() => handleDeleteContact(contact.id)}
                     className="flex-1 px-3 py-2 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex items-center justify-center space-x-1"
                   >
-                    <i className="fas fa-trash"></i>
+                    <Trash2 size={16} />
                     <span>Eliminar</span>
                   </button>
                 </div>
@@ -1389,7 +1390,7 @@ export default function CRMPanel() {
                           {getStatusBadge(contact.status)}
                           {duplicateContactIds.has(contact.id) && (
                             <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">
-                              <i className="fas fa-exclamation-triangle mr-1"></i>
+                              <AlertTriangle className="mr-1" size={14} />
                               Duplicado
                             </span>
                           )}
@@ -1426,7 +1427,7 @@ export default function CRMPanel() {
                           {/* Last Interaction */}
                           {contact.lastInteraction && (
                             <div className="flex items-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
-                              <i className="fas fa-clock flex-shrink-0"></i>
+                              <Clock className="flex-shrink-0" size={16} />
                               <span className="truncate">
                                 {new Date(contact.lastInteraction).toLocaleDateString()}
                               </span>
@@ -1446,7 +1447,7 @@ export default function CRMPanel() {
                         className="p-2 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors"
                         title="Ver detalles"
                       >
-                        <i className="fas fa-eye"></i>
+                        <Eye size={16} />
                       </button>
                       <button
                         onClick={(e) => {
@@ -1456,7 +1457,7 @@ export default function CRMPanel() {
                         className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                         title="Editar"
                       >
-                        <i className="fas fa-edit"></i>
+                        <Edit size={16} />
                       </button>
                       <button
                         onClick={(e) => {
@@ -1466,7 +1467,7 @@ export default function CRMPanel() {
                         className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                         title="Eliminar"
                       >
-                        <i className="fas fa-trash"></i>
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   </div>
@@ -1483,7 +1484,7 @@ export default function CRMPanel() {
             {viewMode === 'table' && (
               <div>
                 <div className="w-24 h-24 mx-auto mb-6 text-gray-300 dark:text-gray-600">
-                  <i className="fas fa-table text-7xl"></i>
+                  <Table size={64} />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                   {searchTerm || statusFilter !== 'all' ? 'No se encontraron contactos' : 'Tabla vacía'}
@@ -1502,7 +1503,7 @@ export default function CRMPanel() {
                     }}
                     className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg hover:shadow-xl inline-flex items-center space-x-2"
                   >
-                    <i className="fas fa-plus"></i>
+                    <Plus size={16} />
                     <span>Agregar Primer Contacto</span>
                   </button>
                 )}
@@ -1513,7 +1514,7 @@ export default function CRMPanel() {
             {viewMode === 'cards' && (
               <div>
                 <div className="w-24 h-24 mx-auto mb-6 text-gray-300 dark:text-gray-600">
-                  <i className="fas fa-id-card text-7xl"></i>
+                  <CreditCard size={64} />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                   {searchTerm || statusFilter !== 'all' ? 'No hay tarjetas para mostrar' : 'Sin tarjetas de contacto'}
@@ -1532,7 +1533,7 @@ export default function CRMPanel() {
                     }}
                     className="bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-3 rounded-lg font-medium hover:from-purple-700 hover:to-purple-800 transition-all shadow-lg hover:shadow-xl inline-flex items-center space-x-2"
                   >
-                    <i className="fas fa-plus-circle"></i>
+                    <PlusCircle size={16} />
                     <span>Crear Primera Tarjeta</span>
                   </button>
                 )}
@@ -1543,7 +1544,7 @@ export default function CRMPanel() {
             {viewMode === 'list' && (
               <div>
                 <div className="w-24 h-24 mx-auto mb-6 text-gray-300 dark:text-gray-600">
-                  <i className="fas fa-list-ul text-7xl"></i>
+                  <List size={64} />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                   {searchTerm || statusFilter !== 'all' ? 'Lista vacía' : 'Sin contactos en la lista'}
@@ -1562,7 +1563,7 @@ export default function CRMPanel() {
                     }}
                     className="bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-3 rounded-lg font-medium hover:from-green-700 hover:to-green-800 transition-all shadow-lg hover:shadow-xl inline-flex items-center space-x-2"
                   >
-                    <i className="fas fa-user-plus"></i>
+                    <UserPlus size={16} />
                     <span>Agregar a la Lista</span>
                   </button>
                 )}
@@ -1614,7 +1615,7 @@ export default function CRMPanel() {
                 {/* Tags Selector */}
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    <i className="fas fa-tags mr-2"></i>
+                    <Tags className="mr-2" size={16} />
                     Etiquetas
                   </label>
                   <div className="border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-700 min-h-[60px]">
@@ -1639,7 +1640,7 @@ export default function CRMPanel() {
                                 }}
                                 className="ml-2 hover:bg-white/20 rounded-full p-0.5 transition-colors"
                               >
-                                <i className="fas fa-times text-xs"></i>
+                                <X size={12} />
                               </button>
                             </span>
                           );
@@ -1662,7 +1663,7 @@ export default function CRMPanel() {
                             className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium text-white transition-all hover:scale-105 opacity-60 hover:opacity-100"
                             style={{ backgroundColor: tag.color }}
                           >
-                            <i className="fas fa-plus text-xs mr-1"></i>
+                            <Plus className="text-xs mr-1" size={12} />
                             {tag.name}
                           </button>
                         ))}
@@ -1709,7 +1710,7 @@ export default function CRMPanel() {
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full transition-colors duration-300">
             <div className="p-6 border-b border-gray-100 dark:border-gray-700">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
-                <i className="fas fa-list-ul text-blue-600 mr-3"></i>
+                <List className="text-blue-600 mr-3" size={24} />
                 Agregar a Lista
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
@@ -1785,7 +1786,7 @@ export default function CRMPanel() {
                 onClick={handleAddToList}
                 className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 px-6 rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg"
               >
-                <i className="fas fa-check mr-2"></i>
+                <Check className="mr-2" size={16} />
                 Agregar
               </button>
             </div>
@@ -1801,7 +1802,7 @@ export default function CRMPanel() {
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
-                    <i className="fas fa-user-circle text-purple-600 mr-3"></i>
+                    <UserCircle className="text-purple-600 mr-3" size={24} />
                     Detalles del Contacto
                   </h2>
                   <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
@@ -1815,7 +1816,7 @@ export default function CRMPanel() {
                   }}
                   className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
                 >
-                  <i className="fas fa-times text-2xl"></i>
+                  <X size={24} />
                 </button>
               </div>
             </div>
@@ -1824,7 +1825,7 @@ export default function CRMPanel() {
               {/* Contact Information */}
               <div className="mb-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                  <i className="fas fa-info-circle text-blue-600 mr-2"></i>
+                  <Info className="text-blue-600 mr-2" size={16} />
                   Información de Contacto
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
@@ -1878,7 +1879,7 @@ export default function CRMPanel() {
               {/* Calendar Events */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                  <i className="fas fa-calendar-alt text-blue-600 mr-2"></i>
+                  <Calendar className="text-blue-600 mr-2" size={16} />
                   Eventos de Calendario
                   <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
                     ({contactEvents.length})
@@ -1928,18 +1929,18 @@ export default function CRMPanel() {
                                   </span>
                                   {event.recurrence && event.recurrence.frequency !== 'none' && (
                                     <span className="px-2 py-0.5 rounded-md text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
-                                      <i className="fas fa-repeat mr-1"></i>
+                                      <Repeat className="mr-1" size={14} />
                                       Recurrente
                                     </span>
                                   )}
                                 </div>
                                 <div className="flex items-center space-x-4 text-xs text-gray-600 dark:text-gray-400">
                                   <span className="flex items-center">
-                                    <i className="fas fa-calendar text-blue-600 mr-1.5"></i>
+                                    <Calendar className="text-blue-600 mr-1.5" size={14} />
                                     {format(event.start, "dd 'de' MMMM 'de' yyyy", { locale: es })}
                                   </span>
                                   <span className="flex items-center">
-                                    <i className="fas fa-clock text-green-600 mr-1.5"></i>
+                                    <Clock className="text-green-600 mr-1.5" size={14} />
                                     {format(event.start, 'HH:mm', { locale: es })} - {format(event.end, 'HH:mm', { locale: es })}
                                   </span>
                                 </div>
@@ -1967,7 +1968,7 @@ export default function CRMPanel() {
                   </div>
                 ) : (
                   <div className="text-center py-12 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                    <i className="fas fa-calendar-times text-gray-400 dark:text-gray-500 text-5xl mb-3"></i>
+                    <CalendarOff className="text-gray-400 dark:text-gray-500 mb-3" size={48} />
                     <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">
                       No hay eventos vinculados
                     </h4>
@@ -1981,7 +1982,7 @@ export default function CRMPanel() {
               {/* Message History Section */}
               <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                  <i className="fas fa-comments text-green-600 mr-2"></i>
+                  <MessageCircle className="text-green-600 mr-2" size={16} />
                   Historial de Mensajes WhatsApp
                   <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
                     ({contactMessages.length})
@@ -2063,7 +2064,7 @@ export default function CRMPanel() {
                           onClick={() => setMessageFilter({})}
                           className="w-full px-3 py-2 text-sm bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
                         >
-                          <i className="fas fa-times mr-2"></i>
+                          <X className="mr-2" size={16} />
                           Limpiar
                         </button>
                       </div>
@@ -2104,7 +2105,7 @@ export default function CRMPanel() {
                             <div className="flex items-start space-x-2">
                               {/* Icon Avatar */}
                               <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white shadow-lg ${config.bgClass}`}>
-                                <i className="fas fa-paper-plane"></i>
+                                <Send size={16} />
                               </div>
 
                               {/* Message Content */}
@@ -2118,14 +2119,14 @@ export default function CRMPanel() {
                                 }`}>
                                   {/* Template Name */}
                                   <div className="flex items-center space-x-2 mb-2">
-                                    <i className="fas fa-file-alt text-sm opacity-90"></i>
+                                    <FileText className="text-sm opacity-90" size={14} />
                                     <span className="font-semibold text-sm">{message.templateName}</span>
                                   </div>
 
                                   {/* Campaign Badge */}
                                   {message.campaignName && (
                                     <div className="inline-flex items-center bg-white/20 backdrop-blur-sm px-2.5 py-1 rounded-full text-xs font-medium mb-2">
-                                      <i className="fas fa-bullhorn mr-1.5"></i>
+                                      <Megaphone className="mr-1.5" size={14} />
                                       {message.campaignName}
                                     </div>
                                   )}
@@ -2133,7 +2134,7 @@ export default function CRMPanel() {
                                   {/* Phone Number */}
                                   {message.phoneNumber && (
                                     <div className="flex items-center text-xs opacity-90 mt-2">
-                                      <i className="fas fa-phone mr-1.5"></i>
+                                      <Phone className="mr-1.5" size={14} />
                                       <span className="font-mono">{message.phoneNumber}</span>
                                     </div>
                                   )}
@@ -2141,7 +2142,7 @@ export default function CRMPanel() {
                                   {/* Error Message */}
                                   {message.errorMessage && (
                                     <div className="mt-3 bg-white/20 backdrop-blur-sm rounded-lg p-2 text-xs">
-                                      <i className="fas fa-exclamation-triangle mr-1.5"></i>
+                                      <AlertTriangle className="mr-1.5 inline" size={12} />
                                       {message.errorMessage}
                                     </div>
                                   )}
@@ -2172,7 +2173,7 @@ export default function CRMPanel() {
                     {filterMessageHistory(contactMessages, messageFilter).length > 5 && (
                       <div className="text-center mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                         <span className="text-xs text-gray-500 dark:text-gray-400">
-                          <i className="fas fa-arrow-down mr-1"></i>
+                          <ArrowDown className="mr-1" size={14} />
                           {filterMessageHistory(contactMessages, messageFilter).length} mensajes en total
                         </span>
                       </div>
@@ -2180,7 +2181,7 @@ export default function CRMPanel() {
                   </div>
                 ) : (
                   <div className="text-center py-12 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                    <i className="fas fa-comment-slash text-gray-400 dark:text-gray-500 text-5xl mb-3"></i>
+                    <MessageSquare className="text-gray-400 dark:text-gray-500 mb-3" size={48} />
                     <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">
                       No hay mensajes enviados
                     </h4>
@@ -2194,7 +2195,7 @@ export default function CRMPanel() {
                 {messageStats && messageStats.topTemplates.length > 0 && (
                   <div className="mt-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
                     <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
-                      <i className="fas fa-star text-yellow-500 mr-2"></i>
+                      <Star className="text-yellow-500 mr-2" size={16} />
                       Plantillas Más Usadas
                     </h4>
                     <div className="space-y-2">
@@ -2217,7 +2218,7 @@ export default function CRMPanel() {
                 onClick={() => handleEditContact(viewingContact)}
                 className="px-6 py-2.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg font-medium hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all flex items-center space-x-2"
               >
-                <i className="fas fa-edit"></i>
+                <Edit size={16} />
                 <span>Editar Contacto</span>
               </button>
               <button
@@ -2242,7 +2243,7 @@ export default function CRMPanel() {
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
-                    <i className="fas fa-tags text-purple-600 mr-3"></i>
+                    <Tags className="text-purple-600 mr-3" size={24} />
                     Gestión de Etiquetas
                   </h2>
                   <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
@@ -2257,7 +2258,7 @@ export default function CRMPanel() {
                   }}
                   className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
                 >
-                  <i className="fas fa-times text-2xl"></i>
+                  <X size={24} />
                 </button>
               </div>
             </div>
@@ -2266,7 +2267,7 @@ export default function CRMPanel() {
               {/* Create/Edit Tag Form */}
               <div className="mb-6 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-5">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                  <i className="fas fa-plus-circle text-purple-600 mr-2"></i>
+                  <PlusCircle className="text-purple-600 mr-2" size={20} />
                   {editingTag ? 'Editar Etiqueta' : 'Nueva Etiqueta'}
                 </h3>
                 <div className="space-y-4">
@@ -2333,7 +2334,7 @@ export default function CRMPanel() {
               {/* Tags List */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                  <i className="fas fa-list text-blue-600 mr-2"></i>
+                  <List className="text-blue-600 mr-2" size={16} />
                   Etiquetas Existentes
                   <span className="ml-2 text-sm font-normal text-gray-500 dark:text-gray-400">
                     ({tags.length})
@@ -2363,14 +2364,14 @@ export default function CRMPanel() {
                               className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                               title="Editar"
                             >
-                              <i className="fas fa-edit"></i>
+                              <Edit size={16} />
                             </button>
                             <button
                               onClick={() => handleDeleteTag(tag.id)}
                               className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                               title="Eliminar"
                             >
-                              <i className="fas fa-trash"></i>
+                              <Trash2 size={16} />
                             </button>
                           </div>
                         </div>
@@ -2379,7 +2380,7 @@ export default function CRMPanel() {
                   </div>
                 ) : (
                   <div className="text-center py-12 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                    <i className="fas fa-tags text-gray-400 dark:text-gray-500 text-5xl mb-3"></i>
+                    <Tags className="text-gray-400 dark:text-gray-500 mb-3" size={48} />
                     <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">
                       No hay etiquetas creadas
                     </h4>
@@ -2415,7 +2416,7 @@ export default function CRMPanel() {
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
-                    <i className="fas fa-tags text-purple-600 mr-3"></i>
+                    <Tags className="text-purple-600 mr-3" size={24} />
                     Asignar Etiquetas Masivamente
                   </h2>
                   <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
@@ -2426,7 +2427,7 @@ export default function CRMPanel() {
                   onClick={() => setShowMassTagModal(false)}
                   className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
                 >
-                  <i className="fas fa-times text-2xl"></i>
+                  <X size={24} />
                 </button>
               </div>
             </div>
@@ -2436,7 +2437,7 @@ export default function CRMPanel() {
                 <>
                   <div className="mb-6">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
-                      <i className="fas fa-plus-circle text-green-600 mr-2"></i>
+                      <PlusCircle className="text-green-600 mr-2" size={16} />
                       Agregar Etiquetas
                     </h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
@@ -2450,7 +2451,7 @@ export default function CRMPanel() {
                           className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium text-white transition-all hover:scale-105 hover:shadow-lg"
                           style={{ backgroundColor: tag.color }}
                         >
-                          <i className="fas fa-plus mr-2"></i>
+                          <Plus className="mr-2" size={14} />
                           {tag.name}
                         </button>
                       ))}
@@ -2459,7 +2460,7 @@ export default function CRMPanel() {
 
                   <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
-                      <i className="fas fa-minus-circle text-red-600 mr-2"></i>
+                      <MinusCircle className="text-red-600 mr-2" size={16} />
                       Eliminar Etiquetas
                     </h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
@@ -2473,7 +2474,7 @@ export default function CRMPanel() {
                           className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium text-white transition-all hover:scale-105 hover:shadow-lg opacity-75 hover:opacity-100"
                           style={{ backgroundColor: tag.color }}
                         >
-                          <i className="fas fa-minus mr-2"></i>
+                          <Minus className="mr-2" size={16} />
                           {tag.name}
                         </button>
                       ))}
@@ -2482,7 +2483,7 @@ export default function CRMPanel() {
                 </>
               ) : (
                 <div className="text-center py-12">
-                  <i className="fas fa-tags text-gray-400 dark:text-gray-500 text-5xl mb-3"></i>
+                  <Tags className="text-gray-400 dark:text-gray-500 mb-3" size={48} />
                   <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">
                     No hay etiquetas disponibles
                   </h4>
@@ -2521,14 +2522,14 @@ export default function CRMPanel() {
             <div className="p-6 border-b border-gray-100 dark:border-gray-700">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
-                  <i className="fas fa-broom text-emerald-600 mr-3"></i>
+                  <Sparkles className="text-emerald-600 mr-3" size={24} />
                   Validación y Limpieza de Datos
                 </h2>
                 <button
                   onClick={() => setShowDataCleaningModal(false)}
                   className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 >
-                  <i className="fas fa-times text-2xl"></i>
+                  <X size={24} />
                 </button>
               </div>
             </div>
@@ -2543,7 +2544,7 @@ export default function CRMPanel() {
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                 }`}
               >
-                <i className="fas fa-chart-pie mr-2"></i>
+                <PieChart className="mr-2" size={16} />
                 Resumen
               </button>
               <button
@@ -2554,7 +2555,7 @@ export default function CRMPanel() {
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                 }`}
               >
-                <i className="fas fa-copy mr-2"></i>
+                <Copy className="mr-2" size={16} />
                 Duplicados ({validationIssues.filter(i => i.type === 'duplicate').length / 2})
               </button>
               <button
@@ -2565,7 +2566,7 @@ export default function CRMPanel() {
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                 }`}
               >
-                <i className="fas fa-exclamation-circle mr-2"></i>
+                <AlertCircle className="mr-2" size={16} />
                 Validación ({validationIssues.filter(i => i.type === 'invalid_phone' || i.type === 'invalid_email' || i.type === 'missing_required').length})
               </button>
               <button
@@ -2576,7 +2577,7 @@ export default function CRMPanel() {
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
                 }`}
               >
-                <i className="fas fa-magic mr-2"></i>
+                <Wand2 className="mr-2" size={16} />
                 Formato ({validationIssues.filter(i => i.type === 'formatting').length})
               </button>
             </div>
@@ -2599,7 +2600,7 @@ export default function CRMPanel() {
                               <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">Total Contactos</p>
                               <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">{contacts.length}</p>
                             </div>
-                            <i className="fas fa-users text-3xl text-blue-600 dark:text-blue-400 opacity-50"></i>
+                            <Users className="text-blue-600 dark:text-blue-400 opacity-50" size={32} />
                           </div>
                         </div>
 
@@ -2609,7 +2610,7 @@ export default function CRMPanel() {
                               <p className="text-sm text-yellow-600 dark:text-yellow-400 font-medium">Problemas Encontrados</p>
                               <p className="text-2xl font-bold text-yellow-900 dark:text-yellow-100">{validationIssues.length}</p>
                             </div>
-                            <i className="fas fa-exclamation-triangle text-3xl text-yellow-600 dark:text-yellow-400 opacity-50"></i>
+                            <AlertTriangle className="text-yellow-600 dark:text-yellow-400 opacity-50" size={32} />
                           </div>
                         </div>
 
@@ -2621,7 +2622,7 @@ export default function CRMPanel() {
                                 {contacts.length - new Set(validationIssues.map(i => i.contactId)).size}
                               </p>
                             </div>
-                            <i className="fas fa-check-circle text-3xl text-emerald-600 dark:text-emerald-400 opacity-50"></i>
+                            <CheckCircle className="text-emerald-600 dark:text-emerald-400 opacity-50" size={32} />
                           </div>
                         </div>
                       </div>
@@ -2631,7 +2632,7 @@ export default function CRMPanel() {
                         <div className="space-y-3">
                           <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
                             <div className="flex items-center space-x-3">
-                              <i className="fas fa-copy text-orange-600"></i>
+                              <Copy className="text-orange-600" size={16} />
                               <span className="text-gray-700 dark:text-gray-300">Contactos Duplicados</span>
                             </div>
                             <span className="font-bold text-orange-600">{validationIssues.filter(i => i.type === 'duplicate').length / 2}</span>
@@ -2639,7 +2640,7 @@ export default function CRMPanel() {
 
                           <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
                             <div className="flex items-center space-x-3">
-                              <i className="fas fa-phone-slash text-red-600"></i>
+                              <PhoneOff className="text-red-600" size={16} />
                               <span className="text-gray-700 dark:text-gray-300">Teléfonos Inválidos</span>
                             </div>
                             <span className="font-bold text-red-600">{validationIssues.filter(i => i.type === 'invalid_phone').length}</span>
@@ -2647,7 +2648,7 @@ export default function CRMPanel() {
 
                           <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
                             <div className="flex items-center space-x-3">
-                              <i className="fas fa-envelope-open-text text-red-600"></i>
+                              <MailOpen className="text-red-600" size={16} />
                               <span className="text-gray-700 dark:text-gray-300">Emails Inválidos</span>
                             </div>
                             <span className="font-bold text-red-600">{validationIssues.filter(i => i.type === 'invalid_email').length}</span>
@@ -2655,7 +2656,7 @@ export default function CRMPanel() {
 
                           <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
                             <div className="flex items-center space-x-3">
-                              <i className="fas fa-exclamation-circle text-red-600"></i>
+                              <AlertCircle className="text-red-600" size={16} />
                               <span className="text-gray-700 dark:text-gray-300">Campos Requeridos Vacíos</span>
                             </div>
                             <span className="font-bold text-red-600">{validationIssues.filter(i => i.type === 'missing_required').length}</span>
@@ -2663,7 +2664,7 @@ export default function CRMPanel() {
 
                           <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700">
                             <div className="flex items-center space-x-3">
-                              <i className="fas fa-magic text-blue-600"></i>
+                              <Wand2 className="text-blue-600" size={16} />
                               <span className="text-gray-700 dark:text-gray-300">Problemas de Formato</span>
                             </div>
                             <span className="font-bold text-blue-600">{validationIssues.filter(i => i.type === 'formatting').length}</span>
@@ -2676,7 +2677,7 @@ export default function CRMPanel() {
                           onClick={handleApplyAutoCleaning}
                           className="px-8 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg font-medium hover:from-emerald-600 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
                         >
-                          <i className="fas fa-magic"></i>
+                          <Wand2 size={16} />
                           <span>Aplicar Limpieza Automática</span>
                         </button>
                       </div>
@@ -2729,7 +2730,7 @@ export default function CRMPanel() {
                             return (
                               <div key={index} className="bg-orange-50 dark:bg-gray-900 p-4 rounded-lg border border-orange-200 dark:border-gray-700">
                                 <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
-                                  <i className="fas fa-copy text-orange-600 mr-2"></i>
+                                  <Copy className="text-orange-600 mr-2" size={16} />
                                   Grupo de Duplicados #{index + 1} ({duplicateContacts.length} contactos)
                                 </h4>
                                 <div className="space-y-2">
@@ -2749,10 +2750,10 @@ export default function CRMPanel() {
                                           </p>
                                           <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                                             {phoneField && contact[phoneField.name] && (
-                                              <p><i className="fas fa-phone mr-2"></i>{contact[phoneField.name]}</p>
+                                              <p><Phone className="mr-2" size={16} />{contact[phoneField.name]}</p>
                                             )}
                                             {emailField && contact[emailField.name] && (
-                                              <p><i className="fas fa-envelope mr-2"></i>{contact[emailField.name]}</p>
+                                              <p><Mail className="mr-2" size={16} />{contact[emailField.name]}</p>
                                             )}
                                           </div>
                                         </div>
@@ -2762,7 +2763,7 @@ export default function CRMPanel() {
                                               onClick={() => handleMergeContacts(contact.id, duplicateContacts[1].id)}
                                               className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-all flex items-center"
                                             >
-                                              <i className="fas fa-compress-arrows-alt mr-2"></i>
+                                              <Minimize2 className="mr-2" size={16} />
                                               Fusionar
                                             </button>
                                           )}
@@ -2770,7 +2771,7 @@ export default function CRMPanel() {
                                             onClick={() => handleDeleteDuplicate(contact.id)}
                                             className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-all flex items-center"
                                           >
-                                            <i className="fas fa-trash mr-2"></i>
+                                            <Trash2 className="mr-2" size={16} />
                                             Eliminar
                                           </button>
                                         </div>
@@ -2783,7 +2784,7 @@ export default function CRMPanel() {
                           })
                         ) : (
                           <div className="text-center py-12">
-                            <i className="fas fa-check-circle text-emerald-600 text-5xl mb-3"></i>
+                            <CheckCircle className="text-emerald-600 mb-3" size={48} />
                             <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">
                               No se encontraron duplicados
                             </h4>
@@ -2828,7 +2829,7 @@ export default function CRMPanel() {
                                     <p className="text-sm text-red-700 dark:text-red-300 mb-1">{issue.message}</p>
                                     {issue.suggestedFix && (
                                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                                        <i className="fas fa-lightbulb mr-1"></i>
+                                        <Lightbulb className="mr-1" size={14} />
                                         Sugerencia: {issue.suggestedFix}
                                       </p>
                                     )}
@@ -2840,7 +2841,7 @@ export default function CRMPanel() {
                                     }}
                                     className="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-all"
                                   >
-                                    <i className="fas fa-edit mr-2"></i>
+                                    <Edit className="mr-2" size={16} />
                                     Editar
                                   </button>
                                 </div>
@@ -2849,7 +2850,7 @@ export default function CRMPanel() {
                           })
                       ) : (
                         <div className="text-center py-12">
-                          <i className="fas fa-check-circle text-emerald-600 text-5xl mb-3"></i>
+                          <CheckCircle className="text-emerald-600 mb-3" size={48} />
                           <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">
                             No se encontraron errores de validación
                           </h4>
@@ -2881,7 +2882,7 @@ export default function CRMPanel() {
                                 <div className="flex items-start justify-between">
                                   <div className="flex-1">
                                     <div className="flex items-center space-x-2 mb-2">
-                                      <i className="fas fa-magic text-blue-600"></i>
+                                      <Wand2 className="text-blue-600" size={16} />
                                       <span className="font-medium text-gray-900 dark:text-gray-100">
                                         {nameField ? contact[nameField.name] : 'Sin nombre'}
                                       </span>
@@ -2889,7 +2890,7 @@ export default function CRMPanel() {
                                     <p className="text-sm text-blue-700 dark:text-blue-300 mb-1">{issue.message}</p>
                                     {issue.suggestedFix && (
                                       <p className="text-sm text-gray-600 dark:text-gray-400">
-                                        <i className="fas fa-lightbulb mr-1"></i>
+                                        <Lightbulb className="mr-1" size={14} />
                                         Sugerencia: {issue.suggestedFix}
                                       </p>
                                     )}
@@ -2900,7 +2901,7 @@ export default function CRMPanel() {
                           })
                       ) : (
                         <div className="text-center py-12">
-                          <i className="fas fa-check-circle text-emerald-600 text-5xl mb-3"></i>
+                          <CheckCircle className="text-emerald-600 mb-3" size={48} />
                           <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">
                             No se encontraron problemas de formato
                           </h4>
@@ -2947,7 +2948,7 @@ export default function CRMPanel() {
             <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-6">
               <div className="mb-6">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
-                  <i className="fas fa-file-export text-cyan-600 mr-3"></i>
+                  <FileDown className="text-cyan-600 mr-3" size={24} />
                   Exportar Contactos
                 </h2>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
@@ -2963,13 +2964,13 @@ export default function CRMPanel() {
                   className="w-full px-6 py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl font-medium hover:from-emerald-600 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-between"
                 >
                   <div className="flex items-center space-x-3">
-                    <i className="fas fa-file-excel text-2xl"></i>
+                    <FileSpreadsheet size={24} />
                     <div className="text-left">
                       <div className="font-semibold">Excel (.xlsx)</div>
                       <div className="text-xs text-emerald-100">Mejor para análisis y edición</div>
                     </div>
                   </div>
-                  <i className="fas fa-arrow-right"></i>
+                  <ArrowRight size={16} />
                 </button>
 
                 <button
@@ -2977,13 +2978,13 @@ export default function CRMPanel() {
                   className="w-full px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-between"
                 >
                   <div className="flex items-center space-x-3">
-                    <i className="fas fa-file-csv text-2xl"></i>
+                    <FileText size={24} />
                     <div className="text-left">
                       <div className="font-semibold">CSV (.csv)</div>
                       <div className="text-xs text-blue-100">Compatible con todas las plataformas</div>
                     </div>
                   </div>
-                  <i className="fas fa-arrow-right"></i>
+                  <ArrowRight size={16} />
                 </button>
 
                 <button
@@ -2991,13 +2992,13 @@ export default function CRMPanel() {
                   className="w-full px-6 py-4 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl font-medium hover:from-purple-600 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-between"
                 >
                   <div className="flex items-center space-x-3">
-                    <i className="fas fa-address-card text-2xl"></i>
+                    <User size={24} />
                     <div className="text-left">
                       <div className="font-semibold">vCard (.vcf)</div>
                       <div className="text-xs text-purple-100">Para importar en teléfonos</div>
                     </div>
                   </div>
-                  <i className="fas fa-arrow-right"></i>
+                  <ArrowRight size={16} />
                 </button>
               </div>
 

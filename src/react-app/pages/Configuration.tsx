@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { loadConfig, saveConfig, AppConfig } from '@/react-app/utils/storage';
+import { Plug, Palette, Settings, Lightbulb, MessageCircle, Download, Upload, Trash2 } from 'lucide-react';
 
 interface ConfigurationProps {
   onConfigUpdate: (config: AppConfig) => void;
@@ -129,9 +130,9 @@ export default function Configuration({ onConfigUpdate, darkMode = false, onDark
       {/* Tabs */}
       <div className="flex space-x-1 bg-gray-100 rounded-lg p-1 mb-6">
         {[
-          { id: 'api', label: 'API de Meta', icon: 'fas fa-plug' },
-          { id: 'branding', label: 'Personalización', icon: 'fas fa-palette' },
-          { id: 'advanced', label: 'Avanzado', icon: 'fas fa-cogs' }
+          { id: 'api', label: 'API de Meta', Icon: Plug },
+          { id: 'branding', label: 'Personalización', Icon: Palette },
+          { id: 'advanced', label: 'Avanzado', Icon: Settings }
         ].map((tab) => (
           <button
             key={tab.id}
@@ -142,7 +143,7 @@ export default function Configuration({ onConfigUpdate, darkMode = false, onDark
                 : 'text-gray-600 hover:text-gray-900'
             }`}
           >
-            <i className={tab.icon}></i>
+            <tab.Icon size={16} />
             <span>{tab.label}</span>
           </button>
         ))}
@@ -310,7 +311,7 @@ export default function Configuration({ onConfigUpdate, darkMode = false, onDark
                 </div>
               </div>
               <div className="mt-4 flex items-center space-x-2 text-sm text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 px-3 py-2 rounded-lg">
-                <i className="fas fa-lightbulb"></i>
+                <Lightbulb size={16} />
                 <span>El modo oscuro se aplica instantáneamente en toda la aplicación</span>
               </div>
             </div>
@@ -323,7 +324,7 @@ export default function Configuration({ onConfigUpdate, darkMode = false, onDark
                   <img src={config.branding.logoUrl} alt="Logo" className="w-12 h-12 rounded-lg object-cover ring-2 ring-white" />
                 ) : (
                   <div className="w-12 h-12 rounded-lg flex items-center justify-center bg-gradient-to-br from-blue-600 to-purple-600 text-white">
-                    <i className="fas fa-comments"></i>
+                    <MessageCircle size={24} />
                   </div>
                 )}
                 <div>
@@ -365,13 +366,13 @@ export default function Configuration({ onConfigUpdate, darkMode = false, onDark
                   onClick={exportData}
                   className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-center"
                 >
-                  <i className="fas fa-download text-blue-500 text-2xl mb-2"></i>
+                  <div className="flex justify-center mb-2"><Download className="text-blue-500" size={24} /></div>
                   <p className="font-medium">Exportar Datos</p>
                   <p className="text-sm text-gray-600">Descargar backup completo</p>
                 </button>
 
                 <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-center">
-                  <i className="fas fa-upload text-green-500 text-2xl mb-2"></i>
+                  <div className="flex justify-center mb-2"><Upload className="text-green-500" size={24} /></div>
                   <p className="font-medium">Importar Datos</p>
                   <p className="text-sm text-gray-600">Restaurar desde backup</p>
                 </button>
@@ -380,7 +381,7 @@ export default function Configuration({ onConfigUpdate, darkMode = false, onDark
                   onClick={clearAllData}
                   className="p-4 border border-red-200 rounded-lg hover:bg-red-50 transition-colors text-center"
                 >
-                  <i className="fas fa-trash text-red-500 text-2xl mb-2"></i>
+                  <div className="flex justify-center mb-2"><Trash2 className="text-red-500" size={24} /></div>
                   <p className="font-medium text-red-600">Limpiar Datos</p>
                   <p className="text-sm text-gray-600">Eliminar todos los datos</p>
                 </button>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { loadCampaigns, saveCampaigns } from '@/react-app/utils/storage';
+import { CheckCircle, Loader2, Clock, XCircle, HelpCircle, Plus, Megaphone, Users, Send, Eye, Trash2 } from 'lucide-react';
 
 interface Campaign {
   id: string;
@@ -77,16 +78,17 @@ export default function CampaignHistory() {
 
   const getStatusBadge = (status: Campaign['status']) => {
     const statusConfig: any = {
-      completed: { color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400', label: 'Completada', icon: 'fas fa-check-circle' },
-      'in-progress': { color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400', label: 'En Progreso', icon: 'fas fa-spinner' },
-      scheduled: { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400', label: 'Programada', icon: 'fas fa-clock' },
-      cancelled: { color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400', label: 'Cancelada', icon: 'fas fa-times-circle' }
+      completed: { color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400', label: 'Completada', icon: CheckCircle },
+      'in-progress': { color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400', label: 'En Progreso', icon: Loader2 },
+      scheduled: { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400', label: 'Programada', icon: Clock },
+      cancelled: { color: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400', label: 'Cancelada', icon: XCircle }
     };
 
-    const config = statusConfig[status] || { color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400', label: 'Desconocido', icon: 'fas fa-question-circle' };
+    const config = statusConfig[status] || { color: 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-400', label: 'Desconocido', icon: HelpCircle };
+    const IconComponent = config.icon;
     return (
       <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${config.color}`}>
-        <i className={`${config.icon} mr-1`}></i>
+        <IconComponent className="w-3 h-3 mr-1" />
         {config.label}
       </span>
     );
@@ -145,7 +147,7 @@ export default function CampaignHistory() {
           onClick={handleNewCampaign}
           className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg hover:shadow-xl flex items-center space-x-2"
         >
-          <i className="fas fa-plus"></i>
+          <Plus className="w-5 h-5" />
           <span>Nueva Campaña</span>
         </button>
       </div>
@@ -155,7 +157,7 @@ export default function CampaignHistory() {
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
           <div className="flex items-center justify-between mb-4">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white">
-              <i className="fas fa-bullhorn"></i>
+              <Megaphone className="w-6 h-6" />
             </div>
           </div>
           <h3 className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-1">Total Campañas</h3>
@@ -165,7 +167,7 @@ export default function CampaignHistory() {
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
           <div className="flex items-center justify-between mb-4">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white">
-              <i className="fas fa-check-circle"></i>
+              <CheckCircle className="w-6 h-6" />
             </div>
           </div>
           <h3 className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-1">Completadas</h3>
@@ -175,7 +177,7 @@ export default function CampaignHistory() {
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
           <div className="flex items-center justify-between mb-4">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white">
-              <i className="fas fa-users"></i>
+              <Users className="w-6 h-6" />
             </div>
           </div>
           <h3 className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-1">Total Contactos</h3>
@@ -185,7 +187,7 @@ export default function CampaignHistory() {
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
           <div className="flex items-center justify-between mb-4">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center text-white">
-              <i className="fas fa-paper-plane"></i>
+              <Send className="w-6 h-6" />
             </div>
           </div>
           <h3 className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-1">Mensajes Enviados</h3>
@@ -312,14 +314,14 @@ export default function CampaignHistory() {
                         className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 p-1 rounded"
                         title="Ver detalles"
                       >
-                        <i className="fas fa-eye"></i>
+                        <Eye className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleDeleteCampaign(campaign.id)}
                         className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 p-1 rounded"
                         title="Eliminar"
                       >
-                        <i className="fas fa-trash"></i>
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   </td>
@@ -331,8 +333,8 @@ export default function CampaignHistory() {
 
         {sortedAndFilteredCampaigns.length === 0 && (
           <div className="text-center py-16">
-            <div className="w-24 h-24 mx-auto mb-6 text-gray-300 dark:text-gray-600">
-              <i className="fas fa-bullhorn text-8xl"></i>
+            <div className="w-24 h-24 mx-auto mb-6 text-gray-300 dark:text-gray-600 flex items-center justify-center">
+              <Megaphone className="w-20 h-20" />
             </div>
             <h3 className="text-xl font-medium text-gray-900 dark:text-gray-100 mb-2">
               {filterStatus === 'all' ? 'No hay campañas' : 'No hay campañas con ese estado'}

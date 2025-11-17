@@ -6,6 +6,7 @@ import { loadCRMData, loadCRMConfig } from '@/react-app/utils/storage';
 import { useToast } from '@/react-app/components/Toast';
 import ContactSelector from '@/react-app/components/ContactSelector';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
+import { Calendar as CalendarIcon, List, Repeat, Clock, UserCircle, ArrowRight, CalendarOff, Search, X, Plus, Layers, Bell, CalendarCheck, Lightbulb, RefreshCw, PieChart, CalendarPlus, Users, CheckCircle, Info, Check, Trash2 } from 'lucide-react';
 
 const locales = { es };
 const localizer = dateFnsLocalizer({
@@ -959,7 +960,7 @@ _Evento creado desde ChatFlow Pro_
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2 flex items-center">
-            <i className="fas fa-calendar-alt text-blue-600 mr-3"></i>
+            <CalendarIcon className="text-blue-600 mr-3" size={28} />
             Agenda y Calendario
           </h1>
           <p className="text-gray-600 dark:text-gray-400">Organiza eventos, reuniones y recordatorios vinculados a tus contactos</p>
@@ -975,7 +976,7 @@ _Evento creado desde ChatFlow Pro_
                 : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
             }`}
           >
-            <i className="fas fa-calendar mr-2"></i>
+            <CalendarIcon className="mr-2" size={16} />
             Calendario
           </button>
           <button
@@ -986,7 +987,7 @@ _Evento creado desde ChatFlow Pro_
                 : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
             }`}
           >
-            <i className="fas fa-list mr-2"></i>
+            <List className="mr-2" size={16} />
             Lista
           </button>
         </div>
@@ -1069,7 +1070,7 @@ _Evento creado desde ChatFlow Pro_
                             </span>
                             {event.recurrence && event.recurrence.frequency !== 'none' && (
                               <span className="px-2 py-1 rounded-md text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
-                                <i className="fas fa-repeat mr-1"></i>
+                                <Repeat className="mr-1" size={14} />
                                 {event.recurrence.frequency === 'daily' && 'Diario'}
                                 {event.recurrence.frequency === 'weekly' && 'Semanal'}
                                 {event.recurrence.frequency === 'monthly' && 'Mensual'}
@@ -1085,18 +1086,18 @@ _Evento creado desde ChatFlow Pro_
 
                           <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400 mb-2">
                             <span className="flex items-center">
-                              <i className="fas fa-calendar text-blue-600 mr-2"></i>
+                              <CalendarIcon className="text-blue-600 mr-2" size={16} />
                               {format(eventStart, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: es })}
                             </span>
                             <span className="flex items-center">
-                              <i className="fas fa-clock text-green-600 mr-2"></i>
+                              <Clock className="text-green-600 mr-2" size={16} />
                               {format(eventStart, 'HH:mm', { locale: es })} - {format(eventEnd, 'HH:mm', { locale: es })}
                             </span>
                           </div>
 
                           {(event.contactNames?.length || event.contactName) && (
                             <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mb-2">
-                              <i className="fas fa-user text-purple-600 mr-2"></i>
+                              <UserCircle className="text-purple-600 mr-2" size={16} />
                               {event.contactNames?.length
                                 ? event.contactNames.join(', ')
                                 : event.contactName}
@@ -1126,7 +1127,7 @@ _Evento creado desde ChatFlow Pro_
                               ? 'Hoy'
                               : 'Próximo'}
                           </div>
-                          <i className="fas fa-chevron-right text-gray-400 dark:text-gray-500"></i>
+                          <ArrowRight className="text-gray-400 dark:text-gray-500" size={16} />
                         </div>
                       </div>
                     </div>
@@ -1134,7 +1135,7 @@ _Evento creado desde ChatFlow Pro_
                   })
               ) : (
                 <div className="text-center py-16">
-                  <i className="fas fa-calendar-times text-gray-400 dark:text-gray-500 text-5xl mb-4"></i>
+                  <CalendarOff className="text-gray-400 dark:text-gray-500 mb-4" size={48} />
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
                     No hay eventos
                   </h3>
@@ -1161,13 +1162,13 @@ _Evento creado desde ChatFlow Pro_
                 placeholder="Buscar eventos..."
                 className="w-full pl-10 pr-10 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 transition-colors duration-300"
               />
-              <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500"></i>
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500" size={16} />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 >
-                  <i className="fas fa-times"></i>
+                  <X size={16} />
                 </button>
               )}
             </div>
@@ -1240,7 +1241,7 @@ _Evento creado desde ChatFlow Pro_
             }}
             className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-xl font-medium hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg hover:shadow-2xl transform hover:scale-105 active:scale-95 flex items-center justify-center space-x-2"
           >
-            <i className="fas fa-plus"></i>
+            <Plus size={16} />
             <span>Nuevo Evento</span>
           </button>
 
@@ -1249,14 +1250,14 @@ _Evento creado desde ChatFlow Pro_
             onClick={() => setShowTemplatesModal(true)}
             className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-3 rounded-xl font-medium hover:from-purple-700 hover:to-purple-800 transition-all shadow-lg hover:shadow-2xl transform hover:scale-105 active:scale-95 flex items-center justify-center space-x-2"
           >
-            <i className="fas fa-layer-group"></i>
+            <Layers size={16} />
             <span>Plantillas {templates.length > 0 && `(${templates.length})`}</span>
           </button>
 
           {/* Upcoming Events */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-              <i className="fas fa-bell text-amber-500 mr-2"></i>
+              <Bell className="text-amber-500 mr-2" size={16} />
               Próximos 7 Días
             </h3>
 
@@ -1274,7 +1275,7 @@ _Evento creado desde ChatFlow Pro_
                         <h4 className="font-medium text-gray-900 dark:text-gray-100 text-sm">{event.title}</h4>
                         {(event.contactNames?.length || event.contactName) && (
                           <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
-                            <i className="fas fa-user mr-1"></i>
+                            <UserCircle className="mr-1" size={14} />
                             {event.contactNames?.length
                               ? event.contactNames.join(', ')
                               : event.contactName}
@@ -1286,7 +1287,7 @@ _Evento creado desde ChatFlow Pro_
                       </div>
                     </div>
                     <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      <i className="fas fa-clock mr-1"></i>
+                      <Clock className="mr-1" size={14} />
                       {format(event.start, 'HH:mm')}
                     </div>
                   </div>
@@ -1294,7 +1295,7 @@ _Evento creado desde ChatFlow Pro_
               </div>
             ) : (
               <div className="text-center py-8 text-gray-400 dark:text-gray-500">
-                <i className="fas fa-calendar-check text-4xl mb-2"></i>
+                <CalendarCheck className="mb-2" size={32} />
                 <p className="text-sm">No hay eventos próximos</p>
               </div>
             )}
@@ -1304,7 +1305,7 @@ _Evento creado desde ChatFlow Pro_
           {followUpSuggestions.length > 0 && (
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border-2 border-orange-200 dark:border-orange-900">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                <i className="fas fa-lightbulb text-orange-500 mr-2"></i>
+                <Lightbulb className="text-orange-500 mr-2" size={16} />
                 Sugerencias de Seguimiento
                 <span className="ml-2 text-xs font-normal bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 px-2 py-0.5 rounded-full">
                   {followUpSuggestions.length}
@@ -1340,7 +1341,7 @@ _Evento creado desde ChatFlow Pro_
                         onClick={() => handleCreateFollowUpFromSuggestion(suggestion)}
                         className="w-full mt-2 px-3 py-1.5 bg-orange-600 text-white rounded-lg text-xs font-medium hover:bg-orange-700 transition-all flex items-center justify-center space-x-1"
                       >
-                        <i className="fas fa-plus"></i>
+                        <Plus size={16} />
                         <span>Crear Seguimiento</span>
                       </button>
                     </div>
@@ -1352,7 +1353,7 @@ _Evento creado desde ChatFlow Pro_
                 onClick={generateFollowUpSuggestions}
                 className="w-full mt-4 px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all flex items-center justify-center space-x-2"
               >
-                <i className="fas fa-sync-alt"></i>
+                <RefreshCw size={16} />
                 <span>Actualizar Sugerencias</span>
               </button>
             </div>
@@ -1361,7 +1362,7 @@ _Evento creado desde ChatFlow Pro_
           {/* Event Statistics */}
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-              <i className="fas fa-chart-pie text-blue-600 mr-2"></i>
+              <PieChart className="text-blue-600 mr-2" size={16} />
               Estadísticas
             </h3>
 
@@ -1427,7 +1428,7 @@ _Evento creado desde ChatFlow Pro_
             <div className="p-6 border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
-                  <i className="fas fa-calendar-plus text-blue-600 mr-3"></i>
+                  <CalendarPlus className="text-blue-600 mr-3" size={24} />
                   {selectedEvent ? 'Editar Evento' : 'Nuevo Evento'}
                 </h2>
                 <button
@@ -1437,7 +1438,7 @@ _Evento creado desde ChatFlow Pro_
                   }}
                   className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
                 >
-                  <i className="fas fa-times text-2xl"></i>
+                  <X size={24} />
                 </button>
               </div>
             </div>
@@ -1488,7 +1489,7 @@ _Evento creado desde ChatFlow Pro_
                 >
                   {newEvent.contactIds.length === 0 ? (
                     <div className="flex flex-col items-center space-y-2">
-                      <i className="fas fa-users text-3xl text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"></i>
+                      <Users className="text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors" size={32} />
                       <div className="text-center">
                         <p className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-blue-600 dark:group-hover:text-blue-400">
                           Click para seleccionar contactos
@@ -1502,7 +1503,7 @@ _Evento creado desde ChatFlow Pro_
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
-                          <i className="fas fa-check-circle text-green-600"></i>
+                          <CheckCircle className="text-green-600" size={16} />
                           <span className="font-medium text-gray-900 dark:text-gray-100">
                             {newEvent.contactIds.length} contacto{newEvent.contactIds.length !== 1 ? 's' : ''} seleccionado{newEvent.contactIds.length !== 1 ? 's' : ''}
                           </span>
@@ -1596,7 +1597,7 @@ _Evento creado desde ChatFlow Pro_
               {/* Recurrence Section */}
               <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                 <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center">
-                  <i className="fas fa-repeat text-purple-600 mr-2"></i>
+                  <Repeat className="text-purple-600 mr-2" size={16} />
                   Repetir Evento
                 </h4>
 
@@ -1653,7 +1654,7 @@ _Evento creado desde ChatFlow Pro_
                       {/* Info message */}
                       <div className="md:col-span-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-3">
                         <p className="text-sm text-purple-700 dark:text-purple-300">
-                          <i className="fas fa-info-circle mr-2"></i>
+                          <Info className="mr-2" size={16} />
                           {newEvent.recurrenceFrequency === 'daily' && 'Este evento se repetirá todos los días'}
                           {newEvent.recurrenceFrequency === 'weekly' && 'Este evento se repetirá cada semana'}
                           {newEvent.recurrenceFrequency === 'monthly' && 'Este evento se repetirá cada mes'}
@@ -1688,9 +1689,9 @@ _Evento creado desde ChatFlow Pro_
                       }`}
                     >
                       {showWhatsAppSection ? (
-                        <><i className="fas fa-check mr-2"></i>Activado</>
+                        <><Check className="mr-2" size={16} />Activado</>
                       ) : (
-                        <><i className="fas fa-plus mr-2"></i>Activar</>
+                        <><Plus className="mr-2" size={16} />Activar</>
                       )}
                     </button>
                   </div>
@@ -1746,7 +1747,7 @@ _Evento creado desde ChatFlow Pro_
                               className="w-4 h-4 text-green-600"
                             />
                             <span className="ml-3 text-sm text-gray-900 dark:text-gray-100">
-                              <i className="fas fa-clock mr-2 text-green-600"></i>
+                              <Clock className="mr-2 text-green-600" size={16} />
                               En la fecha/hora del evento ({newEvent.date} {newEvent.time})
                             </span>
                           </label>
@@ -1759,7 +1760,7 @@ _Evento creado desde ChatFlow Pro_
                               className="w-4 h-4 text-green-600"
                             />
                             <span className="ml-3 text-sm text-gray-900 dark:text-gray-100">
-                              <i className="fas fa-calendar-alt mr-2 text-blue-600"></i>
+                              <CalendarIcon className="mr-2 text-blue-600" size={16} />
                               Personalizar fecha/hora
                             </span>
                           </label>
@@ -1817,7 +1818,7 @@ _Evento creado desde ChatFlow Pro_
                             <div className="flex items-start justify-between">
                               <div>
                                 <p className="text-sm font-medium text-blue-900 dark:text-blue-200">
-                                  <i className="fas fa-clock mr-2"></i>
+                                  <Clock className="mr-2" size={16} />
                                   Mensaje ya programado
                                 </p>
                                 <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
@@ -1834,7 +1835,7 @@ _Evento creado desde ChatFlow Pro_
                                 }}
                                 className="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg text-xs font-medium hover:bg-red-200 dark:hover:bg-red-900/50 transition-all"
                               >
-                                <i className="fas fa-times mr-1"></i>
+                                <X className="mr-1" size={14} />
                                 Cancelar
                               </button>
                             </div>
@@ -1855,7 +1856,7 @@ _Evento creado desde ChatFlow Pro_
                       onClick={handleDeleteEvent}
                       className="px-6 py-2.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg font-medium hover:bg-red-100 dark:hover:bg-red-900/40 transition-all hover:shadow-lg transform hover:scale-105 flex items-center space-x-2"
                     >
-                      <i className="fas fa-trash"></i>
+                      <Trash2 size={16} />
                       <span>Eliminar</span>
                     </button>
                     <button
@@ -1869,7 +1870,7 @@ _Evento creado desde ChatFlow Pro_
                       onClick={handleExportToICS}
                       className="px-6 py-2.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg font-medium hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-all hover:shadow-lg transform hover:scale-105 flex items-center space-x-2"
                     >
-                      <i className="fas fa-calendar-alt"></i>
+                      <CalendarIcon size={16} />
                       <span>Exportar .ics</span>
                     </button>
                   </>
@@ -1890,7 +1891,7 @@ _Evento creado desde ChatFlow Pro_
                     onClick={() => setShowSaveTemplateModal(true)}
                     className="px-6 py-2.5 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 rounded-lg font-medium hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-all flex items-center space-x-2"
                   >
-                    <i className="fas fa-layer-group"></i>
+                    <Layers size={16} />
                     <span>Guardar Plantilla</span>
                   </button>
                 )}
@@ -1898,7 +1899,7 @@ _Evento creado desde ChatFlow Pro_
                   onClick={handleSaveEvent}
                   className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg transform hover:scale-105 active:scale-95 flex items-center space-x-2"
                 >
-                  <i className="fas fa-check"></i>
+                  <Check size={16} />
                   <span>{selectedEvent ? 'Actualizar' : 'Crear'} Evento</span>
                 </button>
               </div>
@@ -1915,7 +1916,7 @@ _Evento creado desde ChatFlow Pro_
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
-                    <i className="fas fa-layer-group text-purple-600 mr-3"></i>
+                    <Layers className="text-purple-600 mr-3" size={24} />
                     Plantillas de Eventos
                   </h2>
                   <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
@@ -1926,7 +1927,7 @@ _Evento creado desde ChatFlow Pro_
                   onClick={() => setShowTemplatesModal(false)}
                   className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
                 >
-                  <i className="fas fa-times text-2xl"></i>
+                  <X size={24} />
                 </button>
               </div>
             </div>
@@ -1976,12 +1977,12 @@ _Evento creado desde ChatFlow Pro_
                             {typeLabels[template.type]}
                           </span>
                           <span className="flex items-center">
-                            <i className="fas fa-clock mr-1"></i>
+                            <Clock className="mr-1" size={14} />
                             {template.duration} min
                           </span>
                           {template.recurrenceFrequency !== 'none' && (
                             <span className="flex items-center px-2 py-1 rounded-md bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
-                              <i className="fas fa-repeat mr-1"></i>
+                              <Repeat className="mr-1" size={14} />
                               {template.recurrenceFrequency === 'daily' && 'Diario'}
                               {template.recurrenceFrequency === 'weekly' && 'Semanal'}
                               {template.recurrenceFrequency === 'monthly' && 'Mensual'}
@@ -2000,14 +2001,14 @@ _Evento creado desde ChatFlow Pro_
                             onClick={() => handleLoadTemplate(template)}
                             className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-all flex items-center justify-center space-x-2"
                           >
-                            <i className="fas fa-plus"></i>
+                            <Plus size={16} />
                             <span>Usar</span>
                           </button>
                           <button
                             onClick={() => handleDeleteTemplate(template.id)}
                             className="px-4 py-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg font-medium hover:bg-red-100 dark:hover:bg-red-900/40 transition-all"
                           >
-                            <i className="fas fa-trash"></i>
+                            <Trash2 size={16} />
                           </button>
                         </div>
                       </div>
@@ -2016,7 +2017,7 @@ _Evento creado desde ChatFlow Pro_
                 </div>
               ) : (
                 <div className="text-center py-16">
-                  <i className="fas fa-layer-group text-gray-400 dark:text-gray-500 text-6xl mb-4"></i>
+                  <Layers className="text-gray-400 dark:text-gray-500 mb-4" size={56} />
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
                     No hay plantillas guardadas
                   </h3>
@@ -2042,7 +2043,7 @@ _Evento creado desde ChatFlow Pro_
                     }}
                     className="px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl font-medium hover:from-purple-700 hover:to-purple-800 transition-all shadow-lg inline-flex items-center space-x-2"
                   >
-                    <i className="fas fa-plus"></i>
+                    <Plus size={16} />
                     <span>Crear Primer Evento</span>
                   </button>
                 </div>
@@ -2067,7 +2068,7 @@ _Evento creado desde ChatFlow Pro_
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl ring-1 ring-black/5 dark:ring-white/10 max-w-md w-full">
             <div className="p-6 border-b border-gray-100 dark:border-gray-700">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
-                <i className="fas fa-layer-group text-purple-600 mr-3"></i>
+                <Layers className="text-purple-600 mr-3" size={24} />
                 Guardar como Plantilla
               </h2>
             </div>
@@ -2132,7 +2133,7 @@ _Evento creado desde ChatFlow Pro_
                 onClick={handleSaveAsTemplate}
                 className="flex-1 px-6 py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg font-medium hover:from-purple-700 hover:to-purple-800 transition-all shadow-lg flex items-center justify-center space-x-2"
               >
-                <i className="fas fa-check"></i>
+                <Check size={16} />
                 <span>Guardar</span>
               </button>
             </div>
