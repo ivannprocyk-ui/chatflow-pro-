@@ -1,6 +1,27 @@
 import React from 'react';
 import { AppSection } from "@/react-app/App";
 import { AppConfig } from "@/react-app/utils/storage";
+import {
+  PieChart,
+  Send,
+  FileText,
+  Clock,
+  Megaphone,
+  BarChart3,
+  BookUser,
+  Users,
+  SlidersHorizontal,
+  Calendar,
+  Bot,
+  Brain,
+  ShieldCheck,
+  Settings,
+  MessageSquare,
+  Moon,
+  Sun,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-react';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -16,28 +37,28 @@ interface SidebarProps {
 
 const menuItems = [
   // Panel Principal
-  { id: 'dashboard', icon: 'fas fa-chart-pie', label: 'Dashboard', group: 'main' },
+  { id: 'dashboard', Icon: PieChart, label: 'Dashboard', group: 'main' },
 
   // Mensajería
-  { id: 'bulk-messaging', icon: 'fas fa-paper-plane', label: 'Envío Masivo', group: 'messaging' },
-  { id: 'templates', icon: 'fas fa-file-alt', label: 'Plantillas', group: 'messaging' },
-  { id: 'message-scheduler', icon: 'fas fa-clock', label: 'Programar Envíos', group: 'messaging' },
-  { id: 'campaign-history', icon: 'fas fa-bullhorn', label: 'Historial de Campañas', group: 'messaging' },
-  { id: 'analytics', icon: 'fas fa-chart-bar', label: 'Analytics de Campañas', group: 'messaging' },
+  { id: 'bulk-messaging', Icon: Send, label: 'Envío Masivo', group: 'messaging' },
+  { id: 'templates', Icon: FileText, label: 'Plantillas', group: 'messaging' },
+  { id: 'message-scheduler', Icon: Clock, label: 'Programar Envíos', group: 'messaging' },
+  { id: 'campaign-history', Icon: Megaphone, label: 'Historial de Campañas', group: 'messaging' },
+  { id: 'analytics', Icon: BarChart3, label: 'Analytics de Campañas', group: 'messaging' },
 
   // Contactos y CRM
-  { id: 'contact-lists', icon: 'fas fa-address-book', label: 'Listas de Contactos', group: 'crm' },
-  { id: 'crm-panel', icon: 'fas fa-chart-line', label: 'Contactos', group: 'crm' },
-  { id: 'crm-settings', icon: 'fas fa-sliders-h', label: 'Configurar CRM', group: 'crm' },
-  { id: 'calendar', icon: 'fas fa-calendar-alt', label: 'Agenda', group: 'crm' },
+  { id: 'contact-lists', Icon: BookUser, label: 'Listas de Contactos', group: 'crm' },
+  { id: 'crm-panel', Icon: Users, label: 'Contactos', group: 'crm' },
+  { id: 'crm-settings', Icon: SlidersHorizontal, label: 'Configurar CRM', group: 'crm' },
+  { id: 'calendar', Icon: Calendar, label: 'Agenda', group: 'crm' },
 
   // Bot e IA
-  { id: 'bot-config', icon: 'fas fa-robot', label: 'Bot IA', group: 'bot' },
-  { id: 'bot-analytics', icon: 'fas fa-brain', label: 'Analytics Bot', group: 'bot' },
+  { id: 'bot-config', Icon: Bot, label: 'Bot IA', group: 'bot' },
+  { id: 'bot-analytics', Icon: Brain, label: 'Analytics Bot', group: 'bot' },
 
   // Administración
-  { id: 'admin-panel', icon: 'fas fa-user-shield', label: 'Panel Admin', group: 'admin' },
-  { id: 'configuration', icon: 'fas fa-cog', label: 'Configuración', group: 'admin' },
+  { id: 'admin-panel', Icon: ShieldCheck, label: 'Panel Admin', group: 'admin' },
+  { id: 'configuration', Icon: Settings, label: 'Configuración', group: 'admin' },
 ] as const;
 
 export default function Sidebar({ isOpen, isCollapsed = false, currentSection, onSectionChange, onToggleCollapse, config, darkMode = false, onDarkModeToggle }: SidebarProps) {
@@ -69,7 +90,7 @@ export default function Sidebar({ isOpen, isCollapsed = false, currentSection, o
             />
           ) : (
             <div className="w-10 h-10 rounded-lg bg-gray-200 dark:bg-gray-700 flex items-center justify-center transition-colors duration-300">
-              <i className="fas fa-comments text-gray-600 dark:text-gray-300 text-lg transition-colors duration-300"></i>
+              <MessageSquare size={20} className="text-gray-600 dark:text-gray-300 transition-colors duration-300" />
             </div>
           )}
           {!isCollapsed && (
@@ -110,7 +131,7 @@ export default function Sidebar({ isOpen, isCollapsed = false, currentSection, o
                       }
                     `}
                   >
-                    <i className={`${item.icon} text-lg ${isCollapsed ? '' : 'w-5'} transition-colors duration-300`}></i>
+                    <item.Icon size={18} className="transition-colors duration-300" />
                     {!isCollapsed && <span className="transition-colors duration-300">{item.label}</span>}
                   </button>
                 </li>
@@ -132,8 +153,11 @@ export default function Sidebar({ isOpen, isCollapsed = false, currentSection, o
           `}
           title={darkMode ? 'Modo claro' : 'Modo oscuro'}
         >
-          {!isCollapsed && <span className="text-sm font-medium">{darkMode ? '🌙 Modo Oscuro' : '☀️ Modo Claro'}</span>}
-          {isCollapsed && <i className={`fas ${darkMode ? 'fa-moon' : 'fa-sun'} text-lg`}></i>}
+          {!isCollapsed && <span className="text-sm font-medium flex items-center gap-2">
+            {darkMode ? <Moon size={16} /> : <Sun size={16} />}
+            {darkMode ? 'Modo Oscuro' : 'Modo Claro'}
+          </span>}
+          {isCollapsed && (darkMode ? <Moon size={18} /> : <Sun size={18} />)}
           {!isCollapsed && (
             <div className="relative inline-block w-10 h-5">
               <div className={`block w-10 h-5 rounded-full ${darkMode ? 'bg-blue-600' : 'bg-gray-300'} transition-colors`}></div>
@@ -149,7 +173,7 @@ export default function Sidebar({ isOpen, isCollapsed = false, currentSection, o
             className="hidden lg:flex w-full items-center justify-center space-x-2 px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-300 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
             title={isCollapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
           >
-            <i className={`fas ${isCollapsed ? 'fa-angle-right' : 'fa-angle-left'} transition-colors duration-300`}></i>
+            {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
             {!isCollapsed && <span className="text-sm transition-colors duration-300">Colapsar</span>}
           </button>
         )}
