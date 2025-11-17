@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { botConfigAPI } from '@/react-app/services/api';
+import { botConfigAPI, followUpsAPI } from '@/react-app/services/api';
+import { MessageSquare, Plus, Edit2, Trash2, Play, Pause, TrendingUp } from 'lucide-react';
+import FollowUpSequenceEditor from '@/react-app/components/FollowUpSequenceEditor';
 
 interface BotConfig {
   id?: string;
@@ -23,8 +25,41 @@ interface BotConfig {
   botEnabled: boolean;
 }
 
+type TriggerType = 'keyword' | 'variable' | 'conversation_state' | 'bot_stage' | 'time_based' | 'action' | 'no_response' | 'specific_intent' | 'customer_left' | 'price_requested' | 'info_sent' | 'cart_abandoned';
+type Strategy = 'passive' | 'moderate' | 'aggressive';
+type DelayUnit = 'minutes' | 'hours' | 'days';
+
+interface FollowUpMessage {
+  id?: string;
+  step_order: number;
+  delay_amount: number;
+  delay_unit: DelayUnit;
+  message_template: string;
+  available_variables: string[];
+}
+
+interface FollowUpSequence {
+  id?: string;
+  name: string;
+  description: string;
+  enabled: boolean;
+  trigger_type: TriggerType;
+  trigger_config: any;
+  strategy: Strategy;
+  conditions?: {
+    business_hours_only?: boolean;
+    days_of_week?: number[];
+    hours_start?: string;
+    hours_end?: string;
+    max_follow_ups_per_contact?: number;
+  };
+  messages: FollowUpMessage[];
+  total_executions?: number;
+  successful_conversions?: number;
+}
+
 export default function BotConfiguration() {
-  const [activeTab, setActiveTab] = useState<'config' | 'connection' | 'prompt'>('config');
+  const [activeTab, setActiveTab] = useState<'config' | 'connection' | 'prompt' | 'followups'>('config');
   const [config, setConfig] = useState<BotConfig>({
     connectionType: 'evolution_api',
     connectionStatus: 'disconnected',
@@ -38,14 +73,19 @@ export default function BotConfiguration() {
     botEnabled: false,
   });
 
+  // Follow-ups state
+  const [sequences, setSequences] = useState<FollowUpSequence[]>([]);
+  const [editingSequence, setEditingSequence] = useState<FollowUpSequence | null>(null);
+
   const [qrCode, setQRCode] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{type: 'success' | 'error' | 'info', text: string} | null>(null);
 
-  // Load config on mount
+  // Load config and sequences on mount
   useEffect(() => {
     loadBotConfig();
+    loadSequences();
     const interval = setInterval(checkConnectionStatus, 5000); // Check status every 5s
     return () => clearInterval(interval);
   }, []);
@@ -157,6 +197,106 @@ export default function BotConfiguration() {
     }
   };
 
+  // =====================================================
+  // FOLLOW-UPS FUNCTIONS
+  // =====================================================
+
+  const loadSequences = async () => {
+    try {
+      const data = await followUpsAPI.getAllSequences();
+      setSequences(data || []);
+    } catch (error) {
+      console.error('Error loading sequences:', error);
+    }
+  };
+
+  const createNewSequence = () => {
+    const newSequence: FollowUpSequence = {
+      name: '',
+      description: '',
+      enabled: true,
+      trigger_type: 'no_response',
+      trigger_config: { no_response_minutes: 30 },
+      strategy: 'moderate',
+      conditions: {
+        business_hours_only: false,
+        days_of_week: [1, 2, 3, 4, 5], // Lunes a Viernes
+        hours_start: '09:00',
+        hours_end: '18:00',
+        max_follow_ups_per_contact: 3,
+      },
+      messages: [
+        {
+          step_order: 1,
+          delay_amount: 30,
+          delay_unit: 'minutes',
+          message_template: '',
+          available_variables: ['nombre', 'producto', 'precio', 'empresa'],
+        },
+      ],
+    };
+    setEditingSequence(newSequence);
+  };
+
+  const saveSequence = async (sequence: FollowUpSequence) => {
+    try {
+      if (sequence.id) {
+        await followUpsAPI.updateSequence(sequence.id, sequence);
+        showMessage('success', '✅ Secuencia actualizada');
+      } else {
+        await followUpsAPI.createSequence(sequence);
+        showMessage('success', '✅ Secuencia creada');
+      }
+      await loadSequences();
+      setEditingSequence(null);
+    } catch (error: any) {
+      showMessage('error', `❌ Error: ${error.message || 'No se pudo guardar'}`);
+    }
+  };
+
+  const deleteSequence = async (id: string) => {
+    if (!window.confirm('¿Eliminar esta secuencia?')) return;
+
+    try {
+      await followUpsAPI.deleteSequence(id);
+      await loadSequences();
+      showMessage('success', '✅ Secuencia eliminada');
+    } catch (error: any) {
+      showMessage('error', `❌ Error: ${error.message || 'No se pudo eliminar'}`);
+    }
+  };
+
+  const toggleSequenceEnabled = async (sequence: FollowUpSequence) => {
+    try {
+      await followUpsAPI.updateSequence(sequence.id!, {
+        ...sequence,
+        enabled: !sequence.enabled,
+      });
+      await loadSequences();
+      showMessage('success', `✅ Secuencia ${!sequence.enabled ? 'activada' : 'pausada'}`);
+    } catch (error: any) {
+      showMessage('error', `❌ Error: ${error.message || 'No se pudo cambiar estado'}`);
+    }
+  };
+
+  const getStrategyInfo = (strategy: Strategy) => {
+    const info = {
+      passive: {
+        label: 'Pasivo',
+        color: 'bg-green-100 text-green-800',
+      },
+      moderate: {
+        label: 'Moderado',
+        color: 'bg-yellow-100 text-yellow-800',
+      },
+      aggressive: {
+        label: 'Agresivo',
+        color: 'bg-red-100 text-red-800',
+      },
+    };
+    return info[strategy];
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 p-6">
       <div className="max-w-6xl mx-auto">
@@ -168,7 +308,7 @@ export default function BotConfiguration() {
                 🤖 Configuración del Bot IA
               </h1>
               <p className="text-gray-600 mt-2">
-                Configura tu asistente virtual inteligente con IA
+                Configura tu asistente virtual inteligente con IA y seguimientos automáticos
               </p>
             </div>
             <div className="flex items-center gap-4">
@@ -242,6 +382,19 @@ export default function BotConfiguration() {
                 }`}
               >
                 💬 Prompt Personalizado
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab('followups');
+                  if (sequences.length === 0) loadSequences();
+                }}
+                className={`px-6 py-4 font-medium transition-colors ${
+                  activeTab === 'followups'
+                    ? 'border-b-2 border-purple-500 text-purple-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                🔄 Seguimientos Automáticos
               </button>
             </div>
           </div>
@@ -526,8 +679,144 @@ export default function BotConfiguration() {
                 </button>
               </div>
             )}
+
+            {/* Follow-ups Tab */}
+            {activeTab === 'followups' && (
+              <div className="space-y-6">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900">Secuencias de Seguimiento</h2>
+                    <p className="text-gray-600 mt-1">
+                      Crea secuencias inteligentes para recuperar conversaciones y aumentar conversiones
+                    </p>
+                  </div>
+                  <button
+                    onClick={createNewSequence}
+                    className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg transition-colors shadow-lg"
+                  >
+                    <Plus size={20} />
+                    Nueva Secuencia
+                  </button>
+                </div>
+
+                {/* Sequences List */}
+                {sequences.length === 0 ? (
+                  <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg p-12 text-center border-2 border-dashed border-purple-300">
+                    <MessageSquare size={64} className="mx-auto text-purple-400 mb-4" />
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                      No hay secuencias creadas
+                    </h3>
+                    <p className="text-gray-600 mb-6">
+                      Crea tu primera secuencia de seguimiento para recuperar clientes automáticamente
+                    </p>
+                    <button
+                      onClick={createNewSequence}
+                      className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg transition-colors inline-flex items-center gap-2"
+                    >
+                      <Plus size={20} />
+                      Crear Primera Secuencia
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid gap-4">
+                    {sequences.map((sequence) => {
+                      const strategyInfo = getStrategyInfo(sequence.strategy);
+                      const conversionRate = sequence.total_executions
+                        ? ((sequence.successful_conversions || 0) / sequence.total_executions * 100).toFixed(1)
+                        : '0';
+
+                      return (
+                        <div
+                          key={sequence.id}
+                          className="bg-white border-2 border-gray-200 rounded-lg p-6 hover:shadow-lg transition-shadow"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <h3 className="text-xl font-semibold text-gray-900">{sequence.name}</h3>
+                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${strategyInfo.color}`}>
+                                  {strategyInfo.label}
+                                </span>
+                                <button
+                                  onClick={() => toggleSequenceEnabled(sequence)}
+                                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                                    sequence.enabled
+                                      ? 'bg-green-100 text-green-800'
+                                      : 'bg-gray-100 text-gray-800'
+                                  }`}
+                                >
+                                  {sequence.enabled ? '✅ Activa' : '⏸️ Pausada'}
+                                </button>
+                              </div>
+                              <p className="text-gray-600 mb-4">{sequence.description}</p>
+
+                              {/* Stats */}
+                              <div className="grid grid-cols-4 gap-4 mb-4">
+                                <div className="flex items-center gap-2">
+                                  <MessageSquare size={16} className="text-blue-500" />
+                                  <span className="text-sm text-gray-600">
+                                    {sequence.messages?.length || 0} mensajes
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Play size={16} className="text-purple-500" />
+                                  <span className="text-sm text-gray-600">
+                                    {sequence.total_executions || 0} ejecuciones
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <TrendingUp size={16} className="text-green-500" />
+                                  <span className="text-sm text-gray-600">
+                                    {sequence.successful_conversions || 0} conversiones
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Clock size={16} className="text-orange-500" />
+                                  <span className="text-sm text-gray-600">
+                                    {conversionRate}% tasa
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex items-center gap-2 ml-4">
+                              <button
+                                onClick={() => setEditingSequence(sequence)}
+                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="Editar"
+                              >
+                                <Edit2 size={18} />
+                              </button>
+                              <button
+                                onClick={() => deleteSequence(sequence.id!)}
+                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Eliminar"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
+
+        {/* Sequence Editor Modal */}
+        {editingSequence && (
+          <FollowUpSequenceEditor
+            sequence={editingSequence}
+            onSave={saveSequence}
+            onCancel={() => setEditingSequence(null)}
+            businessName={config.businessName}
+          />
+        )}
       </div>
     </div>
   );
