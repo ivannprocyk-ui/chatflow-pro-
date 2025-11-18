@@ -1139,8 +1139,11 @@ export default function BotConfiguration({ darkMode = false }: BotConfigurationP
                         {/* Timeline de Mensajes */}
                         <div className={`p-6 rounded-lg ${darkMode ? 'bg-gray-750' : 'bg-gray-50'}`}>
                           <div className="flex items-center justify-between mb-4">
+                            <h4 className={`text-lg font-bold transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                              <i className="fas fa-stream mr-2 text-purple-600"></i>
                               Timeline de Mensajes
                             </h4>
+                          </div>
 
                             <div className="space-y-3">
                               {editingSequence.messages?.map((msg, idx) => (
