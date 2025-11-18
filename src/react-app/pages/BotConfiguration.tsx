@@ -779,59 +779,67 @@ export default function BotConfiguration({ darkMode = false }: BotConfigurationP
                     </button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-12 gap-4 h-full">
-                    {/* Panel Izquierdo - Lista de Secuencias */}
-                    <div className={`col-span-3 rounded-lg p-4 overflow-y-auto transition-colors ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`}>
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className={`font-semibold transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                  <div className="space-y-6">
+                    {/* Sección: Lista de Secuencias */}
+                    <div className={`rounded-lg p-6 transition-colors ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200 shadow-sm'}`}>
+                      <div className="flex items-center justify-between mb-6">
+                        <h3 className={`text-xl font-bold transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                           <i className="fas fa-list mr-2 text-purple-600"></i>
-                          Secuencias
+                          Mis Secuencias de Seguimiento
                         </h3>
                         <button
                           onClick={createNewSequence}
-                          className="p-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-                          title="Nueva Secuencia"
+                          className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex items-center gap-2"
                         >
-                          <i className="fas fa-plus text-sm"></i>
+                          <i className="fas fa-plus"></i>
+                          Nueva Secuencia
                         </button>
                       </div>
 
-                      <div className="space-y-2">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {sequences.map((seq) => (
                           <button
                             key={seq.id}
                             onClick={() => setEditingSequence(seq)}
-                            className={`w-full text-left p-3 rounded-lg transition-all ${
+                            className={`text-left p-5 rounded-xl transition-all ${
                               editingSequence?.id === seq.id
                                 ? darkMode
-                                  ? 'bg-purple-900/40 border-2 border-purple-500'
-                                  : 'bg-purple-50 border-2 border-purple-500'
+                                  ? 'bg-gradient-to-br from-purple-900/60 to-purple-800/60 border-2 border-purple-500 shadow-lg'
+                                  : 'bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-500 shadow-lg'
                                 : darkMode
-                                  ? 'bg-gray-700 hover:bg-gray-600 border-2 border-transparent'
-                                  : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'
+                                  ? 'bg-gray-700 hover:bg-gray-600 border-2 border-gray-600 hover:border-gray-500'
+                                  : 'bg-white hover:bg-gray-50 border-2 border-gray-200 hover:border-gray-300 shadow-sm hover:shadow'
                             }`}
                           >
-                            <div className="flex items-center justify-between mb-1">
-                              <span className={`font-medium text-sm transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                            <div className="flex items-start justify-between mb-2">
+                              <span className={`font-bold text-lg transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                                 {seq.name}
                               </span>
-                              {seq.enabled ? (
-                                <i className="fas fa-check-circle text-green-500 text-xs"></i>
-                              ) : (
-                                <i className="fas fa-pause-circle text-gray-400 text-xs"></i>
-                              )}
+                              <div className="flex flex-col items-end gap-1">
+                                {seq.enabled ? (
+                                  <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                                    <i className="fas fa-check-circle"></i>
+                                    Activa
+                                  </span>
+                                ) : (
+                                  <span className="flex items-center gap-1 text-xs text-gray-400">
+                                    <i className="fas fa-pause-circle"></i>
+                                    Pausada
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                            <p className={`text-xs line-clamp-2 transition-colors ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                            <p className={`text-sm mb-3 line-clamp-2 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                               {seq.description}
                             </p>
-                            <div className="flex items-center gap-2 mt-2 text-xs">
-                              <span className={`transition-colors ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                                <i className="fas fa-comments mr-1"></i>
-                                {seq.messages?.length || 0}
+                            <div className="flex items-center justify-between text-xs pt-3 border-t ${darkMode ? 'border-gray-600' : 'border-gray-200'}">
+                              <span className={`flex items-center gap-1 transition-colors ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                <i className="fas fa-comments"></i>
+                                {seq.messages?.length || 0} mensajes
                               </span>
-                              <span className={`transition-colors ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-                                <i className="fas fa-chart-line mr-1"></i>
-                                {seq.total_executions || 0}
+                              <span className={`flex items-center gap-1 transition-colors ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                <i className="fas fa-rocket"></i>
+                                {seq.total_executions || 0} enviados
                               </span>
                             </div>
                           </button>
@@ -839,59 +847,73 @@ export default function BotConfiguration({ darkMode = false }: BotConfigurationP
                       </div>
                     </div>
 
-                    {/* Panel Central - Configuración y Timeline */}
-                    <div className={`col-span-5 rounded-lg p-4 overflow-y-auto transition-colors ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`}>
-                      {editingSequence ? (
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between mb-4">
-                            <h3 className={`font-semibold text-lg transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                              <i className="fas fa-cog mr-2 text-purple-600"></i>
-                              Configuración
-                            </h3>
+                    {/* Sección: Configuración de Secuencia */}
+                    {editingSequence && (
+                      <div className={`rounded-lg p-6 transition-colors ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200 shadow-sm'}`}>
+                        <div className="flex items-center justify-between mb-6">
+                          <h3 className={`text-xl font-bold transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                            <i className="fas fa-cog mr-2 text-purple-600"></i>
+                            Configuración de Secuencia
+                          </h3>
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() => setEditingSequence(null)}
+                              className="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                            >
+                              <i className="fas fa-times mr-2"></i>
+                              Cancelar
+                            </button>
                             <button
                               onClick={() => saveSequence(editingSequence)}
-                              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm"
+                              className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-semibold"
                             >
                               <i className="fas fa-save mr-2"></i>
-                              Guardar
+                              Guardar Secuencia
                             </button>
                           </div>
+                        </div>
 
-                          {/* Configuración básica */}
-                          <div className="space-y-3">
-                            <div>
-                              <label className={`block text-sm font-medium mb-1 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                Nombre
-                              </label>
-                              <input
-                                type="text"
-                                value={editingSequence.name}
-                                onChange={(e) => setEditingSequence({ ...editingSequence, name: e.target.value })}
-                                className={`w-full px-3 py-2 rounded-lg text-sm transition-colors ${
-                                  darkMode
-                                    ? 'bg-gray-700 border-gray-600 text-white'
-                                    : 'bg-white border-gray-300 text-gray-900'
-                                } border focus:ring-2 focus:ring-purple-500`}
-                                placeholder="Nombre de la secuencia"
-                              />
-                            </div>
+                        {/* Configuración básica en Grid 2 columnas */}
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                          <div>
+                            <label className={`block text-sm font-semibold mb-2 transition-colors ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                              <i className="fas fa-tag mr-2 text-purple-500"></i>
+                              Nombre de la Secuencia
+                            </label>
+                            <input
+                              type="text"
+                              value={editingSequence.name}
+                              onChange={(e) => setEditingSequence({ ...editingSequence, name: e.target.value })}
+                              className={`w-full px-4 py-3 rounded-lg transition-colors ${
+                                darkMode
+                                  ? 'bg-gray-700 border-gray-600 text-white'
+                                  : 'bg-white border-gray-300 text-gray-900'
+                              } border focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
+                              placeholder="Ej: Seguimiento de Cotización"
+                            />
+                          </div>
 
-                            <div>
-                              <label className={`block text-sm font-medium mb-1 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                Descripción
-                              </label>
-                              <textarea
-                                value={editingSequence.description}
-                                onChange={(e) => setEditingSequence({ ...editingSequence, description: e.target.value })}
-                                className={`w-full px-3 py-2 rounded-lg text-sm transition-colors ${
-                                  darkMode
-                                    ? 'bg-gray-700 border-gray-600 text-white'
-                                    : 'bg-white border-gray-300 text-gray-900'
-                                } border focus:ring-2 focus:ring-purple-500`}
-                                rows={2}
-                                placeholder="Descripción breve"
-                              />
-                            </div>
+                          <div>
+                            <label className={`block text-sm font-semibold mb-2 transition-colors ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                              <i className="fas fa-align-left mr-2 text-purple-500"></i>
+                              Descripción
+                            </label>
+                            <input
+                              type="text"
+                              value={editingSequence.description}
+                              onChange={(e) => setEditingSequence({ ...editingSequence, description: e.target.value })}
+                              className={`w-full px-4 py-3 rounded-lg transition-colors ${
+                                darkMode
+                                  ? 'bg-gray-700 border-gray-600 text-white'
+                                  : 'bg-white border-gray-300 text-gray-900'
+                              } border focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
+                              placeholder="Breve descripción de qué hace esta secuencia"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                          <div>
 
                             {/* Tipo de Trigger */}
                             <div>
