@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
 import { EvolutionApiController } from './evolution-api.controller';
 import { EvolutionApiService } from './evolution-api.service';
@@ -7,7 +7,7 @@ import { BotConfigModule } from '../bot-config/bot-config.module';
 @Module({
   imports: [
     HttpModule,
-    BotConfigModule, // For accessing bot config
+    forwardRef(() => BotConfigModule), // For accessing bot config
   ],
   controllers: [EvolutionApiController],
   providers: [EvolutionApiService],
