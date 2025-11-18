@@ -700,59 +700,7 @@ export default function BotConfiguration({ darkMode = false }: BotConfigurationP
 
             {/* Follow-ups Tab */}
             {activeTab === 'followups' && (
-              <div className="space-y-6">
-                {/* Show editor if editing, otherwise show list */}
-                {editingSequence ? (
-                  <div>
-                    {/* Editor Header */}
-                    <div className="flex items-center justify-between mb-6">
-                      <div>
-                        <h2 className={`text-2xl font-bold transition-colors ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-                          {editingSequence.id ? 'Editar Secuencia' : 'Nueva Secuencia'}
-                        </h2>
-                        <p className={`mt-1 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                          Configura tu secuencia de seguimiento automático
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => setEditingSequence(null)}
-                        className={`px-4 py-2 rounded-lg transition-colors ${darkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-200' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}`}
-                      >
-                        <i className="fas fa-arrow-left mr-2"></i>
-                        Volver
-                      </button>
-                    </div>
-
-                    {/* Integrated Editor */}
-                    <FollowUpSequenceEditor
-                      sequence={editingSequence}
-                      onSave={saveSequence}
-                      onCancel={() => setEditingSequence(null)}
-                      businessName={config.businessName}
-                      darkMode={darkMode}
-                      isModal={false}
-                    />
-                  </div>
-                ) : (
-                  <>
-                    {/* Header */}
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h2 className={`text-2xl font-bold transition-colors ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>Secuencias de Seguimiento</h2>
-                        <p className={`mt-1 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                          Crea secuencias inteligentes para recuperar conversaciones y aumentar conversiones
-                        </p>
-                      </div>
-                      <button
-                        onClick={createNewSequence}
-                        className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg transition-colors shadow-lg"
-                      >
-                        <i className="fas fa-plus"></i>
-                        Nueva Secuencia
-                      </button>
-                    </div>
-
-                {/* Sequences List */}
+              <div className="h-[calc(100vh-300px)]">
                 {sequences.length === 0 ? (
                   <div className={`rounded-lg p-12 text-center border-2 border-dashed transition-colors ${darkMode ? 'bg-gradient-to-br from-gray-700 to-gray-600 border-purple-500' : 'bg-gradient-to-br from-purple-50 to-blue-50 border-purple-300'}`}>
                     <i className={`fas fa-comments text-6xl mb-4 transition-colors ${darkMode ? 'text-purple-300' : 'text-purple-400'}`}></i>
@@ -771,91 +719,471 @@ export default function BotConfiguration({ darkMode = false }: BotConfigurationP
                     </button>
                   </div>
                 ) : (
-                  <div className="grid gap-4">
-                    {sequences.map((sequence) => {
-                      const strategyInfo = getStrategyInfo(sequence.strategy);
-                      const conversionRate = sequence.total_executions
-                        ? ((sequence.successful_conversions || 0) / sequence.total_executions * 100).toFixed(1)
-                        : '0';
-
-                      return (
-                        <div
-                          key={sequence.id}
-                          className={`border-2 rounded-lg p-6 hover:shadow-lg transition-all ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'}`}
+                  <div className="grid grid-cols-12 gap-4 h-full">
+                    {/* Panel Izquierdo - Lista de Secuencias */}
+                    <div className={`col-span-3 rounded-lg p-4 overflow-y-auto transition-colors ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`}>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className={`font-semibold transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                          <i className="fas fa-list mr-2 text-purple-600"></i>
+                          Secuencias
+                        </h3>
+                        <button
+                          onClick={createNewSequence}
+                          className="p-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
+                          title="Nueva Secuencia"
                         >
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-3 mb-2">
-                                <h3 className={`text-xl font-semibold transition-colors ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>{sequence.name}</h3>
-                                <span className={`px-3 py-1 rounded-full text-xs font-medium ${strategyInfo.color}`}>
-                                  {strategyInfo.label}
-                                </span>
-                                <button
-                                  onClick={() => toggleSequenceEnabled(sequence)}
-                                  className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                                    sequence.enabled
-                                      ? 'bg-green-100 text-green-800'
-                                      : 'bg-gray-100 text-gray-800'
-                                  }`}
-                                >
-                                  {sequence.enabled ? '✅ Activa' : '⏸️ Pausada'}
-                                </button>
-                              </div>
-                              <p className={`mb-4 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>{sequence.description}</p>
+                          <i className="fas fa-plus text-sm"></i>
+                        </button>
+                      </div>
 
-                              {/* Stats */}
-                              <div className="grid grid-cols-4 gap-4 mb-4">
-                                <div className="flex items-center gap-2">
-                                  <i className="fas fa-comments text-blue-500"></i>
-                                  <span className={`text-sm transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                                    {sequence.messages?.length || 0} mensajes
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <i className="fas fa-play text-purple-500"></i>
-                                  <span className={`text-sm transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                                    {sequence.total_executions || 0} ejecuciones
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <i className="fas fa-chart-line text-green-500"></i>
-                                  <span className={`text-sm transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                                    {sequence.successful_conversions || 0} conversiones
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <i className="fas fa-percentage text-orange-500"></i>
-                                  <span className={`text-sm transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                                    {conversionRate}% tasa
-                                  </span>
-                                </div>
-                              </div>
+                      <div className="space-y-2">
+                        {sequences.map((seq) => (
+                          <button
+                            key={seq.id}
+                            onClick={() => setEditingSequence(seq)}
+                            className={`w-full text-left p-3 rounded-lg transition-all ${
+                              editingSequence?.id === seq.id
+                                ? darkMode
+                                  ? 'bg-purple-900/40 border-2 border-purple-500'
+                                  : 'bg-purple-50 border-2 border-purple-500'
+                                : darkMode
+                                  ? 'bg-gray-700 hover:bg-gray-600 border-2 border-transparent'
+                                  : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-1">
+                              <span className={`font-medium text-sm transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                                {seq.name}
+                              </span>
+                              {seq.enabled ? (
+                                <i className="fas fa-check-circle text-green-500 text-xs"></i>
+                              ) : (
+                                <i className="fas fa-pause-circle text-gray-400 text-xs"></i>
+                              )}
+                            </div>
+                            <p className={`text-xs line-clamp-2 transition-colors ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                              {seq.description}
+                            </p>
+                            <div className="flex items-center gap-2 mt-2 text-xs">
+                              <span className={`transition-colors ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                                <i className="fas fa-comments mr-1"></i>
+                                {seq.messages?.length || 0}
+                              </span>
+                              <span className={`transition-colors ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                                <i className="fas fa-chart-line mr-1"></i>
+                                {seq.total_executions || 0}
+                              </span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Panel Central - Configuración y Timeline */}
+                    <div className={`col-span-5 rounded-lg p-4 overflow-y-auto transition-colors ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`}>
+                      {editingSequence ? (
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between mb-4">
+                            <h3 className={`font-semibold text-lg transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                              <i className="fas fa-cog mr-2 text-purple-600"></i>
+                              Configuración
+                            </h3>
+                            <button
+                              onClick={() => saveSequence(editingSequence)}
+                              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm"
+                            >
+                              <i className="fas fa-save mr-2"></i>
+                              Guardar
+                            </button>
+                          </div>
+
+                          {/* Configuración básica */}
+                          <div className="space-y-3">
+                            <div>
+                              <label className={`block text-sm font-medium mb-1 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                Nombre
+                              </label>
+                              <input
+                                type="text"
+                                value={editingSequence.name}
+                                onChange={(e) => setEditingSequence({ ...editingSequence, name: e.target.value })}
+                                className={`w-full px-3 py-2 rounded-lg text-sm transition-colors ${
+                                  darkMode
+                                    ? 'bg-gray-700 border-gray-600 text-white'
+                                    : 'bg-white border-gray-300 text-gray-900'
+                                } border focus:ring-2 focus:ring-purple-500`}
+                                placeholder="Nombre de la secuencia"
+                              />
                             </div>
 
-                            {/* Actions */}
-                            <div className="flex items-center gap-2 ml-4">
+                            <div>
+                              <label className={`block text-sm font-medium mb-1 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                Descripción
+                              </label>
+                              <textarea
+                                value={editingSequence.description}
+                                onChange={(e) => setEditingSequence({ ...editingSequence, description: e.target.value })}
+                                className={`w-full px-3 py-2 rounded-lg text-sm transition-colors ${
+                                  darkMode
+                                    ? 'bg-gray-700 border-gray-600 text-white'
+                                    : 'bg-white border-gray-300 text-gray-900'
+                                } border focus:ring-2 focus:ring-purple-500`}
+                                rows={2}
+                                placeholder="Descripción breve"
+                              />
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                id="enabled"
+                                checked={editingSequence.enabled}
+                                onChange={(e) => setEditingSequence({ ...editingSequence, enabled: e.target.checked })}
+                                className="rounded"
+                              />
+                              <label htmlFor="enabled" className={`text-sm transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                Secuencia activa
+                              </label>
+                            </div>
+                          </div>
+
+                          {/* Timeline */}
+                          <div className="mt-6">
+                            <h4 className={`font-semibold mb-3 flex items-center gap-2 transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                              <i className="fas fa-stream text-purple-600"></i>
+                              Timeline de Mensajes
+                            </h4>
+
+                            <div className="space-y-3">
+                              {editingSequence.messages?.map((msg, idx) => (
+                                <div
+                                  key={idx}
+                                  onClick={() => setEditingSequence({ ...editingSequence, __selectedMessageIndex: idx })}
+                                  className={`p-3 rounded-lg cursor-pointer transition-all ${
+                                    (editingSequence as any).__selectedMessageIndex === idx
+                                      ? darkMode
+                                        ? 'bg-purple-900/40 border-2 border-purple-500'
+                                        : 'bg-purple-50 border-2 border-purple-500'
+                                      : darkMode
+                                        ? 'bg-gray-700 hover:bg-gray-600 border-2 border-transparent'
+                                        : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'
+                                  }`}
+                                >
+                                  <div className="flex items-start justify-between mb-2">
+                                    <div className="flex items-center gap-2">
+                                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                                        darkMode ? 'bg-purple-600 text-white' : 'bg-purple-600 text-white'
+                                      }`}>
+                                        {msg.step_order}
+                                      </div>
+                                      <span className={`text-sm font-medium transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                                        Mensaje #{msg.step_order}
+                                      </span>
+                                    </div>
+                                    <span className={`text-xs px-2 py-1 rounded transition-colors ${
+                                      msg.message_type === 'ai_generated'
+                                        ? 'bg-green-100 text-green-800'
+                                        : 'bg-blue-100 text-blue-800'
+                                    }`}>
+                                      {msg.message_type === 'ai_generated' ? 'IA' : 'Fijo'}
+                                    </span>
+                                  </div>
+                                  <p className={`text-xs mb-2 line-clamp-2 transition-colors ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                    {msg.message_type === 'ai_generated'
+                                      ? `IA: ${msg.ai_context_instructions || 'Sin instrucciones'}`
+                                      : msg.message_template || 'Sin mensaje'
+                                    }
+                                  </p>
+                                  <div className={`text-xs transition-colors ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                                    <i className="fas fa-clock mr-1"></i>
+                                    Esperar {msg.delay_amount} {msg.delay_unit === 'minutes' ? 'min' : msg.delay_unit === 'hours' ? 'hrs' : 'días'}
+                                  </div>
+                                </div>
+                              ))}
+
                               <button
-                                onClick={() => setEditingSequence(sequence)}
-                                className={`p-2 text-blue-600 rounded-lg transition-colors ${darkMode ? 'hover:bg-blue-900/30' : 'hover:bg-blue-50'}`}
-                                title="Editar"
+                                onClick={() => {
+                                  const newMsg: FollowUpMessage = {
+                                    step_order: (editingSequence.messages?.length || 0) + 1,
+                                    delay_amount: 60,
+                                    delay_unit: 'minutes',
+                                    message_template: '',
+                                    message_type: 'fixed',
+                                    available_variables: ['nombre', 'producto', 'precio', 'empresa'],
+                                  };
+                                  setEditingSequence({
+                                    ...editingSequence,
+                                    messages: [...(editingSequence.messages || []), newMsg],
+                                    __selectedMessageIndex: editingSequence.messages?.length || 0,
+                                  });
+                                }}
+                                className={`w-full p-3 rounded-lg border-2 border-dashed transition-colors ${
+                                  darkMode
+                                    ? 'border-gray-600 hover:border-purple-500 hover:bg-gray-700 text-gray-400'
+                                    : 'border-gray-300 hover:border-purple-500 hover:bg-gray-50 text-gray-600'
+                                }`}
                               >
-                                <i className="fas fa-edit"></i>
-                              </button>
-                              <button
-                                onClick={() => deleteSequence(sequence.id!)}
-                                className={`p-2 text-red-600 rounded-lg transition-colors ${darkMode ? 'hover:bg-red-900/30' : 'hover:bg-red-50'}`}
-                                title="Eliminar"
-                              >
-                                <i className="fas fa-trash"></i>
+                                <i className="fas fa-plus mr-2"></i>
+                                Agregar Mensaje
                               </button>
                             </div>
                           </div>
                         </div>
-                      );
-                    })}
+                      ) : (
+                        <div className={`flex items-center justify-center h-full transition-colors ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                          <div className="text-center">
+                            <i className="fas fa-arrow-left text-4xl mb-3"></i>
+                            <p>Selecciona una secuencia de la izquierda</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Panel Derecho - Editor de Mensaje y Preview */}
+                    <div className={`col-span-4 rounded-lg p-4 overflow-y-auto transition-colors ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`}>
+                      {editingSequence && editingSequence.messages && (editingSequence as any).__selectedMessageIndex !== undefined ? (
+                        <div className="space-y-4">
+                          <h3 className={`font-semibold text-lg mb-4 transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                            <i className="fas fa-edit mr-2 text-purple-600"></i>
+                            Editar Mensaje
+                          </h3>
+
+                          {(() => {
+                            const selectedIdx = (editingSequence as any).__selectedMessageIndex;
+                            const selectedMsg = editingSequence.messages[selectedIdx];
+
+                            if (!selectedMsg) return null;
+
+                            return (
+                              <div className="space-y-4">
+                                {/* Delay */}
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <label className={`block text-sm font-medium mb-1 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                      Esperar
+                                    </label>
+                                    <input
+                                      type="number"
+                                      value={selectedMsg.delay_amount}
+                                      onChange={(e) => {
+                                        const newMessages = [...editingSequence.messages];
+                                        newMessages[selectedIdx] = { ...selectedMsg, delay_amount: parseInt(e.target.value) };
+                                        setEditingSequence({ ...editingSequence, messages: newMessages });
+                                      }}
+                                      className={`w-full px-3 py-2 rounded-lg text-sm transition-colors ${
+                                        darkMode
+                                          ? 'bg-gray-700 border-gray-600 text-white'
+                                          : 'bg-white border-gray-300 text-gray-900'
+                                      } border focus:ring-2 focus:ring-purple-500`}
+                                      min="1"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className={`block text-sm font-medium mb-1 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                      Unidad
+                                    </label>
+                                    <select
+                                      value={selectedMsg.delay_unit}
+                                      onChange={(e) => {
+                                        const newMessages = [...editingSequence.messages];
+                                        newMessages[selectedIdx] = { ...selectedMsg, delay_unit: e.target.value as DelayUnit };
+                                        setEditingSequence({ ...editingSequence, messages: newMessages });
+                                      }}
+                                      className={`w-full px-3 py-2 rounded-lg text-sm transition-colors ${
+                                        darkMode
+                                          ? 'bg-gray-700 border-gray-600 text-white'
+                                          : 'bg-white border-gray-300 text-gray-900'
+                                      } border focus:ring-2 focus:ring-purple-500`}
+                                    >
+                                      <option value="minutes">Minutos</option>
+                                      <option value="hours">Horas</option>
+                                      <option value="days">Días</option>
+                                    </select>
+                                  </div>
+                                </div>
+
+                                {/* Tipo de mensaje */}
+                                <div>
+                                  <label className={`block text-sm font-medium mb-2 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                    Tipo de mensaje
+                                  </label>
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <button
+                                      onClick={() => {
+                                        const newMessages = [...editingSequence.messages];
+                                        newMessages[selectedIdx] = { ...selectedMsg, message_type: 'fixed' };
+                                        setEditingSequence({ ...editingSequence, messages: newMessages });
+                                      }}
+                                      className={`p-3 rounded-lg border-2 transition-all ${
+                                        selectedMsg.message_type === 'fixed'
+                                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                                          : darkMode
+                                            ? 'border-gray-600 bg-gray-700'
+                                            : 'border-gray-300 bg-white'
+                                      }`}
+                                    >
+                                      <i className="fas fa-file-alt text-lg mb-1"></i>
+                                      <p className={`text-xs font-semibold transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>Fijo</p>
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        const newMessages = [...editingSequence.messages];
+                                        newMessages[selectedIdx] = { ...selectedMsg, message_type: 'ai_generated' };
+                                        setEditingSequence({ ...editingSequence, messages: newMessages });
+                                      }}
+                                      className={`p-3 rounded-lg border-2 transition-all ${
+                                        selectedMsg.message_type === 'ai_generated'
+                                          ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                                          : darkMode
+                                            ? 'border-gray-600 bg-gray-700'
+                                            : 'border-gray-300 bg-white'
+                                      }`}
+                                    >
+                                      <i className="fas fa-robot text-lg mb-1"></i>
+                                      <p className={`text-xs font-semibold transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>IA</p>
+                                    </button>
+                                  </div>
+                                </div>
+
+                                {/* Editor según tipo */}
+                                {selectedMsg.message_type === 'fixed' ? (
+                                  <div>
+                                    <label className={`block text-sm font-medium mb-1 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                      Mensaje
+                                    </label>
+                                    <textarea
+                                      value={selectedMsg.message_template}
+                                      onChange={(e) => {
+                                        const newMessages = [...editingSequence.messages];
+                                        newMessages[selectedIdx] = { ...selectedMsg, message_template: e.target.value };
+                                        setEditingSequence({ ...editingSequence, messages: newMessages });
+                                      }}
+                                      className={`w-full px-3 py-2 rounded-lg text-sm transition-colors ${
+                                        darkMode
+                                          ? 'bg-gray-700 border-gray-600 text-white'
+                                          : 'bg-white border-gray-300 text-gray-900'
+                                      } border focus:ring-2 focus:ring-purple-500`}
+                                      rows={5}
+                                      placeholder="Escribe tu mensaje aquí. Usa {nombre}, {producto}, etc."
+                                    />
+                                    <p className={`text-xs mt-1 transition-colors ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                                      Variables: {'{nombre}'}, {'{producto}'}, {'{precio}'}, {'{empresa}'}
+                                    </p>
+                                  </div>
+                                ) : (
+                                  <div>
+                                    <label className={`block text-sm font-medium mb-1 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                      Instrucciones para la IA
+                                    </label>
+                                    <textarea
+                                      value={selectedMsg.ai_context_instructions || ''}
+                                      onChange={(e) => {
+                                        const newMessages = [...editingSequence.messages];
+                                        newMessages[selectedIdx] = { ...selectedMsg, ai_context_instructions: e.target.value };
+                                        setEditingSequence({ ...editingSequence, messages: newMessages });
+                                      }}
+                                      className={`w-full px-3 py-2 rounded-lg text-sm transition-colors ${
+                                        darkMode
+                                          ? 'bg-gray-700 border-gray-600 text-white'
+                                          : 'bg-white border-gray-300 text-gray-900'
+                                      } border focus:ring-2 focus:ring-purple-500`}
+                                      rows={5}
+                                      placeholder="Ej: Genera un mensaje amigable recordando al cliente sobre su cotización"
+                                    />
+                                    <p className={`text-xs mt-1 transition-colors ${darkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+                                      <i className="fas fa-magic text-purple-500"></i> La IA generará el mensaje basándose en el contexto
+                                    </p>
+                                  </div>
+                                )}
+
+                                {/* Imagen opcional */}
+                                <div>
+                                  <label className={`block text-sm font-medium mb-1 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                    <i className="fas fa-image mr-1 text-purple-600"></i>
+                                    Imagen (opcional)
+                                  </label>
+                                  <input
+                                    type="url"
+                                    value={selectedMsg.image_url || ''}
+                                    onChange={(e) => {
+                                      const newMessages = [...editingSequence.messages];
+                                      newMessages[selectedIdx] = { ...selectedMsg, image_url: e.target.value };
+                                      setEditingSequence({ ...editingSequence, messages: newMessages });
+                                    }}
+                                    className={`w-full px-3 py-2 rounded-lg text-sm transition-colors ${
+                                      darkMode
+                                        ? 'bg-gray-700 border-gray-600 text-white'
+                                        : 'bg-white border-gray-300 text-gray-900'
+                                    } border focus:ring-2 focus:ring-purple-500`}
+                                    placeholder="https://ejemplo.com/imagen.jpg"
+                                  />
+                                </div>
+
+                                {/* Botón eliminar */}
+                                <button
+                                  onClick={() => {
+                                    if (editingSequence.messages.length > 1) {
+                                      const newMessages = editingSequence.messages.filter((_, i) => i !== selectedIdx);
+                                      newMessages.forEach((msg, i) => { msg.step_order = i + 1; });
+                                      setEditingSequence({
+                                        ...editingSequence,
+                                        messages: newMessages,
+                                        __selectedMessageIndex: Math.max(0, selectedIdx - 1),
+                                      });
+                                    }
+                                  }}
+                                  disabled={editingSequence.messages.length <= 1}
+                                  className={`w-full px-4 py-2 rounded-lg transition-colors ${
+                                    editingSequence.messages.length <= 1
+                                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                      : 'bg-red-600 hover:bg-red-700 text-white'
+                                  }`}
+                                >
+                                  <i className="fas fa-trash mr-2"></i>
+                                  Eliminar Mensaje
+                                </button>
+
+                                {/* Preview */}
+                                <div className={`mt-6 p-4 rounded-lg transition-colors ${darkMode ? 'bg-green-900/20 border border-green-800' : 'bg-green-50 border border-green-200'}`}>
+                                  <h4 className={`font-semibold mb-3 flex items-center gap-2 transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                                    <i className="fas fa-eye text-green-600"></i>
+                                    Vista Previa
+                                  </h4>
+                                  <div className={`p-3 rounded-lg transition-colors ${darkMode ? 'bg-gray-700' : 'bg-white'}`}>
+                                    <p className={`text-sm whitespace-pre-wrap transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                      {selectedMsg.message_type === 'ai_generated'
+                                        ? `[Mensaje generado por IA]\n\n${selectedMsg.ai_context_instructions || 'Sin instrucciones'}`
+                                        : selectedMsg.message_template || '(Mensaje vacío)'
+                                      }
+                                    </p>
+                                    {selectedMsg.image_url && (
+                                      <div className="mt-3">
+                                        <img
+                                          src={selectedMsg.image_url}
+                                          alt="Preview"
+                                          className="rounded-lg max-h-40 object-cover"
+                                          onError={(e) => {
+                                            (e.target as HTMLImageElement).style.display = 'none';
+                                          }}
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      ) : (
+                        <div className={`flex items-center justify-center h-full transition-colors ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                          <div className="text-center">
+                            <i className="fas fa-mouse-pointer text-4xl mb-3"></i>
+                            <p>Selecciona un mensaje del timeline</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                )}
-                  </>
                 )}
               </div>
             )}
