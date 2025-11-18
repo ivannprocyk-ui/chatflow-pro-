@@ -91,11 +91,14 @@ export const botConfigAPI = {
   upsert: (data: any) => api.post('/bot-config', data),
   toggleBot: () => api.patch('/bot-config/toggle'),
 
-  // Evolution API - WhatsApp Connection
+  // WhatsApp Connection (Simplified - backend handles everything)
+  connect: () => api.post('/bot-config/connect'),
+  getStatus: () => api.get('/bot-config/status'),
+  disconnect: () => api.post('/bot-config/disconnect'),
+
+  // Legacy Evolution API endpoints (deprecated - use connect() instead)
   connectInstance: (data: any) => api.post('/evolution-api/instance', data),
   getQRCode: () => api.get('/evolution-api/qrcode'),
-  getStatus: () => api.get('/evolution-api/status'),
-  disconnect: () => api.post('/evolution-api/disconnect'),
   deleteInstance: () => api.delete('/evolution-api/instance'),
   setWebhook: (data: any) => api.post('/evolution-api/webhook', data),
 };
