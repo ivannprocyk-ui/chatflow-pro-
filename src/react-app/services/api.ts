@@ -11,12 +11,30 @@ const api = axios.create({
   },
 });
 
-// Add token to requests
+// Add token and organization ID to requests
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('accessToken');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  // Add organization ID if available
+  const organization = localStorage.getItem('organization');
+  if (organization) {
+    try {
+      const orgData = JSON.parse(organization);
+      if (orgData.id) {
+        config.headers['x-organization-id'] = orgData.id;
+      }
+    } catch (e) {
+      // If not found, use a default demo organization ID
+      config.headers['x-organization-id'] = 'demo-org-123';
+    }
+  } else {
+    // Use a default demo organization ID for development
+    config.headers['x-organization-id'] = 'demo-org-123';
+  }
+
   return config;
 });
 

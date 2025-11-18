@@ -34,6 +34,9 @@ interface FollowUpMessage {
   delay_amount: number;
   delay_unit: DelayUnit;
   message_template: string;
+  message_type?: 'fixed' | 'ai_generated';
+  ai_context_instructions?: string;
+  image_url?: string;
   available_variables: string[];
 }
 
@@ -234,6 +237,7 @@ export default function BotConfiguration({ darkMode = false }: BotConfigurationP
           delay_amount: 30,
           delay_unit: 'minutes',
           message_template: '',
+          message_type: 'fixed',
           available_variables: ['nombre', 'producto', 'precio', 'empresa'],
         },
       ],
@@ -307,8 +311,9 @@ export default function BotConfiguration({ darkMode = false }: BotConfigurationP
         <div className={`rounded-xl shadow-lg p-6 mb-6 transition-colors ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">
-                🤖 Configuración del Bot IA
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent flex items-center gap-3">
+                <i className="fas fa-robot text-purple-600"></i>
+                Configuración del Bot IA
               </h1>
               <p className={`mt-2 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
                 Configura tu asistente virtual inteligente con IA y seguimientos automáticos
@@ -335,7 +340,17 @@ export default function BotConfiguration({ darkMode = false }: BotConfigurationP
                     : 'bg-gray-300 hover:bg-gray-400 text-gray-700'
                 }`}
               >
-                {config.botEnabled ? '✅ Bot Activo' : '⏸️ Bot Inactivo'}
+{config.botEnabled ? (
+                  <>
+                    <i className="fas fa-check-circle mr-2"></i>
+                    Bot Activo
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-pause-circle mr-2"></i>
+                    Bot Inactivo
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -358,46 +373,46 @@ export default function BotConfiguration({ darkMode = false }: BotConfigurationP
             <div className="flex">
               <button
                 onClick={() => setActiveTab('config')}
-                className={`px-6 py-4 font-medium transition-colors ${
+                className={`px-6 py-4 font-medium transition-colors flex items-center gap-2 ${
                   activeTab === 'config'
                     ? 'border-b-2 border-purple-500 text-purple-600'
                     : darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
-                ⚙️ Configuración
+                <i className="fas fa-cog"></i> Configuración
               </button>
               <button
                 onClick={() => setActiveTab('connection')}
-                className={`px-6 py-4 font-medium transition-colors ${
+                className={`px-6 py-4 font-medium transition-colors flex items-center gap-2 ${
                   activeTab === 'connection'
                     ? 'border-b-2 border-purple-500 text-purple-600'
                     : darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
-                📱 Conexión WhatsApp
+                <i className="fas fa-mobile-alt"></i> Conexión WhatsApp
               </button>
               <button
                 onClick={() => setActiveTab('prompt')}
-                className={`px-6 py-4 font-medium transition-colors ${
+                className={`px-6 py-4 font-medium transition-colors flex items-center gap-2 ${
                   activeTab === 'prompt'
                     ? 'border-b-2 border-purple-500 text-purple-600'
                     : darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
-                💬 Prompt Personalizado
+                <i className="fas fa-comment-dots"></i> Prompt Personalizado
               </button>
               <button
                 onClick={() => {
                   setActiveTab('followups');
                   if (sequences.length === 0) loadSequences();
                 }}
-                className={`px-6 py-4 font-medium transition-colors ${
+                className={`px-6 py-4 font-medium transition-colors flex items-center gap-2 ${
                   activeTab === 'followups'
                     ? 'border-b-2 border-purple-500 text-purple-600'
                     : darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
-                🔄 Seguimientos Automáticos
+                <i className="fas fa-sync-alt"></i> Seguimientos Automáticos
               </button>
             </div>
           </div>
@@ -416,10 +431,10 @@ export default function BotConfiguration({ darkMode = false }: BotConfigurationP
                     onChange={(e) => handleInputChange('agentType', e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   >
-                    <option value="vendedor">🛍️ Vendedor - Para ventas y promociones</option>
-                    <option value="asistente">👥 Asistente - Atención al cliente general</option>
-                    <option value="secretaria">📅 Secretaria - Agendar citas y organizar</option>
-                    <option value="custom">✏️ Personalizado - Usa tu propio prompt</option>
+                    <option value="vendedor">💼 Vendedor - Para ventas y promociones</option>
+                    <option value="asistente">🎧 Asistente - Atención al cliente general</option>
+                    <option value="secretaria">📋 Secretaria - Agendar citas y organizar</option>
+                    <option value="custom">✍️ Personalizado - Usa tu propio prompt</option>
                   </select>
                 </div>
 
@@ -686,22 +701,56 @@ export default function BotConfiguration({ darkMode = false }: BotConfigurationP
             {/* Follow-ups Tab */}
             {activeTab === 'followups' && (
               <div className="space-y-6">
-                {/* Header */}
-                <div className="flex items-center justify-between">
+                {/* Show editor if editing, otherwise show list */}
+                {editingSequence ? (
                   <div>
-                    <h2 className={`text-2xl font-bold transition-colors ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>Secuencias de Seguimiento</h2>
-                    <p className={`mt-1 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                      Crea secuencias inteligentes para recuperar conversaciones y aumentar conversiones
-                    </p>
+                    {/* Editor Header */}
+                    <div className="flex items-center justify-between mb-6">
+                      <div>
+                        <h2 className={`text-2xl font-bold transition-colors ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                          {editingSequence.id ? 'Editar Secuencia' : 'Nueva Secuencia'}
+                        </h2>
+                        <p className={`mt-1 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                          Configura tu secuencia de seguimiento automático
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setEditingSequence(null)}
+                        className={`px-4 py-2 rounded-lg transition-colors ${darkMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-200' : 'bg-gray-200 hover:bg-gray-300 text-gray-700'}`}
+                      >
+                        <i className="fas fa-arrow-left mr-2"></i>
+                        Volver
+                      </button>
+                    </div>
+
+                    {/* Integrated Editor */}
+                    <FollowUpSequenceEditor
+                      sequence={editingSequence}
+                      onSave={saveSequence}
+                      onCancel={() => setEditingSequence(null)}
+                      businessName={config.businessName}
+                      darkMode={darkMode}
+                      isModal={false}
+                    />
                   </div>
-                  <button
-                    onClick={createNewSequence}
-                    className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg transition-colors shadow-lg"
-                  >
-                    <i className="fas fa-plus"></i>
-                    Nueva Secuencia
-                  </button>
-                </div>
+                ) : (
+                  <>
+                    {/* Header */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h2 className={`text-2xl font-bold transition-colors ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>Secuencias de Seguimiento</h2>
+                        <p className={`mt-1 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                          Crea secuencias inteligentes para recuperar conversaciones y aumentar conversiones
+                        </p>
+                      </div>
+                      <button
+                        onClick={createNewSequence}
+                        className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg transition-colors shadow-lg"
+                      >
+                        <i className="fas fa-plus"></i>
+                        Nueva Secuencia
+                      </button>
+                    </div>
 
                 {/* Sequences List */}
                 {sequences.length === 0 ? (
@@ -806,21 +855,12 @@ export default function BotConfiguration({ darkMode = false }: BotConfigurationP
                     })}
                   </div>
                 )}
+                  </>
+                )}
               </div>
             )}
           </div>
         </div>
-
-        {/* Sequence Editor Modal */}
-        {editingSequence && (
-          <FollowUpSequenceEditor
-            sequence={editingSequence}
-            onSave={saveSequence}
-            onCancel={() => setEditingSequence(null)}
-            businessName={config.businessName}
-            darkMode={darkMode}
-          />
-        )}
       </div>
     </div>
   );

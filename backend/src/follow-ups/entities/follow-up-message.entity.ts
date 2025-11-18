@@ -11,6 +11,9 @@ export interface FollowUpMessage {
 
   // Contenido del mensaje
   message_template: string;
+  message_type: 'fixed' | 'ai_generated';
+  ai_context_instructions?: string;
+  image_url?: string;
 
   // Variables disponibles
   available_variables: string[];

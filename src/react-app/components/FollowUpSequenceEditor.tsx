@@ -13,6 +13,7 @@ interface FollowUpMessage {
   message_template: string;
   message_type: MessageType;
   ai_context_instructions?: string;
+  image_url?: string;
   available_variables: string[];
 }
 
@@ -42,9 +43,10 @@ interface Props {
   onCancel: () => void;
   businessName: string;
   darkMode?: boolean;
+  isModal?: boolean;
 }
 
-export default function FollowUpSequenceEditor({ sequence, onSave, onCancel, businessName, darkMode = false }: Props) {
+export default function FollowUpSequenceEditor({ sequence, onSave, onCancel, businessName, darkMode = false, isModal = true }: Props) {
   const [editedSequence, setEditedSequence] = React.useState<FollowUpSequence>(sequence);
   const [selectedMessageIndex, setSelectedMessageIndex] = React.useState(0);
   const [showPreview, setShowPreview] = React.useState(true);
@@ -197,10 +199,11 @@ export default function FollowUpSequenceEditor({ sequence, onSave, onCancel, bus
 
   const timeline = calculateTimeline();
 
-  return (
-    <div className={`fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto ${darkMode ? 'dark' : ''}`}>
-      <div className="bg-white dark:bg-gray-800 rounded-xl max-w-7xl w-full my-8 max-h-[90vh] overflow-y-auto transition-colors">
-        {/* Header */}
+  // Content component to be rendered
+  const editorContent = (
+    <>
+      {/* Header - Only show in modal mode */}
+      {isModal && (
         <div className="sticky top-0 bg-gradient-to-r from-purple-600 to-blue-500 p-6 flex items-center justify-between z-10">
           <div>
             <h2 className="text-2xl font-bold text-white">
@@ -217,6 +220,7 @@ export default function FollowUpSequenceEditor({ sequence, onSave, onCancel, bus
             <i className="fas fa-times text-xl"></i>
           </button>
         </div>
+      )}
 
         {/* Content */}
         <div className="p-6">
@@ -277,19 +281,26 @@ export default function FollowUpSequenceEditor({ sequence, onSave, onCancel, bus
                     </p>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Estrategia *
-                    </label>
-                    <select
-                      value={editedSequence.strategy}
-                      onChange={(e) => updateSequence({ strategy: e.target.value as Strategy })}
-                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors"
-                    >
-                      <option value="passive">Pasivo - 3 mensajes, intervalos largos</option>
-                      <option value="moderate">Moderado - 4 mensajes, intervalos medios</option>
-                      <option value="aggressive">Agresivo - 5 mensajes, intervalos cortos</option>
-                    </select>
+                  {/* Estrategias - Info decorativa */}
+                  <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 border border-purple-200 dark:border-purple-700 rounded-lg p-4 transition-colors">
+                    <div className="flex items-center gap-2 mb-3">
+                      <i className="fas fa-lightbulb text-purple-600 dark:text-purple-400"></i>
+                      <h4 className="font-semibold text-purple-900 dark:text-purple-200">Guía de Estrategias</h4>
+                    </div>
+                    <div className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+                      <div className="flex items-start gap-2">
+                        <span className="text-green-600 dark:text-green-400 font-bold">• Pasivo:</span>
+                        <span>3 mensajes, intervalos largos (ideal para clientes premium)</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="text-yellow-600 dark:text-yellow-400 font-bold">• Moderado:</span>
+                        <span>4 mensajes, intervalos medios (recomendado para mayoría)</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="text-red-600 dark:text-red-400 font-bold">• Agresivo:</span>
+                        <span>5 mensajes, intervalos cortos (para alta conversión)</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -649,6 +660,26 @@ export default function FollowUpSequenceEditor({ sequence, onSave, onCancel, bus
                           </p>
                         </div>
                       )}
+
+                      {/* Imagen opcional */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          <i className="fas fa-image mr-2 text-purple-600"></i>
+                          Imagen (opcional)
+                        </label>
+                        <input
+                          type="url"
+                          value={selectedMessage.image_url || ''}
+                          onChange={(e) => updateMessage(selectedMessageIndex, {
+                            image_url: e.target.value,
+                          })}
+                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors"
+                          placeholder="https://ejemplo.com/imagen.jpg"
+                        />
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                          URL de la imagen a enviar con el mensaje (JPG, PNG)
+                        </p>
+                      </div>
                     </div>
                   </div>
 
@@ -733,22 +764,41 @@ export default function FollowUpSequenceEditor({ sequence, onSave, onCancel, bus
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="sticky bottom-0 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 p-6 flex items-center justify-end gap-3 transition-colors">
-          <button
-            onClick={onCancel}
-            className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={() => onSave(editedSequence)}
-            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 text-white px-6 py-2 rounded-lg transition-colors shadow-lg"
-          >
-            <i className="fas fa-save"></i>
-            Guardar Secuencia
-          </button>
+      {/* Footer */}
+      <div className="sticky bottom-0 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 p-6 flex items-center justify-end gap-3 transition-colors">
+        <button
+          onClick={onCancel}
+          className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={() => onSave(editedSequence)}
+          className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 text-white px-6 py-2 rounded-lg transition-colors shadow-lg"
+        >
+          <i className="fas fa-save"></i>
+          Guardar Secuencia
+        </button>
+      </div>
+    </>
+  );
+
+  // Conditional rendering based on isModal
+  if (isModal) {
+    return (
+      <div className={`fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto ${darkMode ? 'dark' : ''}`}>
+        <div className="bg-white dark:bg-gray-800 rounded-xl max-w-7xl w-full my-8 max-h-[90vh] overflow-y-auto transition-colors">
+          {editorContent}
         </div>
+      </div>
+    );
+  }
+
+  // Integrated view (no modal)
+  return (
+    <div className={`${darkMode ? 'dark' : ''}`}>
+      <div className="bg-white dark:bg-gray-800 rounded-xl w-full transition-colors">
+        {editorContent}
       </div>
     </div>
   );
