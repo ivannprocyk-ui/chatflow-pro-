@@ -701,7 +701,7 @@ export default function BotConfiguration({ darkMode = false }: BotConfigurationP
             {/* Follow-ups Tab */}
             {activeTab === 'followups' && (
               <div className="h-[calc(100vh-300px)]">
-                {sequences.length === 0 ? (
+                {sequences.length === 0 && !editingSequence ? (
                   <div className={`rounded-lg p-12 text-center border-2 border-dashed transition-colors ${darkMode ? 'bg-gradient-to-br from-gray-700 to-gray-600 border-purple-500' : 'bg-gradient-to-br from-purple-50 to-blue-50 border-purple-300'}`}>
                     <i className={`fas fa-comments text-6xl mb-4 transition-colors ${darkMode ? 'text-purple-300' : 'text-purple-400'}`}></i>
                     <h3 className={`text-xl font-semibold mb-2 transition-colors ${darkMode ? 'text-gray-100' : 'text-gray-900'}`}>
