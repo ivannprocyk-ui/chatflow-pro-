@@ -4,13 +4,7 @@ import FollowUpSequenceEditor from '@/react-app/components/FollowUpSequenceEdito
 
 interface BotConfig {
   id?: string;
-  connectionType: 'evolution_api' | 'meta_api';
-  connectionStatus: 'connected' | 'disconnected' | 'connecting';
-  evolutionApiUrl?: string;
-  evolutionInstanceName?: string;
-  evolutionApiKey?: string;
-  chatwootInboxId?: string;
-  chatwootAccountId?: string;
+  // Configuración del Asistente Virtual
   agentType: 'vendedor' | 'asistente' | 'secretaria' | 'custom';
   businessName: string;
   businessDescription: string;
@@ -19,8 +13,10 @@ interface BotConfig {
   language: 'es' | 'en' | 'pt';
   tone: 'formal' | 'casual' | 'professional';
   customPrompt?: string;
-  flowiseUrl?: string;
-  flowiseApiKey?: string;
+
+  // Estado de conexión (solo lectura para el cliente)
+  connectionStatus: 'connected' | 'disconnected' | 'connecting';
+  connectedPhone?: string;
   botEnabled: boolean;
 }
 
@@ -67,8 +63,6 @@ interface BotConfigurationProps {
 export default function BotConfiguration({ darkMode = false }: BotConfigurationProps = {}) {
   const [activeTab, setActiveTab] = useState<'config' | 'connection' | 'prompt' | 'followups'>('config');
   const [config, setConfig] = useState<BotConfig>({
-    connectionType: 'evolution_api',
-    connectionStatus: 'disconnected',
     agentType: 'asistente',
     businessName: '',
     businessDescription: '',
@@ -76,6 +70,7 @@ export default function BotConfiguration({ darkMode = false }: BotConfigurationP
     businessHours: 'Lunes a Viernes 9:00 - 18:00',
     language: 'es',
     tone: 'casual',
+    connectionStatus: 'disconnected',
     botEnabled: false,
   });
 
@@ -113,15 +108,21 @@ export default function BotConfiguration({ darkMode = false }: BotConfigurationP
   };
 
   const checkConnectionStatus = async () => {
-    if (config.connectionType === 'evolution_api' && config.evolutionApiUrl) {
-      try {
-        const response = await botConfigAPI.getStatus();
-        if (response.data.state === 'open') {
-          setConfig(prev => ({ ...prev, connectionStatus: 'connected' }));
-        }
-      } catch (error) {
-        // Ignore errors in background status check
+    try {
+      const response = await botConfigAPI.getStatus();
+      if (response.data.status === 'connected' || response.data.state === 'open') {
+        setConfig(prev => ({
+          ...prev,
+          connectionStatus: 'connected',
+          connectedPhone: response.data.connectedPhone || response.data.phone
+        }));
+      } else if (response.data.status === 'connecting' || response.data.state === 'connecting') {
+        setConfig(prev => ({ ...prev, connectionStatus: 'connecting' }));
+      } else {
+        setConfig(prev => ({ ...prev, connectionStatus: 'disconnected' }));
       }
+    } catch (error) {
+      // Ignore errors in background status check
     }
   };
 
@@ -148,31 +149,20 @@ export default function BotConfiguration({ darkMode = false }: BotConfigurationP
   };
 
   const connectWhatsApp = async () => {
-    if (!config.evolutionApiUrl || !config.evolutionApiKey) {
-      showMessage('error', 'Por favor configura Evolution API URL y API Key primero');
-      return;
-    }
-
     try {
       setIsLoading(true);
       setConfig(prev => ({ ...prev, connectionStatus: 'connecting' }));
       showMessage('info', '🔄 Conectando a WhatsApp...');
 
-      // Create instance
-      await botConfigAPI.connectInstance({
-        apiUrl: config.evolutionApiUrl,
-        instanceName: config.evolutionInstanceName || `bot-${Date.now()}`,
-        apiKey: config.evolutionApiKey,
-      });
+      // Backend crea la instancia automáticamente usando credenciales globales
+      const response = await botConfigAPI.connect();
 
-      // Get QR code
-      const qrResponse = await botConfigAPI.getQRCode();
-      if (qrResponse.data.qrcode) {
-        setQRCode(qrResponse.data.qrcode);
-        showMessage('success', '📱 Escanea el código QR con WhatsApp');
+      if (response.data.qrcode || response.data.base64) {
+        setQRCode(response.data.qrcode || response.data.base64);
+        showMessage('success', '📱 Escanea el código QR con tu WhatsApp');
       }
     } catch (error: any) {
-      showMessage('error', `❌ Error: ${error.response?.data?.message || 'No se pudo conectar'}`);
+      showMessage('error', `❌ Error al conectar WhatsApp: ${error.response?.data?.message || 'Intenta nuevamente'}`);
       setConfig(prev => ({ ...prev, connectionStatus: 'disconnected' }));
     } finally {
       setIsLoading(false);
@@ -312,10 +302,10 @@ export default function BotConfiguration({ darkMode = false }: BotConfigurationP
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent flex items-center gap-3">
                 <i className="fas fa-robot text-purple-600"></i>
-                Configuración del Bot IA
+                Asistente Virtual
               </h1>
               <p className={`mt-2 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                Configura tu asistente virtual inteligente con IA y seguimientos automáticos
+                Configura tu asistente inteligente y seguimientos automáticos para WhatsApp
               </p>
             </div>
             <div className="flex items-center gap-4">
@@ -388,7 +378,7 @@ export default function BotConfiguration({ darkMode = false }: BotConfigurationP
                     : darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
-                <i className="fas fa-mobile-alt"></i> Conexión WhatsApp
+                <i className="fas fa-mobile-alt"></i> WhatsApp
               </button>
               <button
                 onClick={() => setActiveTab('prompt')}
@@ -398,7 +388,7 @@ export default function BotConfiguration({ darkMode = false }: BotConfigurationP
                     : darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
-                <i className="fas fa-comment-dots"></i> Prompt Personalizado
+                <i className="fas fa-comment-dots"></i> Instrucciones Personalizadas
               </button>
               <button
                 onClick={() => {
