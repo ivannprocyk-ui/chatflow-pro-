@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const API_URL = 'https://chatflow-backend-vj8o.onrender.com/api'; // Hardcoded for production
+// Use local backend in development, production URL in production
+const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:3001/api'
+  : 'https://chatflow-backend-vj8o.onrender.com/api';
 
 console.log('[API] Using API URL:', API_URL);
 

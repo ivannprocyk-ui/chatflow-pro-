@@ -15,6 +15,18 @@ export class CreateFollowUpMessageDto {
   @IsString()
   message_template: string;
 
+  @IsEnum(['fixed', 'ai_generated'])
+  @IsOptional()
+  message_type?: 'fixed' | 'ai_generated';
+
+  @IsString()
+  @IsOptional()
+  ai_context_instructions?: string;
+
+  @IsString()
+  @IsOptional()
+  image_url?: string;
+
   @IsArray()
   @IsString({ each: true })
   @IsOptional()

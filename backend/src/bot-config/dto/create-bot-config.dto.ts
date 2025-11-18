@@ -87,4 +87,8 @@ export class CreateBotConfigDto {
   @IsBoolean()
   @IsOptional()
   botEnabled?: boolean;
+
+  @IsEnum(['connected', 'disconnected', 'connecting'])
+  @IsOptional()
+  connectionStatus?: 'connected' | 'disconnected' | 'connecting';
 }
