@@ -1228,10 +1228,9 @@ export default function BotConfiguration({ darkMode = false }: BotConfigurationP
                           </div>
                         </div>
                       )}
-                    </div>
 
                     {/* Panel Derecho - Editor de Mensaje y Preview */}
-                    <div className={`col-span-4 rounded-lg p-4 overflow-y-auto transition-colors ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`}>
+                    <div className={`rounded-lg p-6 transition-colors ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200 shadow-sm'}`}>
                       {editingSequence && editingSequence.messages && (editingSequence as any).__selectedMessageIndex !== undefined ? (
                         <div className="space-y-4">
                           <h3 className={`font-semibold text-lg mb-4 transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>
