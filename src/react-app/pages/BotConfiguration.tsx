@@ -848,7 +848,7 @@ export default function BotConfiguration({ darkMode = false }: BotConfigurationP
                     </div>
 
                     {/* Sección: Configuración de Secuencia */}
-                    {editingSequence && (
+                    {editingSequence ? (
                       <div className={`rounded-lg p-6 transition-colors ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200 shadow-sm'}`}>
                         <div className="flex items-center justify-between mb-6">
                           <h3 className={`text-xl font-bold transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>
