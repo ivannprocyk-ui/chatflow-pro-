@@ -912,23 +912,27 @@ export default function BotConfiguration({ darkMode = false }: BotConfigurationP
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                          <div>
+                        {/* Trigger y Estrategia */}
+                        <div className={`p-6 rounded-lg mb-6 ${darkMode ? 'bg-gray-750' : 'bg-gray-50'}`}>
+                          <h4 className={`text-lg font-bold mb-4 transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                            <i className="fas fa-bolt mr-2 text-yellow-500"></i>
+                            Disparador y Estrategia
+                          </h4>
 
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             {/* Tipo de Trigger */}
                             <div>
-                              <label className={`block text-sm font-medium mb-1 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                <i className="fas fa-bolt mr-1 text-yellow-500"></i>
-                                Tipo de Trigger (Disparador)
+                              <label className={`block text-sm font-semibold mb-2 transition-colors ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                                Tipo de Disparador
                               </label>
                               <select
                                 value={editingSequence.trigger_type}
                                 onChange={(e) => setEditingSequence({ ...editingSequence, trigger_type: e.target.value as any })}
-                                className={`w-full px-3 py-2 rounded-lg text-sm transition-colors ${
+                                className={`w-full px-4 py-3 rounded-lg transition-colors ${
                                   darkMode
                                     ? 'bg-gray-700 border-gray-600 text-white'
                                     : 'bg-white border-gray-300 text-gray-900'
-                                } border focus:ring-2 focus:ring-purple-500`}
+                                } border focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
                               >
                                 <option value="time_based">⏰ Basado en tiempo - Después de X tiempo sin respuesta</option>
                                 <option value="keyword">🔤 Palabra clave - Al detectar palabra específica</option>
@@ -945,143 +949,158 @@ export default function BotConfiguration({ darkMode = false }: BotConfigurationP
                               </select>
                             </div>
 
-                            {/* Estrategia - Cards Informativos */}
+                            {/* Estrategia */}
                             <div>
-                              <label className={`block text-sm font-medium mb-2 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                <i className="fas fa-chess mr-1 text-purple-500"></i>
-                                Guía de Estrategias
+                              <label className={`block text-sm font-semibold mb-2 transition-colors ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                                Estrategia de Seguimiento
                               </label>
-                              <div className="grid grid-cols-3 gap-2">
-                                <div className={`p-2 rounded-lg border-2 ${
-                                  editingSequence.strategy === 'passive'
-                                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                                    : darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-300 bg-gray-50'
-                                } cursor-pointer`}
-                                onClick={() => setEditingSequence({ ...editingSequence, strategy: 'passive' })}
+                              <div className="grid grid-cols-3 gap-3">
+                                <button
+                                  type="button"
+                                  className={`p-3 rounded-lg border-2 transition-all ${
+                                    editingSequence.strategy === 'passive'
+                                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-md'
+                                      : darkMode ? 'border-gray-600 bg-gray-700 hover:bg-gray-600' : 'border-gray-300 bg-white hover:bg-gray-50'
+                                  }`}
+                                  onClick={() => setEditingSequence({ ...editingSequence, strategy: 'passive' })}
                                 >
-                                  <p className={`text-xs font-semibold text-center transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                                  <p className={`text-sm font-semibold text-center transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                                     😌 Pasiva
                                   </p>
-                                  <p className={`text-[10px] text-center mt-1 transition-colors ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                    1-2 mensajes espaciados
+                                  <p className={`text-xs text-center mt-1 transition-colors ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                    1-2 mensajes
                                   </p>
-                                </div>
-                                <div className={`p-2 rounded-lg border-2 ${
-                                  editingSequence.strategy === 'moderate'
-                                    ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20'
-                                    : darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-300 bg-gray-50'
-                                } cursor-pointer`}
-                                onClick={() => setEditingSequence({ ...editingSequence, strategy: 'moderate' })}
+                                </button>
+                                <button
+                                  type="button"
+                                  className={`p-3 rounded-lg border-2 transition-all ${
+                                    editingSequence.strategy === 'moderate'
+                                      ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 shadow-md'
+                                      : darkMode ? 'border-gray-600 bg-gray-700 hover:bg-gray-600' : 'border-gray-300 bg-white hover:bg-gray-50'
+                                  }`}
+                                  onClick={() => setEditingSequence({ ...editingSequence, strategy: 'moderate' })}
                                 >
-                                  <p className={`text-xs font-semibold text-center transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                                  <p className={`text-sm font-semibold text-center transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                                     ⚖️ Moderada
                                   </p>
-                                  <p className={`text-[10px] text-center mt-1 transition-colors ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                    3-4 mensajes balanceados
+                                  <p className={`text-xs text-center mt-1 transition-colors ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                    3-4 mensajes
                                   </p>
-                                </div>
-                                <div className={`p-2 rounded-lg border-2 ${
-                                  editingSequence.strategy === 'aggressive'
-                                    ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
-                                    : darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-300 bg-gray-50'
-                                } cursor-pointer`}
-                                onClick={() => setEditingSequence({ ...editingSequence, strategy: 'aggressive' })}
+                                </button>
+                                <button
+                                  type="button"
+                                  className={`p-3 rounded-lg border-2 transition-all ${
+                                    editingSequence.strategy === 'aggressive'
+                                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20 shadow-md'
+                                      : darkMode ? 'border-gray-600 bg-gray-700 hover:bg-gray-600' : 'border-gray-300 bg-white hover:bg-gray-50'
+                                  }`}
+                                  onClick={() => setEditingSequence({ ...editingSequence, strategy: 'aggressive' })}
                                 >
-                                  <p className={`text-xs font-semibold text-center transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                                  <p className={`text-sm font-semibold text-center transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>
                                     🔥 Agresiva
                                   </p>
-                                  <p className={`text-[10px] text-center mt-1 transition-colors ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                    5+ mensajes frecuentes
+                                  <p className={`text-xs text-center mt-1 transition-colors ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                    5+ mensajes
                                   </p>
-                                </div>
+                                </button>
                               </div>
                             </div>
+                          </div>
+                        </div>
 
-                            {/* Configuración de Horarios */}
+                        {/* Horarios y Configuración */}
+                        <div className={`p-6 rounded-lg mb-6 ${darkMode ? 'bg-gray-750' : 'bg-gray-50'}`}>
+                          <h4 className={`text-lg font-bold mb-4 transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                            <i className="fas fa-calendar-week mr-2 text-green-500"></i>
+                            Horarios y Límites
+                          </h4>
+
+                          {/* Días Permitidos */}
+                          <div className="mb-6">
+                            <label className={`block text-sm font-semibold mb-3 transition-colors ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                              Días Permitidos para Envío
+                            </label>
+                            <div className="grid grid-cols-7 gap-2">
+                              {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((day, idx) => {
+                                const dayName = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'][idx];
+                                const isSelected = editingSequence.conditions?.allowed_days?.includes(dayName);
+                                return (
+                                  <button
+                                    key={dayName}
+                                    type="button"
+                                    onClick={() => {
+                                      const currentDays = editingSequence.conditions?.allowed_days || [];
+                                      const newDays = isSelected
+                                        ? currentDays.filter(d => d !== dayName)
+                                        : [...currentDays, dayName];
+                                      setEditingSequence({
+                                        ...editingSequence,
+                                        conditions: { ...editingSequence.conditions, allowed_days: newDays }
+                                      });
+                                    }}
+                                    className={`py-3 rounded-lg text-sm font-bold transition-all ${
+                                      isSelected
+                                        ? 'bg-purple-600 text-white shadow-md'
+                                        : darkMode
+                                          ? 'bg-gray-700 text-gray-400 hover:bg-gray-600'
+                                          : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-300'
+                                    }`}
+                                  >
+                                    {day}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            {/* Hora Inicio */}
                             <div>
-                              <label className={`block text-sm font-medium mb-2 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                <i className="fas fa-calendar-week mr-1 text-green-500"></i>
-                                Días Permitidos
+                              <label className={`block text-sm font-semibold mb-2 transition-colors ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                                <i className="fas fa-clock mr-2"></i>
+                                Hora Inicio
                               </label>
-                              <div className="grid grid-cols-7 gap-1">
-                                {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((day, idx) => {
-                                  const dayName = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'][idx];
-                                  const isSelected = editingSequence.conditions?.allowed_days?.includes(dayName);
-                                  return (
-                                    <button
-                                      key={dayName}
-                                      onClick={() => {
-                                        const currentDays = editingSequence.conditions?.allowed_days || [];
-                                        const newDays = isSelected
-                                          ? currentDays.filter(d => d !== dayName)
-                                          : [...currentDays, dayName];
-                                        setEditingSequence({
-                                          ...editingSequence,
-                                          conditions: { ...editingSequence.conditions, allowed_days: newDays }
-                                        });
-                                      }}
-                                      className={`p-2 rounded text-xs font-semibold transition-all ${
-                                        isSelected
-                                          ? 'bg-purple-600 text-white'
-                                          : darkMode
-                                            ? 'bg-gray-700 text-gray-400 hover:bg-gray-600'
-                                            : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                                      }`}
-                                    >
-                                      {day}
-                                    </button>
-                                  );
+                              <input
+                                type="time"
+                                value={editingSequence.conditions?.hours_start || '09:00'}
+                                onChange={(e) => setEditingSequence({
+                                  ...editingSequence,
+                                  conditions: { ...editingSequence.conditions, hours_start: e.target.value }
                                 })}
-                              </div>
+                                className={`w-full px-4 py-3 rounded-lg transition-colors ${
+                                  darkMode
+                                    ? 'bg-gray-700 border-gray-600 text-white'
+                                    : 'bg-white border-gray-300 text-gray-900'
+                                } border focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
+                              />
                             </div>
 
-                            {/* Rango de Horarios */}
-                            <div className="grid grid-cols-2 gap-3">
-                              <div>
-                                <label className={`block text-xs font-medium mb-1 transition-colors ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                  <i className="fas fa-clock mr-1"></i>
-                                  Hora Inicio
-                                </label>
-                                <input
-                                  type="time"
-                                  value={editingSequence.conditions?.hours_start || '09:00'}
-                                  onChange={(e) => setEditingSequence({
-                                    ...editingSequence,
-                                    conditions: { ...editingSequence.conditions, hours_start: e.target.value }
-                                  })}
-                                  className={`w-full px-2 py-1.5 rounded text-sm transition-colors ${
-                                    darkMode
-                                      ? 'bg-gray-700 border-gray-600 text-white'
-                                      : 'bg-white border-gray-300 text-gray-900'
-                                  } border focus:ring-2 focus:ring-purple-500`}
-                                />
-                              </div>
-                              <div>
-                                <label className={`block text-xs font-medium mb-1 transition-colors ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                                  <i className="fas fa-clock mr-1"></i>
-                                  Hora Fin
-                                </label>
-                                <input
-                                  type="time"
-                                  value={editingSequence.conditions?.hours_end || '18:00'}
-                                  onChange={(e) => setEditingSequence({
-                                    ...editingSequence,
-                                    conditions: { ...editingSequence.conditions, hours_end: e.target.value }
-                                  })}
-                                  className={`w-full px-2 py-1.5 rounded text-sm transition-colors ${
-                                    darkMode
-                                      ? 'bg-gray-700 border-gray-600 text-white'
-                                      : 'bg-white border-gray-300 text-gray-900'
-                                  } border focus:ring-2 focus:ring-purple-500`}
-                                />
-                              </div>
+                            {/* Hora Fin */}
+                            <div>
+                              <label className={`block text-sm font-semibold mb-2 transition-colors ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                                <i className="fas fa-clock mr-2"></i>
+                                Hora Fin
+                              </label>
+                              <input
+                                type="time"
+                                value={editingSequence.conditions?.hours_end || '18:00'}
+                                onChange={(e) => setEditingSequence({
+                                  ...editingSequence,
+                                  conditions: { ...editingSequence.conditions, hours_end: e.target.value }
+                                })}
+                                className={`w-full px-4 py-3 rounded-lg transition-colors ${
+                                  darkMode
+                                    ? 'bg-gray-700 border-gray-600 text-white'
+                                    : 'bg-white border-gray-300 text-gray-900'
+                                } border focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
+                              />
                             </div>
 
                             {/* Max Follow-ups */}
                             <div>
-                              <label className={`block text-sm font-medium mb-1 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                <i className="fas fa-hashtag mr-1 text-red-500"></i>
-                                Máximo de Seguimientos por Contacto
+                              <label className={`block text-sm font-semibold mb-2 transition-colors ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                                <i className="fas fa-hashtag mr-2"></i>
+                                Máximo de Seguimientos
                               </label>
                               <input
                                 type="number"
@@ -1092,32 +1111,34 @@ export default function BotConfiguration({ darkMode = false }: BotConfigurationP
                                   ...editingSequence,
                                   conditions: { ...editingSequence.conditions, max_follow_ups_per_contact: parseInt(e.target.value) }
                                 })}
-                                className={`w-full px-3 py-2 rounded-lg text-sm transition-colors ${
+                                className={`w-full px-4 py-3 rounded-lg transition-colors ${
                                   darkMode
                                     ? 'bg-gray-700 border-gray-600 text-white'
                                     : 'bg-white border-gray-300 text-gray-900'
-                                } border focus:ring-2 focus:ring-purple-500`}
+                                } border focus:ring-2 focus:ring-purple-500 focus:border-transparent`}
                               />
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                id="enabled"
-                                checked={editingSequence.enabled}
-                                onChange={(e) => setEditingSequence({ ...editingSequence, enabled: e.target.checked })}
-                                className="rounded"
-                              />
-                              <label htmlFor="enabled" className={`text-sm transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                Secuencia activa
-                              </label>
                             </div>
                           </div>
 
-                          {/* Timeline */}
-                          <div className="mt-6">
-                            <h4 className={`font-semibold mb-3 flex items-center gap-2 transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-                              <i className="fas fa-stream text-purple-600"></i>
+                          {/* Estado Activo */}
+                          <div className="mt-6 flex items-center gap-3">
+                            <input
+                              type="checkbox"
+                              id="enabled"
+                              checked={editingSequence.enabled}
+                              onChange={(e) => setEditingSequence({ ...editingSequence, enabled: e.target.checked })}
+                              className="w-5 h-5 rounded text-purple-600 focus:ring-2 focus:ring-purple-500"
+                            />
+                            <label htmlFor="enabled" className={`text-base font-medium cursor-pointer transition-colors ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                              <i className="fas fa-toggle-on mr-2 text-purple-600"></i>
+                              Secuencia Activa
+                            </label>
+                          </div>
+                        </div>
+
+                        {/* Timeline de Mensajes */}
+                        <div className={`p-6 rounded-lg ${darkMode ? 'bg-gray-750' : 'bg-gray-50'}`}>
+                          <div className="flex items-center justify-between mb-4">
                               Timeline de Mensajes
                             </h4>
 
