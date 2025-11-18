@@ -780,6 +780,81 @@ export default function BotConfiguration({ darkMode = false }: BotConfigurationP
                   </div>
                 ) : (
                   <div className="space-y-6">
+                    {/* Tarjetas de Estadísticas */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {/* Total de Secuencias */}
+                      <div className={`rounded-lg p-6 transition-colors ${darkMode ? 'bg-gradient-to-br from-blue-900/40 to-blue-800/40 border border-blue-700' : 'bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200'}`}>
+                        <div className="flex items-center justify-between mb-3">
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${darkMode ? 'bg-blue-600' : 'bg-blue-500'}`}>
+                            <i className="fas fa-layer-group text-white text-xl"></i>
+                          </div>
+                          <span className={`text-3xl font-bold transition-colors ${darkMode ? 'text-blue-300' : 'text-blue-600'}`}>
+                            {sequences.length}
+                          </span>
+                        </div>
+                        <h4 className={`text-sm font-semibold transition-colors ${darkMode ? 'text-blue-200' : 'text-blue-900'}`}>
+                          Total de Secuencias
+                        </h4>
+                        <p className={`text-xs mt-1 transition-colors ${darkMode ? 'text-blue-300/70' : 'text-blue-700/70'}`}>
+                          Configuradas en el sistema
+                        </p>
+                      </div>
+
+                      {/* Secuencias Activas */}
+                      <div className={`rounded-lg p-6 transition-colors ${darkMode ? 'bg-gradient-to-br from-green-900/40 to-green-800/40 border border-green-700' : 'bg-gradient-to-br from-green-50 to-green-100 border border-green-200'}`}>
+                        <div className="flex items-center justify-between mb-3">
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${darkMode ? 'bg-green-600' : 'bg-green-500'}`}>
+                            <i className="fas fa-check-circle text-white text-xl"></i>
+                          </div>
+                          <span className={`text-3xl font-bold transition-colors ${darkMode ? 'text-green-300' : 'text-green-600'}`}>
+                            {sequences.filter(s => s.enabled).length}
+                          </span>
+                        </div>
+                        <h4 className={`text-sm font-semibold transition-colors ${darkMode ? 'text-green-200' : 'text-green-900'}`}>
+                          Secuencias Activas
+                        </h4>
+                        <p className={`text-xs mt-1 transition-colors ${darkMode ? 'text-green-300/70' : 'text-green-700/70'}`}>
+                          Ejecutándose actualmente
+                        </p>
+                      </div>
+
+                      {/* Total de Ejecuciones */}
+                      <div className={`rounded-lg p-6 transition-colors ${darkMode ? 'bg-gradient-to-br from-purple-900/40 to-purple-800/40 border border-purple-700' : 'bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200'}`}>
+                        <div className="flex items-center justify-between mb-3">
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${darkMode ? 'bg-purple-600' : 'bg-purple-500'}`}>
+                            <i className="fas fa-rocket text-white text-xl"></i>
+                          </div>
+                          <span className={`text-3xl font-bold transition-colors ${darkMode ? 'text-purple-300' : 'text-purple-600'}`}>
+                            {sequences.reduce((acc, s) => acc + (s.total_executions || 0), 0)}
+                          </span>
+                        </div>
+                        <h4 className={`text-sm font-semibold transition-colors ${darkMode ? 'text-purple-200' : 'text-purple-900'}`}>
+                          Total de Ejecuciones
+                        </h4>
+                        <p className={`text-xs mt-1 transition-colors ${darkMode ? 'text-purple-300/70' : 'text-purple-700/70'}`}>
+                          Mensajes enviados
+                        </p>
+                      </div>
+
+                      {/* Conversiones */}
+                      <div className={`rounded-lg p-6 transition-colors ${darkMode ? 'bg-gradient-to-br from-orange-900/40 to-orange-800/40 border border-orange-700' : 'bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200'}`}>
+                        <div className="flex items-center justify-between mb-3">
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${darkMode ? 'bg-orange-600' : 'bg-orange-500'}`}>
+                            <i className="fas fa-chart-line text-white text-xl"></i>
+                          </div>
+                          <span className={`text-3xl font-bold transition-colors ${darkMode ? 'text-orange-300' : 'text-orange-600'}`}>
+                            {sequences.reduce((acc, s) => acc + (s.successful_conversions || 0), 0)}
+                          </span>
+                        </div>
+                        <h4 className={`text-sm font-semibold transition-colors ${darkMode ? 'text-orange-200' : 'text-orange-900'}`}>
+                          Conversiones
+                        </h4>
+                        <p className={`text-xs mt-1 transition-colors ${darkMode ? 'text-orange-300/70' : 'text-orange-700/70'}`}>
+                          Clientes recuperados
+                        </p>
+                      </div>
+                    </div>
+
                     {/* Sección: Lista de Secuencias */}
                     <div className={`rounded-lg p-6 transition-colors ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200 shadow-sm'}`}>
                       <div className="flex items-center justify-between mb-6">
