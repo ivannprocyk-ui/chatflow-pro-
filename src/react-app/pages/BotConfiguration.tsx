@@ -218,15 +218,14 @@ export default function BotConfiguration({ darkMode = false }: BotConfigurationP
 
   const createNewSequence = () => {
     const newSequence: FollowUpSequence = {
-      name: '',
-      description: '',
+      name: 'Nueva Secuencia',
+      description: 'Ingresa una descripción',
       enabled: true,
-      trigger_type: 'no_response',
-      trigger_config: { no_response_minutes: 30 },
+      trigger_type: 'time_based',
+      trigger_config: {},
       strategy: 'moderate',
       conditions: {
-        business_hours_only: false,
-        days_of_week: [1, 2, 3, 4, 5], // Lunes a Viernes
+        allowed_days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
         hours_start: '09:00',
         hours_end: '18:00',
         max_follow_ups_per_contact: 3,
@@ -234,9 +233,9 @@ export default function BotConfiguration({ darkMode = false }: BotConfigurationP
       messages: [
         {
           step_order: 1,
-          delay_amount: 30,
+          delay_amount: 60,
           delay_unit: 'minutes',
-          message_template: '',
+          message_template: 'Hola {nombre}, ¿seguís interesado en {producto}?',
           message_type: 'fixed',
           available_variables: ['nombre', 'producto', 'precio', 'empresa'],
         },
@@ -701,6 +700,67 @@ export default function BotConfiguration({ darkMode = false }: BotConfigurationP
             {/* Follow-ups Tab */}
             {activeTab === 'followups' && (
               <div className="h-[calc(100vh-300px)]">
+                {/* Cards de Estadísticas Superiores */}
+                {sequences.length > 0 && (
+                  <div className="grid grid-cols-4 gap-4 mb-6">
+                    <div className={`rounded-lg p-4 transition-colors ${darkMode ? 'bg-gradient-to-br from-purple-900/40 to-purple-800/40 border border-purple-700' : 'bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200'}`}>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className={`text-xs font-medium transition-colors ${darkMode ? 'text-purple-300' : 'text-purple-600'}`}>
+                            Total Secuencias
+                          </p>
+                          <p className={`text-2xl font-bold mt-1 transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                            {sequences.length}
+                          </p>
+                        </div>
+                        <i className={`fas fa-layer-group text-3xl transition-colors ${darkMode ? 'text-purple-400' : 'text-purple-500'}`}></i>
+                      </div>
+                    </div>
+
+                    <div className={`rounded-lg p-4 transition-colors ${darkMode ? 'bg-gradient-to-br from-green-900/40 to-green-800/40 border border-green-700' : 'bg-gradient-to-br from-green-50 to-green-100 border border-green-200'}`}>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className={`text-xs font-medium transition-colors ${darkMode ? 'text-green-300' : 'text-green-600'}`}>
+                            Activas
+                          </p>
+                          <p className={`text-2xl font-bold mt-1 transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                            {sequences.filter(s => s.enabled).length}
+                          </p>
+                        </div>
+                        <i className={`fas fa-check-circle text-3xl transition-colors ${darkMode ? 'text-green-400' : 'text-green-500'}`}></i>
+                      </div>
+                    </div>
+
+                    <div className={`rounded-lg p-4 transition-colors ${darkMode ? 'bg-gradient-to-br from-blue-900/40 to-blue-800/40 border border-blue-700' : 'bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200'}`}>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className={`text-xs font-medium transition-colors ${darkMode ? 'text-blue-300' : 'text-blue-600'}`}>
+                            Total Ejecuciones
+                          </p>
+                          <p className={`text-2xl font-bold mt-1 transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                            {sequences.reduce((acc, s) => acc + (s.total_executions || 0), 0)}
+                          </p>
+                        </div>
+                        <i className={`fas fa-rocket text-3xl transition-colors ${darkMode ? 'text-blue-400' : 'text-blue-500'}`}></i>
+                      </div>
+                    </div>
+
+                    <div className={`rounded-lg p-4 transition-colors ${darkMode ? 'bg-gradient-to-br from-orange-900/40 to-orange-800/40 border border-orange-700' : 'bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200'}`}>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className={`text-xs font-medium transition-colors ${darkMode ? 'text-orange-300' : 'text-orange-600'}`}>
+                            Conversiones
+                          </p>
+                          <p className={`text-2xl font-bold mt-1 transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                            {sequences.reduce((acc, s) => acc + (s.successful_conversions || 0), 0)}
+                          </p>
+                        </div>
+                        <i className={`fas fa-trophy text-3xl transition-colors ${darkMode ? 'text-orange-400' : 'text-orange-500'}`}></i>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {sequences.length === 0 && !editingSequence ? (
                   <div className={`rounded-lg p-12 text-center border-2 border-dashed transition-colors ${darkMode ? 'bg-gradient-to-br from-gray-700 to-gray-600 border-purple-500' : 'bg-gradient-to-br from-purple-50 to-blue-50 border-purple-300'}`}>
                     <i className={`fas fa-comments text-6xl mb-4 transition-colors ${darkMode ? 'text-purple-300' : 'text-purple-400'}`}></i>
@@ -833,6 +893,191 @@ export default function BotConfiguration({ darkMode = false }: BotConfigurationP
                               />
                             </div>
 
+                            {/* Tipo de Trigger */}
+                            <div>
+                              <label className={`block text-sm font-medium mb-1 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                <i className="fas fa-bolt mr-1 text-yellow-500"></i>
+                                Tipo de Trigger (Disparador)
+                              </label>
+                              <select
+                                value={editingSequence.trigger_type}
+                                onChange={(e) => setEditingSequence({ ...editingSequence, trigger_type: e.target.value as any })}
+                                className={`w-full px-3 py-2 rounded-lg text-sm transition-colors ${
+                                  darkMode
+                                    ? 'bg-gray-700 border-gray-600 text-white'
+                                    : 'bg-white border-gray-300 text-gray-900'
+                                } border focus:ring-2 focus:ring-purple-500`}
+                              >
+                                <option value="time_based">⏰ Basado en tiempo - Después de X tiempo sin respuesta</option>
+                                <option value="keyword">🔤 Palabra clave - Al detectar palabra específica</option>
+                                <option value="conversation_state">💬 Estado de conversación - Según flujo del chat</option>
+                                <option value="bot_stage">🤖 Etapa del bot - En punto específico del bot</option>
+                                <option value="variable">📊 Variable - Cuando variable cumple condición</option>
+                                <option value="action">⚡ Acción - Al realizar acción específica</option>
+                                <option value="no_response">🔕 Sin respuesta - Cliente no contestó</option>
+                                <option value="abandoned_cart">🛒 Carrito abandonado - Dejó productos sin comprar</option>
+                                <option value="quote_sent">💰 Cotización enviada - Después de enviar presupuesto</option>
+                                <option value="meeting_scheduled">📅 Reunión agendada - Post-agendamiento</option>
+                                <option value="form_incomplete">📝 Formulario incompleto - Datos faltantes</option>
+                                <option value="custom">🎯 Personalizado - Condición custom</option>
+                              </select>
+                            </div>
+
+                            {/* Estrategia - Cards Informativos */}
+                            <div>
+                              <label className={`block text-sm font-medium mb-2 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                <i className="fas fa-chess mr-1 text-purple-500"></i>
+                                Guía de Estrategias
+                              </label>
+                              <div className="grid grid-cols-3 gap-2">
+                                <div className={`p-2 rounded-lg border-2 ${
+                                  editingSequence.strategy === 'passive'
+                                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                                    : darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-300 bg-gray-50'
+                                } cursor-pointer`}
+                                onClick={() => setEditingSequence({ ...editingSequence, strategy: 'passive' })}
+                                >
+                                  <p className={`text-xs font-semibold text-center transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                                    😌 Pasiva
+                                  </p>
+                                  <p className={`text-[10px] text-center mt-1 transition-colors ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                    1-2 mensajes espaciados
+                                  </p>
+                                </div>
+                                <div className={`p-2 rounded-lg border-2 ${
+                                  editingSequence.strategy === 'moderate'
+                                    ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20'
+                                    : darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-300 bg-gray-50'
+                                } cursor-pointer`}
+                                onClick={() => setEditingSequence({ ...editingSequence, strategy: 'moderate' })}
+                                >
+                                  <p className={`text-xs font-semibold text-center transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                                    ⚖️ Moderada
+                                  </p>
+                                  <p className={`text-[10px] text-center mt-1 transition-colors ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                    3-4 mensajes balanceados
+                                  </p>
+                                </div>
+                                <div className={`p-2 rounded-lg border-2 ${
+                                  editingSequence.strategy === 'aggressive'
+                                    ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                                    : darkMode ? 'border-gray-600 bg-gray-700' : 'border-gray-300 bg-gray-50'
+                                } cursor-pointer`}
+                                onClick={() => setEditingSequence({ ...editingSequence, strategy: 'aggressive' })}
+                                >
+                                  <p className={`text-xs font-semibold text-center transition-colors ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                                    🔥 Agresiva
+                                  </p>
+                                  <p className={`text-[10px] text-center mt-1 transition-colors ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                    5+ mensajes frecuentes
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Configuración de Horarios */}
+                            <div>
+                              <label className={`block text-sm font-medium mb-2 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                <i className="fas fa-calendar-week mr-1 text-green-500"></i>
+                                Días Permitidos
+                              </label>
+                              <div className="grid grid-cols-7 gap-1">
+                                {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((day, idx) => {
+                                  const dayName = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'][idx];
+                                  const isSelected = editingSequence.conditions?.allowed_days?.includes(dayName);
+                                  return (
+                                    <button
+                                      key={dayName}
+                                      onClick={() => {
+                                        const currentDays = editingSequence.conditions?.allowed_days || [];
+                                        const newDays = isSelected
+                                          ? currentDays.filter(d => d !== dayName)
+                                          : [...currentDays, dayName];
+                                        setEditingSequence({
+                                          ...editingSequence,
+                                          conditions: { ...editingSequence.conditions, allowed_days: newDays }
+                                        });
+                                      }}
+                                      className={`p-2 rounded text-xs font-semibold transition-all ${
+                                        isSelected
+                                          ? 'bg-purple-600 text-white'
+                                          : darkMode
+                                            ? 'bg-gray-700 text-gray-400 hover:bg-gray-600'
+                                            : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                                      }`}
+                                    >
+                                      {day}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            {/* Rango de Horarios */}
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className={`block text-xs font-medium mb-1 transition-colors ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                  <i className="fas fa-clock mr-1"></i>
+                                  Hora Inicio
+                                </label>
+                                <input
+                                  type="time"
+                                  value={editingSequence.conditions?.hours_start || '09:00'}
+                                  onChange={(e) => setEditingSequence({
+                                    ...editingSequence,
+                                    conditions: { ...editingSequence.conditions, hours_start: e.target.value }
+                                  })}
+                                  className={`w-full px-2 py-1.5 rounded text-sm transition-colors ${
+                                    darkMode
+                                      ? 'bg-gray-700 border-gray-600 text-white'
+                                      : 'bg-white border-gray-300 text-gray-900'
+                                  } border focus:ring-2 focus:ring-purple-500`}
+                                />
+                              </div>
+                              <div>
+                                <label className={`block text-xs font-medium mb-1 transition-colors ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                                  <i className="fas fa-clock mr-1"></i>
+                                  Hora Fin
+                                </label>
+                                <input
+                                  type="time"
+                                  value={editingSequence.conditions?.hours_end || '18:00'}
+                                  onChange={(e) => setEditingSequence({
+                                    ...editingSequence,
+                                    conditions: { ...editingSequence.conditions, hours_end: e.target.value }
+                                  })}
+                                  className={`w-full px-2 py-1.5 rounded text-sm transition-colors ${
+                                    darkMode
+                                      ? 'bg-gray-700 border-gray-600 text-white'
+                                      : 'bg-white border-gray-300 text-gray-900'
+                                  } border focus:ring-2 focus:ring-purple-500`}
+                                />
+                              </div>
+                            </div>
+
+                            {/* Max Follow-ups */}
+                            <div>
+                              <label className={`block text-sm font-medium mb-1 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                                <i className="fas fa-hashtag mr-1 text-red-500"></i>
+                                Máximo de Seguimientos por Contacto
+                              </label>
+                              <input
+                                type="number"
+                                min="1"
+                                max="10"
+                                value={editingSequence.conditions?.max_follow_ups_per_contact || 3}
+                                onChange={(e) => setEditingSequence({
+                                  ...editingSequence,
+                                  conditions: { ...editingSequence.conditions, max_follow_ups_per_contact: parseInt(e.target.value) }
+                                })}
+                                className={`w-full px-3 py-2 rounded-lg text-sm transition-colors ${
+                                  darkMode
+                                    ? 'bg-gray-700 border-gray-600 text-white'
+                                    : 'bg-white border-gray-300 text-gray-900'
+                                } border focus:ring-2 focus:ring-purple-500`}
+                              />
+                            </div>
+
                             <div className="flex items-center gap-2">
                               <input
                                 type="checkbox"
@@ -960,7 +1205,8 @@ export default function BotConfiguration({ darkMode = false }: BotConfigurationP
                                 <div className="grid grid-cols-2 gap-3">
                                   <div>
                                     <label className={`block text-sm font-medium mb-1 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                      Esperar
+                                      <i className="fas fa-hourglass-half mr-1 text-blue-500"></i>
+                                      Cantidad
                                     </label>
                                     <input
                                       type="number"
@@ -980,7 +1226,8 @@ export default function BotConfiguration({ darkMode = false }: BotConfigurationP
                                   </div>
                                   <div>
                                     <label className={`block text-sm font-medium mb-1 transition-colors ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                                      Unidad
+                                      <i className="fas fa-clock mr-1 text-purple-500"></i>
+                                      Tiempo
                                     </label>
                                     <select
                                       value={selectedMsg.delay_unit}
@@ -995,9 +1242,9 @@ export default function BotConfiguration({ darkMode = false }: BotConfigurationP
                                           : 'bg-white border-gray-300 text-gray-900'
                                       } border focus:ring-2 focus:ring-purple-500`}
                                     >
-                                      <option value="minutes">Minutos</option>
-                                      <option value="hours">Horas</option>
-                                      <option value="days">Días</option>
+                                      <option value="minutes">⏱️ Minutos</option>
+                                      <option value="hours">⏰ Horas</option>
+                                      <option value="days">📅 Días</option>
                                     </select>
                                   </div>
                                 </div>
