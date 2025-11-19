@@ -455,7 +455,7 @@ export default function Calendar() {
             ? `Comienza en 15 minutos - ${format(eventStart, 'HH:mm', { locale: es })}`
             : `Comienza ahora - ${format(eventStart, 'HH:mm', { locale: es })}`;
 
-          new Notification(`📅 ${event.title}`, {
+          new Notification(`${event.title}`, {
             body: notificationBody,
             icon: '/favicon.ico',
             badge: '/favicon.ico',
@@ -751,11 +751,11 @@ export default function Calendar() {
     if (!selectedEvent) return;
 
     const typeLabels = {
-      call: '📞 Llamada',
-      meeting: '🤝 Reunión',
-      followup: '📋 Seguimiento',
-      reminder: '⏰ Recordatorio',
-      other: '📌 Otro'
+      call: 'Llamada',
+      meeting: 'Reunión',
+      followup: 'Seguimiento',
+      reminder: 'Recordatorio',
+      other: 'Otro'
     };
 
     const contactsText = selectedEvent.contactNames?.length
@@ -765,10 +765,10 @@ export default function Calendar() {
     const message = `
 *${selectedEvent.title}*
 
-📅 *Fecha:* ${format(selectedEvent.start, "dd 'de' MMMM 'de' yyyy", { locale: es })}
-🕐 *Hora:* ${format(selectedEvent.start, 'HH:mm', { locale: es })} - ${format(selectedEvent.end, 'HH:mm', { locale: es })}
-🏷️ *Tipo:* ${typeLabels[selectedEvent.type]}
-${contactsText ? `👤 *Contacto${selectedEvent.contactNames?.length > 1 ? 's' : ''}:* ${contactsText}\n` : ''}${selectedEvent.notes ? `\n📝 *Notas:*\n${selectedEvent.notes}` : ''}
+*Fecha:* ${format(selectedEvent.start, "dd 'de' MMMM 'de' yyyy", { locale: es })}
+*Hora:* ${format(selectedEvent.start, 'HH:mm', { locale: es })} - ${format(selectedEvent.end, 'HH:mm', { locale: es })}
+*Tipo:* ${typeLabels[selectedEvent.type]}
+${contactsText ? `*Contacto${selectedEvent.contactNames?.length > 1 ? 's' : ''}:* ${contactsText}\n` : ''}${selectedEvent.notes ? `\n*Notas:*\n${selectedEvent.notes}` : ''}
 
 _Evento creado desde ChatFlow Pro_
     `.trim();
@@ -1193,22 +1193,23 @@ _Evento creado desde ChatFlow Pro_
             </div>
             <div className="flex flex-wrap gap-2">
               {[
-                { type: 'call' as const, label: '📞 Llamada', color: '#3b82f6' },
-                { type: 'meeting' as const, label: '🤝 Reunión', color: '#8b5cf6' },
-                { type: 'followup' as const, label: '📋 Seguimiento', color: '#06b6d4' },
-                { type: 'reminder' as const, label: '⏰ Recordatorio', color: '#10b981' },
-                { type: 'other' as const, label: '📌 Otro', color: '#6b7280' }
-              ].map(({ type, label, color }) => (
+                { type: 'call' as const, label: 'Llamada', icon: 'fas fa-phone', color: '#3b82f6' },
+                { type: 'meeting' as const, label: 'Reunión', icon: 'fas fa-handshake', color: '#8b5cf6' },
+                { type: 'followup' as const, label: 'Seguimiento', icon: 'fas fa-clipboard-check', color: '#06b6d4' },
+                { type: 'reminder' as const, label: 'Recordatorio', icon: 'fas fa-bell', color: '#10b981' },
+                { type: 'other' as const, label: 'Otro', icon: 'fas fa-bookmark', color: '#6b7280' }
+              ].map(({ type, label, icon, color }) => (
                 <button
                   key={type}
                   onClick={() => toggleTypeFilter(type)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all transform hover:scale-105 ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all transform hover:scale-105 flex items-center gap-1.5 ${
                     typeFilters.includes(type)
                       ? 'text-white shadow-md'
                       : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
                   style={typeFilters.includes(type) ? { backgroundColor: color } : undefined}
                 >
+                  <i className={icon}></i>
                   {label}
                 </button>
               ))}
@@ -1376,18 +1377,21 @@ _Evento creado desde ChatFlow Pro_
             {/* Events by Type */}
             <div className="space-y-2.5 mb-4">
               {[
-                { type: 'call' as const, label: '📞 Llamadas', color: '#3b82f6' },
-                { type: 'meeting' as const, label: '🤝 Reuniones', color: '#8b5cf6' },
-                { type: 'followup' as const, label: '📋 Seguimientos', color: '#06b6d4' },
-                { type: 'reminder' as const, label: '⏰ Recordatorios', color: '#10b981' },
-                { type: 'other' as const, label: '📌 Otros', color: '#6b7280' }
-              ].map(({ type, label, color }) => {
+                { type: 'call' as const, label: 'Llamadas', icon: 'fas fa-phone', color: '#3b82f6' },
+                { type: 'meeting' as const, label: 'Reuniones', icon: 'fas fa-handshake', color: '#8b5cf6' },
+                { type: 'followup' as const, label: 'Seguimientos', icon: 'fas fa-clipboard-check', color: '#06b6d4' },
+                { type: 'reminder' as const, label: 'Recordatorios', icon: 'fas fa-bell', color: '#10b981' },
+                { type: 'other' as const, label: 'Otros', icon: 'fas fa-bookmark', color: '#6b7280' }
+              ].map(({ type, label, icon, color }) => {
                 const count = events.filter(e => e.type === type).length;
                 const percentage = events.length > 0 ? (count / events.length * 100).toFixed(0) : 0;
                 return (
                   <div key={type}>
                     <div className="flex items-center justify-between text-sm mb-1">
-                      <span className="text-gray-700 dark:text-gray-300">{label}</span>
+                      <span className="text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                        <i className={icon} style={{ color }}></i>
+                        {label}
+                      </span>
                       <span className="font-semibold text-gray-900 dark:text-gray-100">{count}</span>
                     </div>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
@@ -1467,11 +1471,11 @@ _Evento creado desde ChatFlow Pro_
                   onChange={(e) => setNewEvent({ ...newEvent, type: e.target.value as any })}
                   className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 >
-                  <option value="call">📞 Llamada</option>
-                  <option value="meeting">🤝 Reunión</option>
-                  <option value="followup">📋 Seguimiento</option>
-                  <option value="reminder">⏰ Recordatorio</option>
-                  <option value="other">📌 Otro</option>
+                  <option value="call">Llamada</option>
+                  <option value="meeting">Reunión</option>
+                  <option value="followup">Seguimiento</option>
+                  <option value="reminder">Recordatorio</option>
+                  <option value="other">Otro</option>
                 </select>
               </div>
 

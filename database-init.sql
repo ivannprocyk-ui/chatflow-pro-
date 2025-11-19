@@ -1,87 +1,30 @@
-# 🗄️ ChatFlow Pro - Esquema de Base de Datos Supabase
+-- ============================================
+-- CHATFLOW PRO - DATABASE INITIALIZATION
+-- ============================================
+-- This script creates all tables, indexes, triggers, and initial data
+-- for ChatFlow Pro multi-tenant architecture
 
-## 📋 Índice
-1. [Visión General](#visión-general)
-2. [Tablas Principales](#tablas-principales)
-3. [Scripts SQL de Creación](#scripts-sql-de-creación)
-4. [Relaciones entre Tablas](#relaciones-entre-tablas)
-5. [Índices y Optimizaciones](#índices-y-optimizaciones)
-6. [Row Level Security (RLS)](#row-level-security-rls)
-7. [Funciones y Triggers](#funciones-y-triggers)
-
----
-
-## 🎯 Visión General
-
-ChatFlow Pro utiliza **Supabase (PostgreSQL)** como base de datos principal. La arquitectura está diseñada para:
-
-- ✅ Multi-tenant con aislamiento por `organization_id`
-- ✅ Escalabilidad horizontal
-- ✅ Seguridad con RLS
-- ✅ Auditoría con timestamps automáticos
-- ✅ Relaciones tipo CASCADE para integridad referencial
-
-### Diagrama de Relaciones
-
-```
-organizations (1) ──┬── (n) users
-                    ├── (n) contacts
-                    ├── (n) messages
-                    ├── (n) bot_configs
-                    ├── (n) bot_message_logs
-                    └── (n) follow_up_sequences
-                              │
-                              ├── (n) follow_up_messages
-                              └── (n) follow_up_executions
-                                        │
-                                        └── (n) follow_up_message_logs
-```
-
----
-
-## 📊 Tablas Principales
-
-### 1. **organizations** - Organizaciones/Empresas
-Multi-tenant principal. Cada cliente tiene su propia organización.
-
-### 2. **users** - Usuarios del Sistema
-Usuarios que acceden a la plataforma, vinculados a una organización.
-
-### 3. **contacts** - Contactos/Leads
-Personas con las que la organización se comunica por WhatsApp.
-
-### 4. **messages** - Historial de Mensajes
-Registro de todos los mensajes enviados y recibidos.
-
-### 5. **bot_configs** - Configuración del Bot IA
-Configuración del bot inteligente por organización.
-
-### 6. **bot_message_logs** - Logs de Mensajes del Bot
-Métricas y logs de rendimiento del bot (sin contenido sensible).
-
-### 7. **follow_up_sequences** - Secuencias de Seguimiento
-Configuración de campañas de seguimiento automático.
-
-### 8. **follow_up_messages** - Mensajes de Seguimiento
-Mensajes individuales dentro de cada secuencia.
-
-### 9. **follow_up_executions** - Ejecuciones de Seguimiento
-Instancias activas de seguimiento por contacto.
-
-### 10. **follow_up_message_logs** - Logs de Mensajes Enviados
-Registro detallado de cada mensaje de seguimiento enviado.
-
----
-
-## 🔧 Scripts SQL de Creación
-
-### 1️⃣ Tabla: organizations
-
-```sql
--- Habilitar extensiones necesarias
+-- ============================================
+-- 1. ENABLE EXTENSIONS
+-- ============================================
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Tabla: organizations
+-- ============================================
+-- 2. CREATE UPDATED_AT TRIGGER FUNCTION
+-- ============================================
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ============================================
+-- 3. CREATE TABLES
+-- ============================================
+
+-- 3.1 Table: organizations
 CREATE TABLE IF NOT EXISTS public.organizations (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
@@ -104,7 +47,7 @@ CREATE TABLE IF NOT EXISTS public.organizations (
     whatsapp_phone VARCHAR(50),
 
     -- Meta API (optional)
-    meta_access_token TEXT, -- Encrypted
+    meta_access_token TEXT,
     meta_waba_id VARCHAR(255),
 
     -- Follow-ups
@@ -116,28 +59,13 @@ CREATE TABLE IF NOT EXISTS public.organizations (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Índices
 CREATE INDEX idx_organizations_slug ON public.organizations(slug);
 CREATE INDEX idx_organizations_is_active ON public.organizations(is_active);
 
--- Trigger para updated_at
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
 CREATE TRIGGER update_organizations_updated_at BEFORE UPDATE ON public.organizations
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-```
 
----
-
-### 2️⃣ Tabla: users
-
-```sql
+-- 3.2 Table: users
 CREATE TABLE IF NOT EXISTS public.users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     organization_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
@@ -152,21 +80,14 @@ CREATE TABLE IF NOT EXISTS public.users (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Índices
 CREATE INDEX idx_users_organization_id ON public.users(organization_id);
 CREATE INDEX idx_users_email ON public.users(email);
 CREATE INDEX idx_users_is_active ON public.users(is_active);
 
--- Trigger para updated_at
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON public.users
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-```
 
----
-
-### 3️⃣ Tabla: contacts
-
-```sql
+-- 3.3 Table: contacts
 CREATE TABLE IF NOT EXISTS public.contacts (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     organization_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
@@ -194,23 +115,16 @@ CREATE TABLE IF NOT EXISTS public.contacts (
     CONSTRAINT unique_phone_per_org UNIQUE (organization_id, phone)
 );
 
--- Índices
 CREATE INDEX idx_contacts_organization_id ON public.contacts(organization_id);
 CREATE INDEX idx_contacts_phone ON public.contacts(phone);
 CREATE INDEX idx_contacts_status ON public.contacts(status);
 CREATE INDEX idx_contacts_last_contact_at ON public.contacts(last_contact_at);
 CREATE INDEX idx_contacts_custom_fields ON public.contacts USING GIN (custom_fields);
 
--- Trigger para updated_at
 CREATE TRIGGER update_contacts_updated_at BEFORE UPDATE ON public.contacts
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-```
 
----
-
-### 4️⃣ Tabla: messages
-
-```sql
+-- 3.4 Table: messages
 CREATE TABLE IF NOT EXISTS public.messages (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     organization_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
@@ -240,20 +154,14 @@ CREATE TABLE IF NOT EXISTS public.messages (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Índices
 CREATE INDEX idx_messages_organization_id ON public.messages(organization_id);
 CREATE INDEX idx_messages_contact_id ON public.messages(contact_id);
 CREATE INDEX idx_messages_direction ON public.messages(direction);
 CREATE INDEX idx_messages_status ON public.messages(status);
 CREATE INDEX idx_messages_sent_at ON public.messages(sent_at DESC);
 CREATE INDEX idx_messages_whatsapp_message_id ON public.messages(whatsapp_message_id);
-```
 
----
-
-### 5️⃣ Tabla: bot_configs
-
-```sql
+-- 3.5 Table: bot_configs
 CREATE TABLE IF NOT EXISTS public.bot_configs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     organization_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
@@ -265,11 +173,11 @@ CREATE TABLE IF NOT EXISTS public.bot_configs (
     -- Evolution API Configuration
     evolution_api_url VARCHAR(500),
     evolution_instance_name VARCHAR(255),
-    evolution_api_key TEXT, -- Encrypted
+    evolution_api_key TEXT,
 
     -- Meta API Configuration
     meta_business_account_id VARCHAR(255),
-    meta_access_token TEXT, -- Encrypted
+    meta_access_token TEXT,
     meta_phone_number_id VARCHAR(255),
 
     -- ChatWoot Configuration
@@ -288,7 +196,7 @@ CREATE TABLE IF NOT EXISTS public.bot_configs (
 
     -- Flowise Configuration (optional override per org)
     flowise_url VARCHAR(500),
-    flowise_api_key TEXT, -- Encrypted
+    flowise_api_key TEXT,
 
     -- Bot Status
     bot_enabled BOOLEAN DEFAULT false,
@@ -301,28 +209,21 @@ CREATE TABLE IF NOT EXISTS public.bot_configs (
     CONSTRAINT unique_bot_config_per_org UNIQUE (organization_id)
 );
 
--- Índices
 CREATE INDEX idx_bot_configs_organization_id ON public.bot_configs(organization_id);
 CREATE INDEX idx_bot_configs_bot_enabled ON public.bot_configs(bot_enabled);
 
--- Trigger para updated_at
 CREATE TRIGGER update_bot_configs_updated_at BEFORE UPDATE ON public.bot_configs
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-```
 
----
-
-### 6️⃣ Tabla: bot_message_logs
-
-```sql
+-- 3.6 Table: bot_message_logs
 CREATE TABLE IF NOT EXISTS public.bot_message_logs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     organization_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
 
     -- Message metadata (NO content for privacy)
-    message_id VARCHAR(255), -- External message ID from ChatWoot/WhatsApp
-    conversation_id VARCHAR(255), -- ChatWoot conversation ID
-    inbox_id VARCHAR(255), -- ChatWoot inbox ID
+    message_id VARCHAR(255),
+    conversation_id VARCHAR(255),
+    inbox_id VARCHAR(255),
     direction VARCHAR(50) NOT NULL CHECK (direction IN ('inbound', 'outbound')),
 
     -- Bot processing data
@@ -351,18 +252,12 @@ CREATE TABLE IF NOT EXISTS public.bot_message_logs (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Índices
 CREATE INDEX idx_bot_message_logs_organization_id ON public.bot_message_logs(organization_id);
 CREATE INDEX idx_bot_message_logs_status ON public.bot_message_logs(status);
 CREATE INDEX idx_bot_message_logs_received_at ON public.bot_message_logs(received_at DESC);
 CREATE INDEX idx_bot_message_logs_conversation_id ON public.bot_message_logs(conversation_id);
-```
 
----
-
-### 7️⃣ Tabla: follow_up_sequences
-
-```sql
+-- 3.7 Table: follow_up_sequences
 CREATE TABLE IF NOT EXISTS public.follow_up_sequences (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     organization_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
@@ -395,21 +290,14 @@ CREATE TABLE IF NOT EXISTS public.follow_up_sequences (
     successful_conversions INTEGER DEFAULT 0
 );
 
--- Índices
 CREATE INDEX idx_follow_up_sequences_organization_id ON public.follow_up_sequences(organization_id);
 CREATE INDEX idx_follow_up_sequences_enabled ON public.follow_up_sequences(enabled);
 CREATE INDEX idx_follow_up_sequences_trigger_type ON public.follow_up_sequences(trigger_type);
 
--- Trigger para updated_at
 CREATE TRIGGER update_follow_up_sequences_updated_at BEFORE UPDATE ON public.follow_up_sequences
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-```
 
----
-
-### 8️⃣ Tabla: follow_up_messages
-
-```sql
+-- 3.8 Table: follow_up_messages
 CREATE TABLE IF NOT EXISTS public.follow_up_messages (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     sequence_id UUID NOT NULL REFERENCES public.follow_up_sequences(id) ON DELETE CASCADE,
@@ -441,20 +329,13 @@ CREATE TABLE IF NOT EXISTS public.follow_up_messages (
     CONSTRAINT unique_step_order_per_sequence UNIQUE (sequence_id, step_order)
 );
 
--- Índices
 CREATE INDEX idx_follow_up_messages_sequence_id ON public.follow_up_messages(sequence_id);
 CREATE INDEX idx_follow_up_messages_step_order ON public.follow_up_messages(step_order);
 
--- Trigger para updated_at
 CREATE TRIGGER update_follow_up_messages_updated_at BEFORE UPDATE ON public.follow_up_messages
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-```
 
----
-
-### 9️⃣ Tabla: follow_up_executions
-
-```sql
+-- 3.9 Table: follow_up_executions
 CREATE TABLE IF NOT EXISTS public.follow_up_executions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     sequence_id UUID NOT NULL REFERENCES public.follow_up_sequences(id) ON DELETE CASCADE,
@@ -485,19 +366,13 @@ CREATE TABLE IF NOT EXISTS public.follow_up_executions (
     total_messages_sent INTEGER DEFAULT 0
 );
 
--- Índices
 CREATE INDEX idx_follow_up_executions_sequence_id ON public.follow_up_executions(sequence_id);
 CREATE INDEX idx_follow_up_executions_organization_id ON public.follow_up_executions(organization_id);
 CREATE INDEX idx_follow_up_executions_contact_phone ON public.follow_up_executions(contact_phone);
 CREATE INDEX idx_follow_up_executions_status ON public.follow_up_executions(status);
 CREATE INDEX idx_follow_up_executions_next_scheduled_at ON public.follow_up_executions(next_scheduled_at);
-```
 
----
-
-### 🔟 Tabla: follow_up_message_logs
-
-```sql
+-- 3.10 Table: follow_up_message_logs
 CREATE TABLE IF NOT EXISTS public.follow_up_message_logs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     execution_id UUID NOT NULL REFERENCES public.follow_up_executions(id) ON DELETE CASCADE,
@@ -523,119 +398,35 @@ CREATE TABLE IF NOT EXISTS public.follow_up_message_logs (
     error_message TEXT
 );
 
--- Índices
 CREATE INDEX idx_follow_up_message_logs_execution_id ON public.follow_up_message_logs(execution_id);
 CREATE INDEX idx_follow_up_message_logs_message_id ON public.follow_up_message_logs(message_id);
 CREATE INDEX idx_follow_up_message_logs_sent_at ON public.follow_up_message_logs(sent_at DESC);
 CREATE INDEX idx_follow_up_message_logs_delivery_status ON public.follow_up_message_logs(delivery_status);
-```
 
----
+-- ============================================
+-- 4. CREATE COMPOSITE INDEXES FOR PERFORMANCE
+-- ============================================
 
-## 🔗 Relaciones entre Tablas
-
-```
-organizations (1:n) ──> users
-                   ├──> contacts
-                   ├──> messages
-                   ├──> bot_configs (1:1)
-                   ├──> bot_message_logs
-                   ├──> follow_up_sequences
-                   └──> follow_up_executions
-
-contacts (1:n) ────────> messages
-
-follow_up_sequences (1:n) ──> follow_up_messages
-                          └──> follow_up_executions
-
-follow_up_executions (1:n) ──> follow_up_message_logs
-
-follow_up_messages (1:n) ────> follow_up_message_logs
-
-users (created_by) ────────> follow_up_sequences
-```
-
----
-
-## ⚡ Índices y Optimizaciones
-
-### Índices Compuestos Recomendados
-
-```sql
--- Para búsquedas de mensajes por organización y fecha
+-- For message searches by organization and date
 CREATE INDEX idx_messages_org_sent_at ON public.messages(organization_id, sent_at DESC);
 
--- Para búsquedas de contactos activos por organización
+-- For active contact searches by organization
 CREATE INDEX idx_contacts_org_last_contact ON public.contacts(organization_id, last_contact_at DESC);
 
--- Para ejecuciones pendientes de seguimiento
+-- For pending follow-up executions
 CREATE INDEX idx_executions_status_next_scheduled
 ON public.follow_up_executions(status, next_scheduled_at)
 WHERE status = 'active';
 
--- Para logs de bot por período
+-- For bot logs by period
 CREATE INDEX idx_bot_logs_org_received
 ON public.bot_message_logs(organization_id, received_at DESC);
-```
 
-### Particionamiento (para producción con alto volumen)
+-- ============================================
+-- 5. CREATE TRIGGERS FOR METRICS
+-- ============================================
 
-```sql
--- Particionar tabla messages por fecha (mensual)
--- Implementar cuando se superen 10M de registros
-```
-
----
-
-## 🔐 Row Level Security (RLS)
-
-### Habilitar RLS en todas las tablas
-
-```sql
--- Habilitar RLS
-ALTER TABLE public.organizations ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.contacts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.bot_configs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.bot_message_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.follow_up_sequences ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.follow_up_messages ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.follow_up_executions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.follow_up_message_logs ENABLE ROW LEVEL SECURITY;
-```
-
-### Políticas de Seguridad
-
-```sql
--- Política: Users solo pueden ver datos de su organización
-CREATE POLICY select_own_organization ON public.contacts
-    FOR SELECT
-    USING (organization_id = current_setting('app.current_organization_id')::uuid);
-
-CREATE POLICY select_own_organization ON public.messages
-    FOR SELECT
-    USING (organization_id = current_setting('app.current_organization_id')::uuid);
-
-CREATE POLICY select_own_organization ON public.bot_message_logs
-    FOR SELECT
-    USING (organization_id = current_setting('app.current_organization_id')::uuid);
-
-CREATE POLICY select_own_organization ON public.follow_up_sequences
-    FOR SELECT
-    USING (organization_id = current_setting('app.current_organization_id')::uuid);
-
--- Política: Insert/Update/Delete también limitados por organización
--- Replicar para cada tabla con INSERT, UPDATE, DELETE
-```
-
----
-
-## 🤖 Funciones y Triggers
-
-### Función: Actualizar estadísticas de secuencia
-
-```sql
+-- Trigger: Update sequence statistics
 CREATE OR REPLACE FUNCTION update_sequence_stats()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -658,11 +449,8 @@ AFTER UPDATE ON public.follow_up_executions
 FOR EACH ROW
 WHEN (OLD.status IS DISTINCT FROM NEW.status)
 EXECUTE FUNCTION update_sequence_stats();
-```
 
-### Función: Actualizar métricas de contacto
-
-```sql
+-- Trigger: Update contact metrics
 CREATE OR REPLACE FUNCTION update_contact_metrics()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -680,89 +468,30 @@ CREATE TRIGGER trigger_update_contact_metrics
 AFTER INSERT ON public.messages
 FOR EACH ROW
 EXECUTE FUNCTION update_contact_metrics();
-```
 
----
+-- ============================================
+-- 6. ENABLE ROW LEVEL SECURITY (RLS)
+-- ============================================
 
-## 🚀 Script de Inicialización Completo
+ALTER TABLE public.organizations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.contacts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.bot_configs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.bot_message_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.follow_up_sequences ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.follow_up_messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.follow_up_executions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.follow_up_message_logs ENABLE ROW LEVEL SECURITY;
 
-Para ejecutar en Supabase SQL Editor:
+-- ============================================
+-- 7. CREATE RLS POLICIES (Service role bypass)
+-- ============================================
 
-```sql
--- 1. Habilitar extensiones
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- Allow service role to bypass RLS
+-- Note: Application should set app.current_organization_id for user queries
 
--- 2. Crear función de updated_at
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- 3. Ejecutar todos los CREATE TABLE de arriba en orden
--- (organizations, users, contacts, messages, bot_configs, etc.)
-
--- 4. Crear índices compuestos
-
--- 5. Habilitar RLS
-
--- 6. Crear políticas de seguridad
-
--- 7. Crear triggers adicionales
-```
-
----
-
-## 📝 Notas de Migración
-
-### Desde desarrollo a producción:
-
-1. **Backup antes de ejecutar**
-2. **Ejecutar scripts en orden** (respetar dependencias)
-3. **Verificar índices** con `EXPLAIN ANALYZE`
-4. **Configurar RLS** según roles de usuarios
-5. **Encriptar campos sensibles** (tokens, API keys)
-
-### Variables de entorno necesarias:
-
-```env
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-DATABASE_URL=postgresql://postgres:[password]@db.[project].supabase.co:5432/postgres
-```
-
----
-
-## ✅ Checklist de Implementación
-
-- [ ] Crear proyecto en Supabase
-- [ ] Ejecutar script de extensiones
-- [ ] Crear todas las tablas en orden
-- [ ] Crear índices principales
-- [ ] Crear índices compuestos
-- [ ] Habilitar RLS en todas las tablas
-- [ ] Crear políticas de seguridad
-- [ ] Crear funciones y triggers
-- [ ] Configurar variables de entorno en backend
-- [ ] Probar conexión desde NestJS
-- [ ] Insertar datos de prueba
-- [ ] Verificar rendimiento de queries
-
----
-
-## 🎯 Próximos Pasos
-
-1. **Ejecutar este esquema en Supabase**
-2. **Configurar el backend NestJS** para conectarse
-3. **Implementar los servicios** que usen estas tablas
-4. **Probar el módulo de follow-ups** end-to-end
-5. **Optimizar queries** según métricas de producción
-
----
-
-**Creado para:** ChatFlow Pro
-**Fecha:** 2025
-**Versión:** 1.0
+-- ============================================
+-- INITIALIZATION COMPLETE
+-- ============================================
+-- Now ready to insert initial organization and user

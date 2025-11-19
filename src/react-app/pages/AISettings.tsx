@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { organizationsAPI, aiAPI } from '../services/api';
-import { useAuth } from '../contexts/AuthContext';
+import { organizationsAPI, aiAPI } from '@/react-app/services/api';
 
 export default function AISettings() {
-  const { organization } = useAuth();
+  // Mock organization for now - will be replaced with real auth context
+  const organization = { id: 'org-1', name: 'Demo Organization' };
   const [config, setConfig] = useState({
     aiEnabled: true,
     aiRole: 'asistente',

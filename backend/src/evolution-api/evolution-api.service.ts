@@ -297,6 +297,117 @@ export class EvolutionApiService {
   }
 
   /**
+   * Send text message via Evolution API
+   */
+  async sendTextMessage(
+    apiUrl: string,
+    instanceName: string,
+    apiKey: string,
+    phone: string,
+    text: string,
+  ): Promise<any> {
+    try {
+      this.logger.log(`Sending text message to ${phone} via ${instanceName}`);
+
+      const response = await firstValueFrom(
+        this.httpService.post(
+          `${apiUrl}/message/sendText/${instanceName}`,
+          {
+            number: this.formatPhone(phone),
+            text,
+          },
+          {
+            headers: {
+              apikey: apiKey,
+              'Content-Type': 'application/json',
+            },
+          },
+        ),
+      );
+
+      this.logger.log(`Message sent successfully to ${phone}`);
+      return response.data;
+    } catch (error) {
+      this.logger.error(
+        `Error sending text message to ${phone}: ${error.message}`,
+      );
+      throw new HttpException(
+        `Failed to send text message: ${error.message}`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  /**
+   * Send media message (image, video, audio, document)
+   */
+  async sendMediaMessage(
+    apiUrl: string,
+    instanceName: string,
+    apiKey: string,
+    phone: string,
+    mediaUrl: string,
+    caption?: string,
+    mediaType: 'image' | 'video' | 'audio' | 'document' = 'image',
+  ): Promise<any> {
+    try {
+      this.logger.log(`Sending ${mediaType} message to ${phone} via ${instanceName}`);
+
+      const response = await firstValueFrom(
+        this.httpService.post(
+          `${apiUrl}/message/sendMedia/${instanceName}`,
+          {
+            number: this.formatPhone(phone),
+            mediatype: mediaType,
+            media: mediaUrl,
+            caption: caption || '',
+          },
+          {
+            headers: {
+              apikey: apiKey,
+              'Content-Type': 'application/json',
+            },
+          },
+        ),
+      );
+
+      this.logger.log(`Media message sent successfully to ${phone}`);
+      return response.data;
+    } catch (error) {
+      this.logger.error(
+        `Error sending media message to ${phone}: ${error.message}`,
+      );
+      throw new HttpException(
+        `Failed to send media message: ${error.message}`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  /**
+   * Format phone number for WhatsApp
+   * Ensures format: 5491234567890@s.whatsapp.net
+   */
+  private formatPhone(phone: string): string {
+    // Remove non-numeric characters
+    let cleaned = phone.replace(/\D/g, '');
+
+    // Add WhatsApp suffix if not present
+    if (!cleaned.includes('@')) {
+      cleaned = cleaned + '@s.whatsapp.net';
+    }
+
+    return cleaned;
+  }
+
+  /**
+   * Extract clean phone number from WhatsApp format
+   */
+  extractPhone(whatsappId: string): string {
+    return whatsappId.replace('@s.whatsapp.net', '').replace('@c.us', '');
+  }
+
+  /**
    * Map Evolution API connection state to our status
    */
   private mapConnectionState(

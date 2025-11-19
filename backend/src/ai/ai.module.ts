@@ -4,9 +4,10 @@ import { AIService } from './ai.service';
 import { AIController } from './ai.controller';
 import { OrganizationsModule } from '../organizations/organizations.module';
 import { MessagesModule } from '../messages/messages.module';
+import { BotConfigModule } from '../bot-config/bot-config.module';
 
 @Module({
-  imports: [HttpModule, OrganizationsModule, MessagesModule],
+  imports: [HttpModule, OrganizationsModule, MessagesModule, BotConfigModule],
   providers: [AIService],
   controllers: [AIController],
   exports: [AIService],
