@@ -31,22 +31,25 @@ ALTER TABLE segments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ab_tests ENABLE ROW LEVEL SECURITY;
 
 -- ================================================
--- FUNCIÓN HELPER PARA OBTENER ORGANIZATION_ID DEL JWT
+-- FUNCIONES HELPER PARA RLS
 -- ================================================
 
-CREATE OR REPLACE FUNCTION auth.organization_id() RETURNS UUID AS $$
+-- Función para obtener organization_id del usuario actual
+-- Intenta primero desde el JWT, luego desde la tabla users
+CREATE OR REPLACE FUNCTION public.get_organization_id() RETURNS UUID AS $$
   SELECT COALESCE(
-    auth.jwt() ->> 'organization_id',
-    (SELECT organization_id::text FROM users WHERE id = auth.uid())
-  )::uuid;
-$$ LANGUAGE SQL SECURITY DEFINER;
-
-CREATE OR REPLACE FUNCTION auth.user_role() RETURNS TEXT AS $$
-  SELECT COALESCE(
-    auth.jwt() ->> 'role',
-    (SELECT role FROM users WHERE id = auth.uid())
+    (current_setting('request.jwt.claims', true)::json->>'organization_id')::uuid,
+    (SELECT organization_id FROM public.users WHERE id = auth.uid())
   );
-$$ LANGUAGE SQL SECURITY DEFINER;
+$$ LANGUAGE SQL SECURITY DEFINER STABLE;
+
+-- Función para obtener el rol del usuario actual
+CREATE OR REPLACE FUNCTION public.get_user_role() RETURNS TEXT AS $$
+  SELECT COALESCE(
+    current_setting('request.jwt.claims', true)::json->>'role',
+    (SELECT role FROM public.users WHERE id = auth.uid())
+  );
+$$ LANGUAGE SQL SECURITY DEFINER STABLE;
 
 -- ================================================
 -- POLÍTICAS: ORGANIZATIONS
@@ -55,12 +58,12 @@ $$ LANGUAGE SQL SECURITY DEFINER;
 -- Usuarios pueden ver su propia organización
 CREATE POLICY "Users can view their own organization"
   ON organizations FOR SELECT
-  USING (id = auth.organization_id());
+  USING (id = public.get_organization_id());
 
 -- Solo admins pueden actualizar la organización
 CREATE POLICY "Admins can update organization"
   ON organizations FOR UPDATE
-  USING (id = auth.organization_id() AND auth.user_role() = 'admin');
+  USING (id = public.get_organization_id() AND public.get_user_role() = 'admin');
 
 -- ================================================
 -- POLÍTICAS: USERS
@@ -69,30 +72,30 @@ CREATE POLICY "Admins can update organization"
 -- Usuarios pueden ver otros usuarios de su organización
 CREATE POLICY "Users can view organization members"
   ON users FOR SELECT
-  USING (organization_id = auth.organization_id());
+  USING (organization_id = public.get_organization_id());
 
 -- Admins pueden crear nuevos usuarios
 CREATE POLICY "Admins can insert users"
   ON users FOR INSERT
   WITH CHECK (
-    organization_id = auth.organization_id()
-    AND auth.user_role() = 'admin'
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() = 'admin'
   );
 
 -- Admins pueden actualizar usuarios
 CREATE POLICY "Admins can update users"
   ON users FOR UPDATE
   USING (
-    organization_id = auth.organization_id()
-    AND auth.user_role() = 'admin'
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() = 'admin'
   );
 
 -- Admins pueden eliminar usuarios
 CREATE POLICY "Admins can delete users"
   ON users FOR DELETE
   USING (
-    organization_id = auth.organization_id()
-    AND auth.user_role() = 'admin'
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() = 'admin'
   );
 
 -- ================================================
@@ -102,31 +105,31 @@ CREATE POLICY "Admins can delete users"
 -- Todos los usuarios pueden ver contactos de su organización
 CREATE POLICY "Users can view organization contacts"
   ON contacts FOR SELECT
-  USING (organization_id = auth.organization_id());
+  USING (organization_id = public.get_organization_id());
 
 -- Admins y users pueden crear contactos
 CREATE POLICY "Users can insert contacts"
   ON contacts FOR INSERT
   WITH CHECK (
-    organization_id = auth.organization_id()
-    AND auth.user_role() IN ('admin', 'user')
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() IN ('admin', 'user')
   );
 
 -- Admins y users pueden actualizar contactos
 CREATE POLICY "Users can update contacts"
   ON contacts FOR UPDATE
-  USING (organization_id = auth.organization_id())
+  USING (organization_id = public.get_organization_id())
   WITH CHECK (
-    organization_id = auth.organization_id()
-    AND auth.user_role() IN ('admin', 'user')
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() IN ('admin', 'user')
   );
 
 -- Solo admins pueden eliminar contactos
 CREATE POLICY "Admins can delete contacts"
   ON contacts FOR DELETE
   USING (
-    organization_id = auth.organization_id()
-    AND auth.user_role() = 'admin'
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() = 'admin'
   );
 
 -- ================================================
@@ -135,28 +138,28 @@ CREATE POLICY "Admins can delete contacts"
 
 CREATE POLICY "Users can view organization tags"
   ON tags FOR SELECT
-  USING (organization_id = auth.organization_id());
+  USING (organization_id = public.get_organization_id());
 
 CREATE POLICY "Users can insert tags"
   ON tags FOR INSERT
   WITH CHECK (
-    organization_id = auth.organization_id()
-    AND auth.user_role() IN ('admin', 'user')
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() IN ('admin', 'user')
   );
 
 CREATE POLICY "Users can update tags"
   ON tags FOR UPDATE
-  USING (organization_id = auth.organization_id())
+  USING (organization_id = public.get_organization_id())
   WITH CHECK (
-    organization_id = auth.organization_id()
-    AND auth.user_role() IN ('admin', 'user')
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() IN ('admin', 'user')
   );
 
 CREATE POLICY "Users can delete tags"
   ON tags FOR DELETE
   USING (
-    organization_id = auth.organization_id()
-    AND auth.user_role() IN ('admin', 'user')
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() IN ('admin', 'user')
   );
 
 -- ================================================
@@ -169,7 +172,7 @@ CREATE POLICY "Users can view contact tags"
     EXISTS (
       SELECT 1 FROM contacts
       WHERE contacts.id = contact_tags.contact_id
-      AND contacts.organization_id = auth.organization_id()
+      AND contacts.organization_id = public.get_organization_id()
     )
   );
 
@@ -179,9 +182,9 @@ CREATE POLICY "Users can insert contact tags"
     EXISTS (
       SELECT 1 FROM contacts
       WHERE contacts.id = contact_tags.contact_id
-      AND contacts.organization_id = auth.organization_id()
+      AND contacts.organization_id = public.get_organization_id()
     )
-    AND auth.user_role() IN ('admin', 'user')
+    AND public.get_user_role() IN ('admin', 'user')
   );
 
 CREATE POLICY "Users can delete contact tags"
@@ -190,9 +193,9 @@ CREATE POLICY "Users can delete contact tags"
     EXISTS (
       SELECT 1 FROM contacts
       WHERE contacts.id = contact_tags.contact_id
-      AND contacts.organization_id = auth.organization_id()
+      AND contacts.organization_id = public.get_organization_id()
     )
-    AND auth.user_role() IN ('admin', 'user')
+    AND public.get_user_role() IN ('admin', 'user')
   );
 
 -- ================================================
@@ -201,28 +204,28 @@ CREATE POLICY "Users can delete contact tags"
 
 CREATE POLICY "Users can view organization lists"
   ON contact_lists FOR SELECT
-  USING (organization_id = auth.organization_id());
+  USING (organization_id = public.get_organization_id());
 
 CREATE POLICY "Users can insert lists"
   ON contact_lists FOR INSERT
   WITH CHECK (
-    organization_id = auth.organization_id()
-    AND auth.user_role() IN ('admin', 'user')
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() IN ('admin', 'user')
   );
 
 CREATE POLICY "Users can update lists"
   ON contact_lists FOR UPDATE
-  USING (organization_id = auth.organization_id())
+  USING (organization_id = public.get_organization_id())
   WITH CHECK (
-    organization_id = auth.organization_id()
-    AND auth.user_role() IN ('admin', 'user')
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() IN ('admin', 'user')
   );
 
 CREATE POLICY "Users can delete lists"
   ON contact_lists FOR DELETE
   USING (
-    organization_id = auth.organization_id()
-    AND auth.user_role() IN ('admin', 'user')
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() IN ('admin', 'user')
   );
 
 -- ================================================
@@ -235,7 +238,7 @@ CREATE POLICY "Users can view list members"
     EXISTS (
       SELECT 1 FROM contact_lists
       WHERE contact_lists.id = contact_list_members.list_id
-      AND contact_lists.organization_id = auth.organization_id()
+      AND contact_lists.organization_id = public.get_organization_id()
     )
   );
 
@@ -245,9 +248,9 @@ CREATE POLICY "Users can insert list members"
     EXISTS (
       SELECT 1 FROM contact_lists
       WHERE contact_lists.id = contact_list_members.list_id
-      AND contact_lists.organization_id = auth.organization_id()
+      AND contact_lists.organization_id = public.get_organization_id()
     )
-    AND auth.user_role() IN ('admin', 'user')
+    AND public.get_user_role() IN ('admin', 'user')
   );
 
 CREATE POLICY "Users can delete list members"
@@ -256,9 +259,9 @@ CREATE POLICY "Users can delete list members"
     EXISTS (
       SELECT 1 FROM contact_lists
       WHERE contact_lists.id = contact_list_members.list_id
-      AND contact_lists.organization_id = auth.organization_id()
+      AND contact_lists.organization_id = public.get_organization_id()
     )
-    AND auth.user_role() IN ('admin', 'user')
+    AND public.get_user_role() IN ('admin', 'user')
   );
 
 -- ================================================
@@ -267,19 +270,19 @@ CREATE POLICY "Users can delete list members"
 
 CREATE POLICY "Users can view organization messages"
   ON messages FOR SELECT
-  USING (organization_id = auth.organization_id());
+  USING (organization_id = public.get_organization_id());
 
 CREATE POLICY "Users can insert messages"
   ON messages FOR INSERT
   WITH CHECK (
-    organization_id = auth.organization_id()
-    AND auth.user_role() IN ('admin', 'user')
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() IN ('admin', 'user')
   );
 
 CREATE POLICY "Users can update messages"
   ON messages FOR UPDATE
-  USING (organization_id = auth.organization_id())
-  WITH CHECK (organization_id = auth.organization_id());
+  USING (organization_id = public.get_organization_id())
+  WITH CHECK (organization_id = public.get_organization_id());
 
 -- ================================================
 -- POLÍTICAS: CAMPAIGNS
@@ -287,28 +290,28 @@ CREATE POLICY "Users can update messages"
 
 CREATE POLICY "Users can view organization campaigns"
   ON campaigns FOR SELECT
-  USING (organization_id = auth.organization_id());
+  USING (organization_id = public.get_organization_id());
 
 CREATE POLICY "Users can insert campaigns"
   ON campaigns FOR INSERT
   WITH CHECK (
-    organization_id = auth.organization_id()
-    AND auth.user_role() IN ('admin', 'user')
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() IN ('admin', 'user')
   );
 
 CREATE POLICY "Users can update campaigns"
   ON campaigns FOR UPDATE
-  USING (organization_id = auth.organization_id())
+  USING (organization_id = public.get_organization_id())
   WITH CHECK (
-    organization_id = auth.organization_id()
-    AND auth.user_role() IN ('admin', 'user')
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() IN ('admin', 'user')
   );
 
 CREATE POLICY "Admins can delete campaigns"
   ON campaigns FOR DELETE
   USING (
-    organization_id = auth.organization_id()
-    AND auth.user_role() = 'admin'
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() = 'admin'
   );
 
 -- ================================================
@@ -317,21 +320,21 @@ CREATE POLICY "Admins can delete campaigns"
 
 CREATE POLICY "Users can view organization templates"
   ON templates FOR SELECT
-  USING (organization_id = auth.organization_id());
+  USING (organization_id = public.get_organization_id());
 
 CREATE POLICY "Users can insert templates"
   ON templates FOR INSERT
   WITH CHECK (
-    organization_id = auth.organization_id()
-    AND auth.user_role() IN ('admin', 'user')
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() IN ('admin', 'user')
   );
 
 CREATE POLICY "Users can update templates"
   ON templates FOR UPDATE
-  USING (organization_id = auth.organization_id())
+  USING (organization_id = public.get_organization_id())
   WITH CHECK (
-    organization_id = auth.organization_id()
-    AND auth.user_role() IN ('admin', 'user')
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() IN ('admin', 'user')
   );
 
 -- ================================================
@@ -340,28 +343,28 @@ CREATE POLICY "Users can update templates"
 
 CREATE POLICY "Users can view organization scheduled messages"
   ON scheduled_messages FOR SELECT
-  USING (organization_id = auth.organization_id());
+  USING (organization_id = public.get_organization_id());
 
 CREATE POLICY "Users can insert scheduled messages"
   ON scheduled_messages FOR INSERT
   WITH CHECK (
-    organization_id = auth.organization_id()
-    AND auth.user_role() IN ('admin', 'user')
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() IN ('admin', 'user')
   );
 
 CREATE POLICY "Users can update scheduled messages"
   ON scheduled_messages FOR UPDATE
-  USING (organization_id = auth.organization_id())
+  USING (organization_id = public.get_organization_id())
   WITH CHECK (
-    organization_id = auth.organization_id()
-    AND auth.user_role() IN ('admin', 'user')
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() IN ('admin', 'user')
   );
 
 CREATE POLICY "Users can delete scheduled messages"
   ON scheduled_messages FOR DELETE
   USING (
-    organization_id = auth.organization_id()
-    AND auth.user_role() IN ('admin', 'user')
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() IN ('admin', 'user')
   );
 
 -- ================================================
@@ -370,28 +373,28 @@ CREATE POLICY "Users can delete scheduled messages"
 
 CREATE POLICY "Users can view organization events"
   ON calendar_events FOR SELECT
-  USING (organization_id = auth.organization_id());
+  USING (organization_id = public.get_organization_id());
 
 CREATE POLICY "Users can insert events"
   ON calendar_events FOR INSERT
   WITH CHECK (
-    organization_id = auth.organization_id()
-    AND auth.user_role() IN ('admin', 'user')
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() IN ('admin', 'user')
   );
 
 CREATE POLICY "Users can update events"
   ON calendar_events FOR UPDATE
-  USING (organization_id = auth.organization_id())
+  USING (organization_id = public.get_organization_id())
   WITH CHECK (
-    organization_id = auth.organization_id()
-    AND auth.user_role() IN ('admin', 'user')
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() IN ('admin', 'user')
   );
 
 CREATE POLICY "Users can delete events"
   ON calendar_events FOR DELETE
   USING (
-    organization_id = auth.organization_id()
-    AND auth.user_role() IN ('admin', 'user')
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() IN ('admin', 'user')
   );
 
 -- ================================================
@@ -400,28 +403,28 @@ CREATE POLICY "Users can delete events"
 
 CREATE POLICY "Users can view organization automations"
   ON automations FOR SELECT
-  USING (organization_id = auth.organization_id());
+  USING (organization_id = public.get_organization_id());
 
 CREATE POLICY "Users can insert automations"
   ON automations FOR INSERT
   WITH CHECK (
-    organization_id = auth.organization_id()
-    AND auth.user_role() IN ('admin', 'user')
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() IN ('admin', 'user')
   );
 
 CREATE POLICY "Users can update automations"
   ON automations FOR UPDATE
-  USING (organization_id = auth.organization_id())
+  USING (organization_id = public.get_organization_id())
   WITH CHECK (
-    organization_id = auth.organization_id()
-    AND auth.user_role() IN ('admin', 'user')
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() IN ('admin', 'user')
   );
 
 CREATE POLICY "Admins can delete automations"
   ON automations FOR DELETE
   USING (
-    organization_id = auth.organization_id()
-    AND auth.user_role() = 'admin'
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() = 'admin'
   );
 
 -- ================================================
@@ -430,16 +433,16 @@ CREATE POLICY "Admins can delete automations"
 
 CREATE POLICY "Users can view organization automation executions"
   ON automation_executions FOR SELECT
-  USING (organization_id = auth.organization_id());
+  USING (organization_id = public.get_organization_id());
 
 CREATE POLICY "System can insert automation executions"
   ON automation_executions FOR INSERT
-  WITH CHECK (organization_id = auth.organization_id());
+  WITH CHECK (organization_id = public.get_organization_id());
 
 CREATE POLICY "System can update automation executions"
   ON automation_executions FOR UPDATE
-  USING (organization_id = auth.organization_id())
-  WITH CHECK (organization_id = auth.organization_id());
+  USING (organization_id = public.get_organization_id())
+  WITH CHECK (organization_id = public.get_organization_id());
 
 -- ================================================
 -- POLÍTICAS: BOT_CONFIGS
@@ -447,21 +450,21 @@ CREATE POLICY "System can update automation executions"
 
 CREATE POLICY "Users can view organization bot config"
   ON bot_configs FOR SELECT
-  USING (organization_id = auth.organization_id());
+  USING (organization_id = public.get_organization_id());
 
 CREATE POLICY "Admins can insert bot config"
   ON bot_configs FOR INSERT
   WITH CHECK (
-    organization_id = auth.organization_id()
-    AND auth.user_role() = 'admin'
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() = 'admin'
   );
 
 CREATE POLICY "Admins can update bot config"
   ON bot_configs FOR UPDATE
-  USING (organization_id = auth.organization_id())
+  USING (organization_id = public.get_organization_id())
   WITH CHECK (
-    organization_id = auth.organization_id()
-    AND auth.user_role() = 'admin'
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() = 'admin'
   );
 
 -- ================================================
@@ -470,11 +473,11 @@ CREATE POLICY "Admins can update bot config"
 
 CREATE POLICY "Users can view organization bot logs"
   ON bot_message_logs FOR SELECT
-  USING (organization_id = auth.organization_id());
+  USING (organization_id = public.get_organization_id());
 
 CREATE POLICY "System can insert bot logs"
   ON bot_message_logs FOR INSERT
-  WITH CHECK (organization_id = auth.organization_id());
+  WITH CHECK (organization_id = public.get_organization_id());
 
 -- ================================================
 -- POLÍTICAS: CRM_FIELDS
@@ -482,28 +485,28 @@ CREATE POLICY "System can insert bot logs"
 
 CREATE POLICY "Users can view organization crm fields"
   ON crm_fields FOR SELECT
-  USING (organization_id = auth.organization_id());
+  USING (organization_id = public.get_organization_id());
 
 CREATE POLICY "Admins can insert crm fields"
   ON crm_fields FOR INSERT
   WITH CHECK (
-    organization_id = auth.organization_id()
-    AND auth.user_role() = 'admin'
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() = 'admin'
   );
 
 CREATE POLICY "Admins can update crm fields"
   ON crm_fields FOR UPDATE
-  USING (organization_id = auth.organization_id())
+  USING (organization_id = public.get_organization_id())
   WITH CHECK (
-    organization_id = auth.organization_id()
-    AND auth.user_role() = 'admin'
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() = 'admin'
   );
 
 CREATE POLICY "Admins can delete crm fields"
   ON crm_fields FOR DELETE
   USING (
-    organization_id = auth.organization_id()
-    AND auth.user_role() = 'admin'
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() = 'admin'
   );
 
 -- ================================================
@@ -512,28 +515,28 @@ CREATE POLICY "Admins can delete crm fields"
 
 CREATE POLICY "Users can view organization crm statuses"
   ON crm_statuses FOR SELECT
-  USING (organization_id = auth.organization_id());
+  USING (organization_id = public.get_organization_id());
 
 CREATE POLICY "Admins can insert crm statuses"
   ON crm_statuses FOR INSERT
   WITH CHECK (
-    organization_id = auth.organization_id()
-    AND auth.user_role() = 'admin'
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() = 'admin'
   );
 
 CREATE POLICY "Admins can update crm statuses"
   ON crm_statuses FOR UPDATE
-  USING (organization_id = auth.organization_id())
+  USING (organization_id = public.get_organization_id())
   WITH CHECK (
-    organization_id = auth.organization_id()
-    AND auth.user_role() = 'admin'
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() = 'admin'
   );
 
 CREATE POLICY "Admins can delete crm statuses"
   ON crm_statuses FOR DELETE
   USING (
-    organization_id = auth.organization_id()
-    AND auth.user_role() = 'admin'
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() = 'admin'
   );
 
 -- ================================================
@@ -542,28 +545,28 @@ CREATE POLICY "Admins can delete crm statuses"
 
 CREATE POLICY "Users can view organization segments"
   ON segments FOR SELECT
-  USING (organization_id = auth.organization_id());
+  USING (organization_id = public.get_organization_id());
 
 CREATE POLICY "Users can insert segments"
   ON segments FOR INSERT
   WITH CHECK (
-    organization_id = auth.organization_id()
-    AND auth.user_role() IN ('admin', 'user')
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() IN ('admin', 'user')
   );
 
 CREATE POLICY "Users can update segments"
   ON segments FOR UPDATE
-  USING (organization_id = auth.organization_id())
+  USING (organization_id = public.get_organization_id())
   WITH CHECK (
-    organization_id = auth.organization_id()
-    AND auth.user_role() IN ('admin', 'user')
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() IN ('admin', 'user')
   );
 
 CREATE POLICY "Users can delete segments"
   ON segments FOR DELETE
   USING (
-    organization_id = auth.organization_id()
-    AND auth.user_role() IN ('admin', 'user')
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() IN ('admin', 'user')
   );
 
 -- ================================================
@@ -572,28 +575,28 @@ CREATE POLICY "Users can delete segments"
 
 CREATE POLICY "Users can view organization ab tests"
   ON ab_tests FOR SELECT
-  USING (organization_id = auth.organization_id());
+  USING (organization_id = public.get_organization_id());
 
 CREATE POLICY "Users can insert ab tests"
   ON ab_tests FOR INSERT
   WITH CHECK (
-    organization_id = auth.organization_id()
-    AND auth.user_role() IN ('admin', 'user')
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() IN ('admin', 'user')
   );
 
 CREATE POLICY "Users can update ab tests"
   ON ab_tests FOR UPDATE
-  USING (organization_id = auth.organization_id())
+  USING (organization_id = public.get_organization_id())
   WITH CHECK (
-    organization_id = auth.organization_id()
-    AND auth.user_role() IN ('admin', 'user')
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() IN ('admin', 'user')
   );
 
 CREATE POLICY "Users can delete ab tests"
   ON ab_tests FOR DELETE
   USING (
-    organization_id = auth.organization_id()
-    AND auth.user_role() IN ('admin', 'user')
+    organization_id = public.get_organization_id()
+    AND public.get_user_role() IN ('admin', 'user')
   );
 
 -- ================================================

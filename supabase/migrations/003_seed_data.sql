@@ -6,6 +6,13 @@
 -- ================================================
 
 -- ================================================
+-- EXTENSIONES NECESARIAS
+-- ================================================
+
+-- Extensión para búsqueda de texto con trigrams
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+-- ================================================
 -- ORGANIZACIÓN DEMO
 -- ================================================
 
@@ -22,28 +29,20 @@ VALUES (
 ) ON CONFLICT (slug) DO NOTHING;
 
 -- ================================================
--- USUARIO DEMO
+-- NOTA: Usuario Demo
 -- ================================================
-
--- Insertar usuario admin demo (password: demo123)
--- Nota: Este es un hash bcrypt de "demo123"
-INSERT INTO users (
-  id,
-  organization_id,
-  email,
-  password_hash,
-  full_name,
-  role,
-  is_active
-) VALUES (
-  '10000000-0000-0000-0000-000000000001',
-  '00000000-0000-0000-0000-000000000001',
-  'demo@chatflow.pro',
-  '$2b$10$YourHashedPasswordHere',  -- Reemplazar con hash real
-  'Usuario Demo',
-  'admin',
-  true
-) ON CONFLICT (email) DO NOTHING;
+-- El usuario demo debe crearse manualmente usando Supabase Auth Dashboard:
+-- 1. Ve a Authentication > Users en Supabase Dashboard
+-- 2. Clic en "Add user" > "Create new user"
+-- 3. Email: demo@chatflow.pro
+-- 4. Password: (la que prefieras)
+-- 5. User Metadata: {"organization_id": "00000000-0000-0000-0000-000000000001", "full_name": "Usuario Demo"}
+-- 6. Luego ejecuta este SQL para crear el registro en la tabla users:
+--
+-- INSERT INTO users (id, organization_id, email, full_name, role, is_active)
+-- SELECT id, '00000000-0000-0000-0000-000000000001', email, 'Usuario Demo', 'admin', true
+-- FROM auth.users WHERE email = 'demo@chatflow.pro'
+-- ON CONFLICT (email) DO NOTHING;
 
 -- ================================================
 -- TAGS PREDEFINIDOS
@@ -412,9 +411,6 @@ CREATE INDEX IF NOT EXISTS idx_contacts_name_trgm ON contacts USING gin (name gi
 
 -- Índice para búsqueda de contactos por email
 CREATE INDEX IF NOT EXISTS idx_contacts_email_trgm ON contacts USING gin (email gin_trgm_ops);
-
--- Extensión para búsqueda de texto (trigrams)
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- ================================================
 -- COMENTARIOS EN TABLAS
