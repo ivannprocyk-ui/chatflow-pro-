@@ -40,31 +40,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     checkUser();
 
     // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('[AuthContext] Auth state changed:', event);
+    let subscription: any = null;
 
-      if (event === 'SIGNED_IN' && session) {
-        await loadUserData(session.user);
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null);
-        setOrganization(null);
-      }
-    });
+    try {
+      const result = supabase.auth.onAuthStateChange(async (event, session) => {
+        console.log('[AuthContext] Auth state changed:', event);
+
+        if (event === 'SIGNED_IN' && session) {
+          await loadUserData(session.user);
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+          setOrganization(null);
+        }
+      });
+
+      subscription = result.data.subscription;
+    } catch (error: any) {
+      console.warn('[AuthContext] Could not set up auth listener - offline mode:', error.message);
+    }
 
     return () => {
-      subscription.unsubscribe();
+      if (subscription) {
+        subscription.unsubscribe();
+      }
     };
   }, []);
 
   const checkUser = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error } = await supabase.auth.getSession();
+
+      if (error) {
+        console.warn('[AuthContext] Supabase connection error:', error.message);
+        setIsLoading(false);
+        return;
+      }
 
       if (session?.user) {
         await loadUserData(session.user);
       }
-    } catch (error) {
-      console.error('[AuthContext] Error checking user:', error);
+    } catch (error: any) {
+      console.warn('[AuthContext] Error checking user - app will continue without auth:', error.message);
+      // Don't throw - allow app to continue without authentication
     } finally {
       setIsLoading(false);
     }
