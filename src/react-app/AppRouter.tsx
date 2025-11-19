@@ -22,9 +22,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
+  // TEMPORALMENTE DESACTIVADO - Permitir acceso sin autenticación
+  // TODO: Habilitar cuando Supabase esté configurado correctamente
+  // if (!isAuthenticated) {
+  //   return <Navigate to="/login" replace />;
+  // }
 
   return <>{children}</>;
 }
