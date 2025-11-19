@@ -51,7 +51,7 @@ CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   organization_id UUID NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
   email VARCHAR(255) NOT NULL UNIQUE,
-  password_hash VARCHAR(255) NOT NULL,
+  password_hash VARCHAR(255), -- Nullable: Supabase Auth maneja contraseñas en auth.users
   full_name VARCHAR(255),
   role VARCHAR(50) NOT NULL DEFAULT 'user',
   is_active BOOLEAN NOT NULL DEFAULT true,

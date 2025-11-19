@@ -60,7 +60,7 @@ export interface User {
   id: UUID;
   organization_id: UUID;
   email: string;
-  password_hash: string;
+  password_hash?: string; // Opcional: Supabase Auth maneja contraseñas
   full_name?: string;
   role: 'admin' | 'user' | 'viewer';
   is_active: boolean;
