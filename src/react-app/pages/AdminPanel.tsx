@@ -2280,13 +2280,31 @@ export default function AdminPanel() {
               <i className="fas fa-file-invoice text-blue-600 mr-2"></i>
               Todas las Facturas ({pagos.length})
             </h3>
-            <button
-              onClick={openCreateFactura}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
-            >
-              <i className="fas fa-plus"></i>
-              Crear Factura
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowTemplateEditor(true)}
+                className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center gap-2"
+                title="Configurar plantilla de factura"
+              >
+                <i className="fas fa-cog"></i>
+                Configurar Plantilla
+              </button>
+              <button
+                onClick={() => generateAutoInvoices()}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+                title="Generar facturas automáticas para clientes activos"
+              >
+                <i className="fas fa-magic"></i>
+                Auto-generar
+              </button>
+              <button
+                onClick={openCreateFactura}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+              >
+                <i className="fas fa-plus"></i>
+                Crear Factura
+              </button>
+            </div>
           </div>
 
           {pagos.length > 0 && (
@@ -4047,7 +4065,286 @@ export default function AdminPanel() {
                 </button>
               </div>
             </div>
+        {/* Template Editor Modal */}
+        {showTemplateEditor && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-4xl w-full my-8">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    <i className="fas fa-palette text-blue-600 mr-2"></i>
+                    Configurar Plantilla de Factura
+                  </h3>
+                  <button
+                    onClick={() => setShowTemplateEditor(false)}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                  >
+                    <i className="fas fa-times text-xl"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto">
+                {/* Datos de la Empresa */}
+                <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-lg">
+                  <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                    <i className="fas fa-building text-blue-600 mr-2"></i>
+                    Datos de la Empresa
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Nombre de la Empresa *
+                      </label>
+                      <input
+                        type="text"
+                        value={invoiceTemplate.empresa_nombre}
+                        onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, empresa_nombre: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        RFC / CUIT / NIT
+                      </label>
+                      <input
+                        type="text"
+                        value={invoiceTemplate.empresa_rfc || ''}
+                        onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, empresa_rfc: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Dirección
+                      </label>
+                      <input
+                        type="text"
+                        value={invoiceTemplate.empresa_direccion}
+                        onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, empresa_direccion: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Ciudad
+                      </label>
+                      <input
+                        type="text"
+                        value={invoiceTemplate.empresa_ciudad}
+                        onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, empresa_ciudad: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        País
+                      </label>
+                      <input
+                        type="text"
+                        value={invoiceTemplate.empresa_pais}
+                        onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, empresa_pais: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Teléfono
+                      </label>
+                      <input
+                        type="text"
+                        value={invoiceTemplate.empresa_telefono}
+                        onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, empresa_telefono: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        value={invoiceTemplate.empresa_email}
+                        onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, empresa_email: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Sitio Web
+                      </label>
+                      <input
+                        type="text"
+                        value={invoiceTemplate.empresa_website || ''}
+                        onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, empresa_website: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Configuración Fiscal */}
+                <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-lg">
+                  <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                    <i className="fas fa-receipt text-green-600 mr-2"></i>
+                    Configuración Fiscal
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        IVA Por Defecto (%)
+                      </label>
+                      <input
+                        type="number"
+                        value={invoiceTemplate.iva_porcentaje_default}
+                        onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, iva_porcentaje_default: parseFloat(e.target.value) })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Días de Vencimiento
+                      </label>
+                      <input
+                        type="number"
+                        value={invoiceTemplate.dias_vencimiento_default}
+                        onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, dias_vencimiento_default: parseInt(e.target.value) })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        min="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Condición IVA
+                      </label>
+                      <input
+                        type="text"
+                        value={invoiceTemplate.empresa_condicion_iva || ''}
+                        onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, empresa_condicion_iva: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        placeholder="Ej: Responsable Inscripto"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={invoiceTemplate.factura_fiscal_default}
+                        onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, factura_fiscal_default: e.target.checked })}
+                        className="w-4 h-4 text-blue-600 rounded"
+                      />
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Generar facturas fiscales por defecto
+                      </span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Diseño */}
+                <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-lg">
+                  <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                    <i className="fas fa-paintbrush text-purple-600 mr-2"></i>
+                    Diseño
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Color Primario
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={invoiceTemplate.color_primario}
+                          onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, color_primario: e.target.value })}
+                          className="w-16 h-10 rounded border border-gray-300 dark:border-gray-600"
+                        />
+                        <input
+                          type="text"
+                          value={invoiceTemplate.color_primario}
+                          onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, color_primario: e.target.value })}
+                          className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Color Secundario
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={invoiceTemplate.color_secundario}
+                          onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, color_secundario: e.target.value })}
+                          className="w-16 h-10 rounded border border-gray-300 dark:border-gray-600"
+                        />
+                        <input
+                          type="text"
+                          value={invoiceTemplate.color_secundario}
+                          onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, color_secundario: e.target.value })}
+                          className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Términos y Condiciones */}
+                <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-lg">
+                  <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                    <i className="fas fa-file-alt text-orange-600 mr-2"></i>
+                    Términos y Notas
+                  </h4>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Términos y Condiciones
+                      </label>
+                      <textarea
+                        value={invoiceTemplate.terminos_condiciones || ''}
+                        onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, terminos_condiciones: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        rows={3}
+                        placeholder="Ej: Pago dentro de los 30 días..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Nota de Pie de Página
+                      </label>
+                      <input
+                        type="text"
+                        value={invoiceTemplate.nota_pie_pagina || ''}
+                        onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, nota_pie_pagina: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        placeholder="Ej: Gracias por su preferencia"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
+                <button
+                  onClick={() => setShowTemplateEditor(false)}
+                  className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={saveInvoiceTemplate}
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2"
+                >
+                  <i className="fas fa-save"></i>
+                  Guardar Plantilla
+                </button>
+              </div>
+            </div>
           </div>
+        )}          </div>
         )}
       </div>
     </div>
