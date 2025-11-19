@@ -54,10 +54,53 @@ interface Pago {
   cliente_id: string;
   monto: number;
   fecha: Date;
+  fecha_vencimiento?: Date;
   estado: 'pagado' | 'pendiente' | 'vencido' | 'cancelado';
   metodo_pago: 'tarjeta' | 'transferencia' | 'paypal' | 'stripe' | 'otro';
   numero_factura: string;
   tipo: 'suscripcion' | 'one-time';
+  // Campos fiscales
+  es_fiscal?: boolean;
+  subtotal?: number;
+  iva_porcentaje?: number;
+  iva_monto?: number;
+  retenciones?: number;
+  concepto?: string;
+  items?: InvoiceItem[];
+  notas?: string;
+}
+
+interface InvoiceItem {
+  id: string;
+  descripcion: string;
+  cantidad: number;
+  precio_unitario: number;
+  subtotal: number;
+}
+
+interface InvoiceTemplate {
+  // Datos de la empresa
+  empresa_nombre: string;
+  empresa_logo?: string;
+  empresa_direccion: string;
+  empresa_ciudad: string;
+  empresa_pais: string;
+  empresa_telefono: string;
+  empresa_email: string;
+  empresa_website?: string;
+  // Datos fiscales
+  empresa_rfc?: string; // RFC/CUIT/NIT
+  empresa_condicion_iva?: string;
+  // Diseño
+  color_primario: string;
+  color_secundario: string;
+  // Configuración
+  iva_porcentaje_default: number;
+  factura_fiscal_default: boolean;
+  dias_vencimiento_default: number;
+  // Términos
+  terminos_condiciones?: string;
+  nota_pie_pagina?: string;
 }
 
 interface Uso {
@@ -441,6 +484,33 @@ export default function AdminPanel() {
   const [facturaFormData, setFacturaFormData] = useState<Partial<Pago>>({});
   const [showFacturaDetailModal, setShowFacturaDetailModal] = useState(false);
   const [selectedFactura, setSelectedFactura] = useState<Pago | null>(null);
+  const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([]);
+
+  // Invoice Template Configuration
+  const [showTemplateEditor, setShowTemplateEditor] = useState(false);
+  const [invoiceTemplate, setInvoiceTemplate] = useState<InvoiceTemplate>({
+    empresa_nombre: 'ChatFlow Pro',
+    empresa_direccion: 'Av. Principal 123',
+    empresa_ciudad: 'Buenos Aires',
+    empresa_pais: 'Argentina',
+    empresa_telefono: '+54 11 1234-5678',
+    empresa_email: 'facturacion@chatflowpro.com',
+    empresa_website: 'www.chatflowpro.com',
+    empresa_rfc: 'XAXX010101000',
+    empresa_condicion_iva: 'Responsable Inscripto',
+    color_primario: '#3B82F6',
+    color_secundario: '#1E40AF',
+    iva_porcentaje_default: 21,
+    factura_fiscal_default: true,
+    dias_vencimiento_default: 30,
+    terminos_condiciones: 'Pago dentro de los 30 días. Después de esta fecha se aplicarán intereses del 2% mensual.',
+    nota_pie_pagina: 'Gracias por su preferencia',
+  });
+
+  // Client Selector Advanced
+  const [clientSearchTerm, setClientSearchTerm] = useState('');
+  const [clientFilterPlan, setClientFilterPlan] = useState<string>('all');
+  const [clientFilterStatus, setClientFilterStatus] = useState<string>('all');
 
   // Client filters and search
   const [clientSearch, setClientSearch] = useState('');
@@ -2428,55 +2498,139 @@ export default function AdminPanel() {
 
   // ==================== FUNCIONES DE GESTIÓN DE FACTURAS ====================
 
+  // Filtrar clientes para selector avanzado
+  const getFilteredClients = () => {
+    return clientes.filter(cliente => {
+      const matchesSearch = !clientSearchTerm ||
+        cliente.nombre.toLowerCase().includes(clientSearchTerm.toLowerCase()) ||
+        cliente.email.toLowerCase().includes(clientSearchTerm.toLowerCase()) ||
+        cliente.empresa.toLowerCase().includes(clientSearchTerm.toLowerCase());
+
+      const matchesPlan = clientFilterPlan === 'all' || cliente.plan === clientFilterPlan;
+      const matchesStatus = clientFilterStatus === 'all' || cliente.status === clientFilterStatus;
+
+      return matchesSearch && matchesPlan && matchesStatus;
+    });
+  };
+
+  // Calcular totales de factura con IVA
+  const calculateInvoiceTotals = (subtotal: number, esFiscal: boolean, ivaPorcentaje: number) => {
+    const iva = esFiscal ? (subtotal * ivaPorcentaje) / 100 : 0;
+    const total = subtotal + iva;
+    return { subtotal, iva, total };
+  };
+
   const openCreateFactura = () => {
     setEditingFactura(null);
+    const fechaVencimiento = new Date();
+    fechaVencimiento.setDate(fechaVencimiento.getDate() + invoiceTemplate.dias_vencimiento_default);
+
     setFacturaFormData({
       fecha: new Date(),
+      fecha_vencimiento: fechaVencimiento,
       estado: 'pendiente',
       metodo_pago: 'stripe',
       tipo: 'suscripcion',
+      es_fiscal: invoiceTemplate.factura_fiscal_default,
+      iva_porcentaje: invoiceTemplate.iva_porcentaje_default,
+      concepto: 'Servicio de ChatFlow Pro',
     });
+    setInvoiceItems([{
+      id: `item-${Date.now()}`,
+      descripcion: 'Servicio ChatFlow Pro - Plan Mensual',
+      cantidad: 1,
+      precio_unitario: 0,
+      subtotal: 0,
+    }]);
+    setClientSearchTerm('');
+    setClientFilterPlan('all');
+    setClientFilterStatus('all');
     setShowFacturaModal(true);
   };
 
   const openEditFactura = (factura: Pago) => {
     setEditingFactura(factura);
     setFacturaFormData(factura);
+    if (factura.items && factura.items.length > 0) {
+      setInvoiceItems(factura.items);
+    }
     setShowFacturaModal(true);
   };
 
+  const addInvoiceItem = () => {
+    setInvoiceItems([...invoiceItems, {
+      id: `item-${Date.now()}`,
+      descripcion: '',
+      cantidad: 1,
+      precio_unitario: 0,
+      subtotal: 0,
+    }]);
+  };
+
+  const updateInvoiceItem = (itemId: string, field: keyof InvoiceItem, value: any) => {
+    setInvoiceItems(invoiceItems.map(item => {
+      if (item.id === itemId) {
+        const updated = { ...item, [field]: value };
+        if (field === 'cantidad' || field === 'precio_unitario') {
+          updated.subtotal = updated.cantidad * updated.precio_unitario;
+        }
+        return updated;
+      }
+      return item;
+    }));
+  };
+
+  const removeInvoiceItem = (itemId: string) => {
+    setInvoiceItems(invoiceItems.filter(item => item.id !== itemId));
+  };
+
   const handleSaveFactura = () => {
-    if (!facturaFormData.cliente_id || !facturaFormData.monto) {
-      showAlert('destructive', 'Por favor completa los campos requeridos');
+    if (!facturaFormData.cliente_id) {
+      showAlert('destructive', 'Por favor selecciona un cliente');
       return;
     }
 
+    // Calcular subtotal de todos los items
+    const subtotal = invoiceItems.reduce((sum, item) => sum + item.subtotal, 0);
+
+    if (subtotal === 0) {
+      showAlert('destructive', 'Por favor agrega al menos un item con monto mayor a 0');
+      return;
+    }
+
+    // Calcular IVA y total
+    const esFiscal = facturaFormData.es_fiscal ?? invoiceTemplate.factura_fiscal_default;
+    const ivaPorcentaje = facturaFormData.iva_porcentaje ?? invoiceTemplate.iva_porcentaje_default;
+    const { iva, total } = calculateInvoiceTotals(subtotal, esFiscal, ivaPorcentaje);
+
+    const facturaData: Pago = {
+      ...facturaFormData,
+      id: editingFactura?.id || `pago-${Date.now()}`,
+      cliente_id: facturaFormData.cliente_id!,
+      subtotal,
+      iva_monto: iva,
+      monto: total,
+      fecha: facturaFormData.fecha || new Date(),
+      estado: facturaFormData.estado || 'pendiente',
+      metodo_pago: facturaFormData.metodo_pago || 'stripe',
+      numero_factura: facturaFormData.numero_factura || `INV-${Date.now()}`,
+      tipo: facturaFormData.tipo || 'suscripcion',
+      es_fiscal: esFiscal,
+      iva_porcentaje: ivaPorcentaje,
+      items: [...invoiceItems],
+    };
+
     if (editingFactura) {
-      // Editar factura existente
-      setPagos(pagos.map(p =>
-        p.id === editingFactura.id
-          ? { ...editingFactura, ...facturaFormData }
-          : p
-      ));
-      showAlert('success', `Factura ${facturaFormData.numero_factura} actualizada correctamente`);
+      setPagos(pagos.map(p => p.id === editingFactura.id ? facturaData : p));
+      showAlert('success', `Factura ${facturaData.numero_factura} actualizada correctamente`);
     } else {
-      // Crear nueva factura
-      const newFactura: Pago = {
-        id: `pago-${Date.now()}`,
-        cliente_id: facturaFormData.cliente_id!,
-        monto: facturaFormData.monto!,
-        fecha: facturaFormData.fecha || new Date(),
-        estado: facturaFormData.estado || 'pendiente',
-        metodo_pago: facturaFormData.metodo_pago || 'stripe',
-        numero_factura: facturaFormData.numero_factura || `INV-${Date.now()}`,
-        tipo: facturaFormData.tipo || 'suscripcion',
-      };
-      setPagos([...pagos, newFactura]);
-      showAlert('success', `Factura ${newFactura.numero_factura} creada correctamente`);
+      setPagos([...pagos, facturaData]);
+      showAlert('success', `Factura ${facturaData.numero_factura} creada correctamente`);
     }
 
     setShowFacturaModal(false);
     setFacturaFormData({});
+    setInvoiceItems([]);
   };
 
   const handleDeleteFactura = (facturaId: string) => {
@@ -2522,6 +2676,91 @@ export default function AdminPanel() {
     setTimeout(() => {
       showAlert('success', `Factura enviada correctamente a ${cliente?.email}`);
     }, 1500);
+  };
+
+  // Generación automática de facturas para clientes
+  const generateAutoInvoices = () => {
+    const today = new Date();
+    let generatedCount = 0;
+
+    clientes.forEach(cliente => {
+      // Solo generar para clientes activos
+      if (cliente.status !== 'active') return;
+
+      // Verificar si es día de pago
+      if (cliente.fecha_proximo_pago) {
+        const fechaPago = new Date(cliente.fecha_proximo_pago);
+        const isSameDay = fechaPago.getDate() === today.getDate() &&
+                         fechaPago.getMonth() === today.getMonth() &&
+                         fechaPago.getFullYear() === today.getFullYear();
+
+        if (isSameDay) {
+          // Verificar que no exista ya una factura para este período
+          const mesActual = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+          const yaExiste = pagos.some(p =>
+            p.cliente_id === cliente.id &&
+            p.numero_factura.includes(mesActual)
+          );
+
+          if (!yaExiste) {
+            // Generar factura automáticamente
+            const subtotal = cliente.precio_mensual;
+            const esFiscal = invoiceTemplate.factura_fiscal_default;
+            const ivaPorcentaje = invoiceTemplate.iva_porcentaje_default;
+            const { iva, total } = calculateInvoiceTotals(subtotal, esFiscal, ivaPorcentaje);
+
+            const fechaVencimiento = new Date(today);
+            fechaVencimiento.setDate(fechaVencimiento.getDate() + invoiceTemplate.dias_vencimiento_default);
+
+            const newFactura: Pago = {
+              id: `pago-${Date.now()}-${cliente.id}`,
+              cliente_id: cliente.id,
+              numero_factura: `INV-${mesActual}-${String(generatedCount + 1).padStart(4, '0')}`,
+              fecha: today,
+              fecha_vencimiento: fechaVencimiento,
+              concepto: `Servicio ChatFlow Pro - Plan ${cliente.plan.toUpperCase()}`,
+              subtotal,
+              iva_porcentaje: ivaPorcentaje,
+              iva_monto: iva,
+              monto: total,
+              estado: 'pendiente',
+              metodo_pago: 'stripe',
+              tipo: 'suscripcion',
+              es_fiscal: esFiscal,
+              items: [{
+                id: `item-${Date.now()}`,
+                descripcion: `Plan ${cliente.plan.toUpperCase()} - ${cliente.ciclo_facturacion === 'mensual' ? 'Mensual' : 'Anual'}`,
+                cantidad: 1,
+                precio_unitario: subtotal,
+                subtotal,
+              }],
+            };
+
+            setPagos(prev => [...prev, newFactura]);
+            generatedCount++;
+          }
+        }
+      }
+    });
+
+    if (generatedCount > 0) {
+      showAlert('success', `Se generaron ${generatedCount} facturas automáticamente`);
+    }
+  };
+
+  // Ejecutar generación automática al montar el componente (simula un cron job)
+  useEffect(() => {
+    // Comentado para evitar generación automática en cada render
+    // En producción, esto debería ejecutarse con un cron job en el backend
+    // generateAutoInvoices();
+  }, []);
+
+  // Función para editar la plantilla de factura
+  const saveInvoiceTemplate = () => {
+    // En producción, esto se guardaría en la base de datos
+    localStorage.setItem('invoiceTemplate', JSON.stringify(invoiceTemplate));
+    showAlert('success', 'Plantilla de factura guardada correctamente');
+    setShowTemplateEditor(false);
   };
 
   // Evaluar qué clientes cumplen con cada alerta
