@@ -13,19 +13,46 @@ interface SidebarProps {
   onDarkModeToggle?: () => void;
 }
 
-const menuItems = [
-  { id: 'dashboard', icon: 'fas fa-chart-pie', label: 'Dashboard' },
-  { id: 'bulk-messaging', icon: 'fas fa-paper-plane', label: 'Envío Masivo' },
-  { id: 'contact-lists', icon: 'fas fa-address-book', label: 'Listas de Contactos' },
-  { id: 'crm-panel', icon: 'fas fa-chart-line', label: 'Contactos' },
-  { id: 'crm-settings', icon: 'fas fa-sliders-h', label: 'Configurar CRM' },
-  { id: 'calendar', icon: 'fas fa-calendar-alt', label: 'Agenda' },
-  { id: 'campaign-history', icon: 'fas fa-bullhorn', label: 'Historial de Campañas' },
-  { id: 'analytics', icon: 'fas fa-chart-bar', label: 'Analytics' },
-  { id: 'automations', icon: 'fas fa-magic', label: 'Automatizaciones' },
-  { id: 'message-scheduler', icon: 'fas fa-clock', label: 'Programar Envíos' },
-  { id: 'templates', icon: 'fas fa-file-alt', label: 'Plantillas' },
-  { id: 'configuration', icon: 'fas fa-cog', label: 'Configuración' },
+const menuSections = [
+  {
+    title: 'Principal',
+    items: [
+      { id: 'dashboard', icon: 'fas fa-chart-pie', label: 'Dashboard' },
+    ]
+  },
+  {
+    title: 'Mensajería',
+    items: [
+      { id: 'bulk-messaging', icon: 'fas fa-paper-plane', label: 'Envío Masivo' },
+      { id: 'message-scheduler', icon: 'fas fa-clock', label: 'Programar Envíos' },
+      { id: 'templates', icon: 'fas fa-file-alt', label: 'Plantillas' },
+      { id: 'campaign-history', icon: 'fas fa-bullhorn', label: 'Historial de Campañas' },
+    ]
+  },
+  {
+    title: 'CRM & Contactos',
+    items: [
+      { id: 'crm-panel', icon: 'fas fa-users', label: 'Contactos' },
+      { id: 'contact-lists', icon: 'fas fa-address-book', label: 'Listas de Contactos' },
+      { id: 'calendar', icon: 'fas fa-calendar-alt', label: 'Agenda' },
+      { id: 'crm-settings', icon: 'fas fa-sliders-h', label: 'Configurar CRM' },
+    ]
+  },
+  {
+    title: 'Bot IA',
+    items: [
+      { id: 'bot-config', icon: 'fas fa-robot', label: 'Bot IA Config' },
+      { id: 'bot-analytics', icon: 'fas fa-brain', label: 'Bot Analytics' },
+    ]
+  },
+  {
+    title: 'Analytics & Admin',
+    items: [
+      { id: 'analytics', icon: 'fas fa-chart-bar', label: 'Analytics' },
+      { id: 'admin-panel', icon: 'fas fa-user-shield', label: 'Panel Admin' },
+      { id: 'configuration', icon: 'fas fa-cog', label: 'Configuración' },
+    ]
+  },
 ] as const;
 
 export default function Sidebar({ isOpen, isCollapsed = false, currentSection, onSectionChange, onToggleCollapse, config, darkMode = false, onDarkModeToggle }: SidebarProps) {
@@ -71,27 +98,38 @@ export default function Sidebar({ isOpen, isCollapsed = false, currentSection, o
 
       {/* Navigation */}
       <nav className="flex-1 py-6 overflow-y-auto">
-        <ul className="space-y-2 px-4">
-          {menuItems.map((item) => (
-            <li key={item.id}>
-              <button
-                onClick={() => onSectionChange(item.id as AppSection)}
-                title={isCollapsed ? item.label : undefined}
-                className={`
-                  w-full flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} px-4 py-3 rounded-xl
-                  transition-all duration-300
-                  ${currentSection === item.id
-                    ? 'bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700 text-white font-semibold shadow-lg'
-                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100'
-                  }
-                `}
-              >
-                <i className={`${item.icon} text-lg ${isCollapsed ? '' : 'w-5'} transition-colors duration-300`}></i>
-                {!isCollapsed && <span className="transition-colors duration-300">{item.label}</span>}
-              </button>
-            </li>
+        <div className="px-4 space-y-6">
+          {menuSections.map((section, sectionIdx) => (
+            <div key={sectionIdx}>
+              {!isCollapsed && (
+                <h3 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 px-2">
+                  {section.title}
+                </h3>
+              )}
+              <ul className="space-y-1">
+                {section.items.map((item) => (
+                  <li key={item.id}>
+                    <button
+                      onClick={() => onSectionChange(item.id as AppSection)}
+                      title={isCollapsed ? item.label : undefined}
+                      className={`
+                        w-full flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} px-4 py-3 rounded-xl
+                        transition-all duration-300
+                        ${currentSection === item.id
+                          ? 'bg-gradient-to-r from-blue-600 via-purple-600 to-blue-700 text-white font-semibold shadow-lg'
+                          : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100'
+                        }
+                      `}
+                    >
+                      <i className={`${item.icon} text-lg ${isCollapsed ? '' : 'w-5'} transition-colors duration-300`}></i>
+                      {!isCollapsed && <span className="transition-colors duration-300">{item.label}</span>}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
           ))}
-        </ul>
+        </div>
       </nav>
 
       {/* Footer */}

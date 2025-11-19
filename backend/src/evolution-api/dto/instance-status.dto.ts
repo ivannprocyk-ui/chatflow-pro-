@@ -1,6 +1,6 @@
 export interface InstanceStatusDto {
   instance: string;
-  status: 'open' | 'close' | 'connecting';
+  status: 'connected' | 'disconnected' | 'connecting';
   qrcode?: string;
   connectedPhone?: string;
   connectedAt?: string;

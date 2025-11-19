@@ -11,16 +11,25 @@ import {
   Request,
   HttpCode,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { BotConfigService } from './bot-config.service';
+import { EvolutionApiService } from '../evolution-api/evolution-api.service';
 import { CreateBotConfigDto } from './dto/create-bot-config.dto';
 import { UpdateBotConfigDto } from './dto/update-bot-config.dto';
 
 @Controller('api/bot-config')
 @UseGuards(JwtAuthGuard)
 export class BotConfigController {
-  constructor(private readonly botConfigService: BotConfigService) {}
+  private readonly logger = new Logger(BotConfigController.name);
+
+  constructor(
+    private readonly botConfigService: BotConfigService,
+    private readonly evolutionApiService: EvolutionApiService,
+    private readonly configService: ConfigService,
+  ) {}
 
   /**
    * Get bot configuration for current organization
@@ -123,6 +132,161 @@ export class BotConfigController {
   async deleteConfig(@Request() req) {
     const organizationId = req.user.organizationId;
     await this.botConfigService.delete(organizationId);
+  }
+
+  /**
+   * Connect WhatsApp automatically
+   * POST /api/bot-config/connect
+   *
+   * Backend creates Evolution API instance automatically using global credentials
+   */
+  @Post('connect')
+  async connectWhatsApp(@Request() req) {
+    const organizationId = req.user.organizationId;
+
+    try {
+      this.logger.log(`Connecting WhatsApp for organization ${organizationId}`);
+
+      // Get global Evolution API credentials from environment
+      const evolutionApiUrl = this.configService.get<string>('EVOLUTION_API_URL');
+      const evolutionApiKey = this.configService.get<string>('EVOLUTION_API_KEY');
+      const backendUrl = this.configService.get<string>('BACKEND_URL') || 'http://localhost:3001';
+
+      if (!evolutionApiUrl || !evolutionApiKey) {
+        throw new Error('Evolution API not configured. Please set EVOLUTION_API_URL and EVOLUTION_API_KEY in .env');
+      }
+
+      // Create instance name based on organization ID
+      const instanceName = `org-${organizationId}`;
+      const webhookUrl = `${backendUrl}/api/webhooks/evolution/${organizationId}`;
+
+      this.logger.log(`Creating instance ${instanceName} with webhook ${webhookUrl}`);
+
+      // Create instance in Evolution API
+      await this.evolutionApiService.createInstance({
+        apiUrl: evolutionApiUrl,
+        instanceName,
+        apiKey: evolutionApiKey,
+      });
+
+      // Set webhook for this instance
+      await this.evolutionApiService.setWebhook(
+        evolutionApiUrl,
+        instanceName,
+        evolutionApiKey,
+        webhookUrl,
+      );
+
+      // Wait a moment for instance to initialize
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Get QR code
+      const qrData = await this.evolutionApiService.fetchQRCode(
+        evolutionApiUrl,
+        instanceName,
+        evolutionApiKey,
+      );
+
+      // Update bot config with instance name and set status to connecting
+      await this.botConfigService.updateConnectionStatus(organizationId, 'connecting');
+
+      this.logger.log(`QR code generated for organization ${organizationId}`);
+
+      return {
+        success: true,
+        qrcode: qrData.qrcode,
+        code: qrData.code,
+        instanceName,
+        message: 'Escanea el código QR con tu WhatsApp',
+      };
+    } catch (error) {
+      this.logger.error(`Error connecting WhatsApp for org ${organizationId}: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Get WhatsApp connection status
+   * GET /api/bot-config/status
+   */
+  @Get('status')
+  async getConnectionStatus(@Request() req) {
+    const organizationId = req.user.organizationId;
+
+    try {
+      const evolutionApiUrl = this.configService.get<string>('EVOLUTION_API_URL');
+      const evolutionApiKey = this.configService.get<string>('EVOLUTION_API_KEY');
+
+      if (!evolutionApiUrl || !evolutionApiKey) {
+        return {
+          status: 'disconnected',
+          message: 'Evolution API not configured',
+        };
+      }
+
+      const instanceName = `org-${organizationId}`;
+
+      // Get status from Evolution API
+      const statusData = await this.evolutionApiService.getInstanceStatus(
+        evolutionApiUrl,
+        instanceName,
+        evolutionApiKey,
+      );
+
+      return {
+        status: statusData.status,
+        connectedPhone: statusData.connectedPhone,
+        instanceName,
+      };
+    } catch (error) {
+      this.logger.error(`Error getting status for org ${organizationId}: ${error.message}`);
+      return {
+        status: 'disconnected',
+        error: error.message,
+      };
+    }
+  }
+
+  /**
+   * Disconnect WhatsApp
+   * POST /api/bot-config/disconnect
+   */
+  @Post('disconnect')
+  async disconnectWhatsApp(@Request() req) {
+    const organizationId = req.user.organizationId;
+
+    try {
+      this.logger.log(`Disconnecting WhatsApp for organization ${organizationId}`);
+
+      const evolutionApiUrl = this.configService.get<string>('EVOLUTION_API_URL');
+      const evolutionApiKey = this.configService.get<string>('EVOLUTION_API_KEY');
+
+      if (!evolutionApiUrl || !evolutionApiKey) {
+        throw new Error('Evolution API not configured');
+      }
+
+      const instanceName = `org-${organizationId}`;
+
+      // Disconnect instance
+      await this.evolutionApiService.disconnectInstance(
+        evolutionApiUrl,
+        instanceName,
+        evolutionApiKey,
+      );
+
+      // Update status in database
+      await this.botConfigService.updateConnectionStatus(organizationId, 'disconnected');
+
+      this.logger.log(`WhatsApp disconnected for organization ${organizationId}`);
+
+      return {
+        success: true,
+        message: 'WhatsApp desconectado correctamente',
+      };
+    } catch (error) {
+      this.logger.error(`Error disconnecting WhatsApp for org ${organizationId}: ${error.message}`);
+      throw error;
+    }
   }
 
   /**
