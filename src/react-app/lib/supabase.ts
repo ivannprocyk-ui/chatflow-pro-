@@ -12,16 +12,16 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl) {
-  throw new Error(
-    'Missing environment variable: VITE_SUPABASE_URL\n' +
-    'Please add it to your .env file'
+  console.error(
+    '❌ Missing environment variable: VITE_SUPABASE_URL\n' +
+    'Please add it to your .env.local file and restart the dev server'
   );
 }
 
 if (!supabaseAnonKey) {
-  throw new Error(
-    'Missing environment variable: VITE_SUPABASE_ANON_KEY\n' +
-    'Please add it to your .env file'
+  console.error(
+    '❌ Missing environment variable: VITE_SUPABASE_ANON_KEY\n' +
+    'Please add it to your .env.local file and restart the dev server'
   );
 }
 
@@ -31,19 +31,23 @@ if (!supabaseAnonKey) {
  * - Persistencia de sesión en localStorage
  * - Refresh automático de tokens
  */
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true,
-    storage: window.localStorage,
-  },
-  realtime: {
-    params: {
-      eventsPerSecond: 10,
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder.supabase.co',
+  supabaseAnonKey || 'placeholder-key',
+  {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+      storage: window.localStorage,
     },
-  },
-});
+    realtime: {
+      params: {
+        eventsPerSecond: 10,
+      },
+    },
+  }
+);
 
 /**
  * Database Types
