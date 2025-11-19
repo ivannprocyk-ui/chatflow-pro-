@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import Login from './pages/Login';
-import Register from './pages/Register';
+import LoginNew from './pages/LoginNew';
+import RegisterNew from './pages/RegisterNew';
 import AppNew from './AppNew';
 
 /**
@@ -68,7 +68,7 @@ export default function AppRouter() {
             path="/login"
             element={
               <PublicRoute>
-                <Login />
+                <LoginNew />
               </PublicRoute>
             }
           />
@@ -76,7 +76,7 @@ export default function AppRouter() {
             path="/register"
             element={
               <PublicRoute>
-                <Register />
+                <RegisterNew />
               </PublicRoute>
             }
           />
