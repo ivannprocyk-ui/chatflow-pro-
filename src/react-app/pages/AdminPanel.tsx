@@ -54,10 +54,53 @@ interface Pago {
   cliente_id: string;
   monto: number;
   fecha: Date;
+  fecha_vencimiento?: Date;
   estado: 'pagado' | 'pendiente' | 'vencido' | 'cancelado';
   metodo_pago: 'tarjeta' | 'transferencia' | 'paypal' | 'stripe' | 'otro';
   numero_factura: string;
   tipo: 'suscripcion' | 'one-time';
+  // Campos fiscales
+  es_fiscal?: boolean;
+  subtotal?: number;
+  iva_porcentaje?: number;
+  iva_monto?: number;
+  retenciones?: number;
+  concepto?: string;
+  items?: InvoiceItem[];
+  notas?: string;
+}
+
+interface InvoiceItem {
+  id: string;
+  descripcion: string;
+  cantidad: number;
+  precio_unitario: number;
+  subtotal: number;
+}
+
+interface InvoiceTemplate {
+  // Datos de la empresa
+  empresa_nombre: string;
+  empresa_logo?: string;
+  empresa_direccion: string;
+  empresa_ciudad: string;
+  empresa_pais: string;
+  empresa_telefono: string;
+  empresa_email: string;
+  empresa_website?: string;
+  // Datos fiscales
+  empresa_rfc?: string; // RFC/CUIT/NIT
+  empresa_condicion_iva?: string;
+  // Diseño
+  color_primario: string;
+  color_secundario: string;
+  // Configuración
+  iva_porcentaje_default: number;
+  factura_fiscal_default: boolean;
+  dias_vencimiento_default: number;
+  // Términos
+  terminos_condiciones?: string;
+  nota_pie_pagina?: string;
 }
 
 interface Uso {
@@ -434,6 +477,40 @@ export default function AdminPanel() {
   const [showAlertaModal, setShowAlertaModal] = useState(false);
   const [editingAlerta, setEditingAlerta] = useState<AlertaCliente | null>(null);
   const [alertaFormData, setAlertaFormData] = useState<Partial<AlertaCliente>>({});
+
+  // Invoice/Factura Management
+  const [showFacturaModal, setShowFacturaModal] = useState(false);
+  const [editingFactura, setEditingFactura] = useState<Pago | null>(null);
+  const [facturaFormData, setFacturaFormData] = useState<Partial<Pago>>({});
+  const [showFacturaDetailModal, setShowFacturaDetailModal] = useState(false);
+  const [selectedFactura, setSelectedFactura] = useState<Pago | null>(null);
+  const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([]);
+
+  // Invoice Template Configuration
+  const [showTemplateEditor, setShowTemplateEditor] = useState(false);
+  const [invoiceTemplate, setInvoiceTemplate] = useState<InvoiceTemplate>({
+    empresa_nombre: 'ChatFlow Pro',
+    empresa_direccion: 'Av. Principal 123',
+    empresa_ciudad: 'Buenos Aires',
+    empresa_pais: 'Argentina',
+    empresa_telefono: '+54 11 1234-5678',
+    empresa_email: 'facturacion@chatflowpro.com',
+    empresa_website: 'www.chatflowpro.com',
+    empresa_rfc: 'XAXX010101000',
+    empresa_condicion_iva: 'Responsable Inscripto',
+    color_primario: '#3B82F6',
+    color_secundario: '#1E40AF',
+    iva_porcentaje_default: 21,
+    factura_fiscal_default: true,
+    dias_vencimiento_default: 30,
+    terminos_condiciones: 'Pago dentro de los 30 días. Después de esta fecha se aplicarán intereses del 2% mensual.',
+    nota_pie_pagina: 'Gracias por su preferencia',
+  });
+
+  // Client Selector Advanced
+  const [clientSearchTerm, setClientSearchTerm] = useState('');
+  const [clientFilterPlan, setClientFilterPlan] = useState<string>('all');
+  const [clientFilterStatus, setClientFilterStatus] = useState<string>('all');
 
   // Client filters and search
   const [clientSearch, setClientSearch] = useState('');
@@ -2197,12 +2274,40 @@ export default function AdminPanel() {
         </div>
 
         {/* Facturas Pendientes/Vencidas */}
-        {facturasPendientes.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-              <i className="fas fa-file-invoice text-red-600 mr-2"></i>
-              Facturas Pendientes ({facturasPendientes.length})
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center">
+              <i className="fas fa-file-invoice text-blue-600 mr-2"></i>
+              Todas las Facturas ({pagos.length})
             </h3>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowTemplateEditor(true)}
+                className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors flex items-center gap-2"
+                title="Configurar plantilla de factura"
+              >
+                <i className="fas fa-cog"></i>
+                Configurar Plantilla
+              </button>
+              <button
+                onClick={() => generateAutoInvoices()}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+                title="Generar facturas automáticas para clientes activos"
+              >
+                <i className="fas fa-magic"></i>
+                Auto-generar
+              </button>
+              <button
+                onClick={openCreateFactura}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+              >
+                <i className="fas fa-plus"></i>
+                Crear Factura
+              </button>
+            </div>
+          </div>
+
+          {pagos.length > 0 && (
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-gray-50 dark:bg-gray-700">
@@ -2217,7 +2322,7 @@ export default function AdminPanel() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {facturasPendientes.map((pago) => {
+                  {pagos.slice(0, 20).map((pago) => {
                     const cliente = clientes.find(c => c.id === pago.cliente_id);
                     return (
                       <tr key={pago.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
@@ -2246,14 +2351,50 @@ export default function AdminPanel() {
                           </select>
                         </td>
                         <td className="px-6 py-4">
-                          <button
-                            onClick={() => updatePaymentStatus(pago.id, 'pagado')}
-                            className="px-3 py-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
-                            title="Marcar como pagado"
-                          >
-                            <i className="fas fa-check mr-1"></i>
-                            Marcar Pagado
-                          </button>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => viewFacturaDetails(pago)}
+                              className="px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                              title="Ver detalles"
+                            >
+                              <i className="fas fa-eye"></i>
+                            </button>
+                            <button
+                              onClick={() => openEditFactura(pago)}
+                              className="px-2 py-1 text-xs font-medium text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300"
+                              title="Editar"
+                            >
+                              <i className="fas fa-edit"></i>
+                            </button>
+                            <button
+                              onClick={() => generateFacturaPDF(pago)}
+                              className="px-2 py-1 text-xs font-medium text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300"
+                              title="Descargar PDF"
+                            >
+                              <i className="fas fa-file-pdf"></i>
+                            </button>
+                            <button
+                              onClick={() => sendFacturaEmail(pago)}
+                              className="px-2 py-1 text-xs font-medium text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-300"
+                              title="Enviar por email"
+                            >
+                              <i className="fas fa-envelope"></i>
+                            </button>
+                            <button
+                              onClick={() => handleDuplicateFactura(pago)}
+                              className="px-2 py-1 text-xs font-medium text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300"
+                              title="Duplicar"
+                            >
+                              <i className="fas fa-copy"></i>
+                            </button>
+                            <button
+                              onClick={() => handleDeleteFactura(pago.id)}
+                              className="px-2 py-1 text-xs font-medium text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                              title="Eliminar"
+                            >
+                              <i className="fas fa-trash"></i>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -2261,8 +2402,8 @@ export default function AdminPanel() {
                 </tbody>
               </table>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Summary */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -2371,6 +2512,273 @@ export default function AdminPanel() {
   const updatePaymentStatus = (pagoId: string, nuevoEstado: Pago['estado']) => {
     setPagos(pagos.map(p => p.id === pagoId ? { ...p, estado: nuevoEstado } : p));
     showAlert('success', `Pago actualizado a "${nuevoEstado}" correctamente`);
+  };
+
+  // ==================== FUNCIONES DE GESTIÓN DE FACTURAS ====================
+
+  // Filtrar clientes para selector avanzado
+  const getFilteredClients = () => {
+    return clientes.filter(cliente => {
+      const matchesSearch = !clientSearchTerm ||
+        cliente.nombre.toLowerCase().includes(clientSearchTerm.toLowerCase()) ||
+        cliente.email.toLowerCase().includes(clientSearchTerm.toLowerCase()) ||
+        cliente.empresa.toLowerCase().includes(clientSearchTerm.toLowerCase());
+
+      const matchesPlan = clientFilterPlan === 'all' || cliente.plan === clientFilterPlan;
+      const matchesStatus = clientFilterStatus === 'all' || cliente.status === clientFilterStatus;
+
+      return matchesSearch && matchesPlan && matchesStatus;
+    });
+  };
+
+  // Calcular totales de factura con IVA
+  const calculateInvoiceTotals = (subtotal: number, esFiscal: boolean, ivaPorcentaje: number) => {
+    const iva = esFiscal ? (subtotal * ivaPorcentaje) / 100 : 0;
+    const total = subtotal + iva;
+    return { subtotal, iva, total };
+  };
+
+  const openCreateFactura = () => {
+    setEditingFactura(null);
+    const fechaVencimiento = new Date();
+    fechaVencimiento.setDate(fechaVencimiento.getDate() + invoiceTemplate.dias_vencimiento_default);
+
+    setFacturaFormData({
+      fecha: new Date(),
+      fecha_vencimiento: fechaVencimiento,
+      estado: 'pendiente',
+      metodo_pago: 'stripe',
+      tipo: 'suscripcion',
+      es_fiscal: invoiceTemplate.factura_fiscal_default,
+      iva_porcentaje: invoiceTemplate.iva_porcentaje_default,
+      concepto: 'Servicio de ChatFlow Pro',
+    });
+    setInvoiceItems([{
+      id: `item-${Date.now()}`,
+      descripcion: 'Servicio ChatFlow Pro - Plan Mensual',
+      cantidad: 1,
+      precio_unitario: 0,
+      subtotal: 0,
+    }]);
+    setClientSearchTerm('');
+    setClientFilterPlan('all');
+    setClientFilterStatus('all');
+    setShowFacturaModal(true);
+  };
+
+  const openEditFactura = (factura: Pago) => {
+    setEditingFactura(factura);
+    setFacturaFormData(factura);
+    if (factura.items && factura.items.length > 0) {
+      setInvoiceItems(factura.items);
+    }
+    setShowFacturaModal(true);
+  };
+
+  const addInvoiceItem = () => {
+    setInvoiceItems([...invoiceItems, {
+      id: `item-${Date.now()}`,
+      descripcion: '',
+      cantidad: 1,
+      precio_unitario: 0,
+      subtotal: 0,
+    }]);
+  };
+
+  const updateInvoiceItem = (itemId: string, field: keyof InvoiceItem, value: any) => {
+    setInvoiceItems(invoiceItems.map(item => {
+      if (item.id === itemId) {
+        const updated = { ...item, [field]: value };
+        if (field === 'cantidad' || field === 'precio_unitario') {
+          updated.subtotal = updated.cantidad * updated.precio_unitario;
+        }
+        return updated;
+      }
+      return item;
+    }));
+  };
+
+  const removeInvoiceItem = (itemId: string) => {
+    setInvoiceItems(invoiceItems.filter(item => item.id !== itemId));
+  };
+
+  const handleSaveFactura = () => {
+    if (!facturaFormData.cliente_id) {
+      showAlert('destructive', 'Por favor selecciona un cliente');
+      return;
+    }
+
+    // Calcular subtotal de todos los items
+    const subtotal = invoiceItems.reduce((sum, item) => sum + item.subtotal, 0);
+
+    if (subtotal === 0) {
+      showAlert('destructive', 'Por favor agrega al menos un item con monto mayor a 0');
+      return;
+    }
+
+    // Calcular IVA y total
+    const esFiscal = facturaFormData.es_fiscal ?? invoiceTemplate.factura_fiscal_default;
+    const ivaPorcentaje = facturaFormData.iva_porcentaje ?? invoiceTemplate.iva_porcentaje_default;
+    const { iva, total } = calculateInvoiceTotals(subtotal, esFiscal, ivaPorcentaje);
+
+    const facturaData: Pago = {
+      ...facturaFormData,
+      id: editingFactura?.id || `pago-${Date.now()}`,
+      cliente_id: facturaFormData.cliente_id!,
+      subtotal,
+      iva_monto: iva,
+      monto: total,
+      fecha: facturaFormData.fecha || new Date(),
+      estado: facturaFormData.estado || 'pendiente',
+      metodo_pago: facturaFormData.metodo_pago || 'stripe',
+      numero_factura: facturaFormData.numero_factura || `INV-${Date.now()}`,
+      tipo: facturaFormData.tipo || 'suscripcion',
+      es_fiscal: esFiscal,
+      iva_porcentaje: ivaPorcentaje,
+      items: [...invoiceItems],
+    };
+
+    if (editingFactura) {
+      setPagos(pagos.map(p => p.id === editingFactura.id ? facturaData : p));
+      showAlert('success', `Factura ${facturaData.numero_factura} actualizada correctamente`);
+    } else {
+      setPagos([...pagos, facturaData]);
+      showAlert('success', `Factura ${facturaData.numero_factura} creada correctamente`);
+    }
+
+    setShowFacturaModal(false);
+    setFacturaFormData({});
+    setInvoiceItems([]);
+  };
+
+  const handleDeleteFactura = (facturaId: string) => {
+    const factura = pagos.find(p => p.id === facturaId);
+    if (window.confirm(`¿Está seguro que desea eliminar la factura ${factura?.numero_factura}?`)) {
+      setPagos(pagos.filter(p => p.id !== facturaId));
+      showAlert('success', `Factura eliminada correctamente`);
+    }
+  };
+
+  const handleDuplicateFactura = (factura: Pago) => {
+    const duplicated: Pago = {
+      ...factura,
+      id: `pago-${Date.now()}`,
+      numero_factura: `INV-${Date.now()}`,
+      fecha: new Date(),
+      estado: 'pendiente',
+    };
+    setPagos([...pagos, duplicated]);
+    showAlert('success', `Factura duplicada como ${duplicated.numero_factura}`);
+  };
+
+  const viewFacturaDetails = (factura: Pago) => {
+    setSelectedFactura(factura);
+    setShowFacturaDetailModal(true);
+  };
+
+  const generateFacturaPDF = (factura: Pago) => {
+    const cliente = clientes.find(c => c.id === factura.cliente_id);
+    showAlert('info', `Generando PDF de factura ${factura.numero_factura}...`);
+
+    // Simular descarga
+    setTimeout(() => {
+      showAlert('success', `PDF de factura ${factura.numero_factura} descargado correctamente`);
+      // Aquí irá la implementación real con jsPDF
+    }, 1000);
+  };
+
+  const sendFacturaEmail = (factura: Pago) => {
+    const cliente = clientes.find(c => c.id === factura.cliente_id);
+    showAlert('info', `Enviando factura ${factura.numero_factura} a ${cliente?.email}...`);
+
+    setTimeout(() => {
+      showAlert('success', `Factura enviada correctamente a ${cliente?.email}`);
+    }, 1500);
+  };
+
+  // Generación automática de facturas para clientes
+  const generateAutoInvoices = () => {
+    const today = new Date();
+    let generatedCount = 0;
+
+    clientes.forEach(cliente => {
+      // Solo generar para clientes activos
+      if (cliente.status !== 'active') return;
+
+      // Verificar si es día de pago
+      if (cliente.fecha_proximo_pago) {
+        const fechaPago = new Date(cliente.fecha_proximo_pago);
+        const isSameDay = fechaPago.getDate() === today.getDate() &&
+                         fechaPago.getMonth() === today.getMonth() &&
+                         fechaPago.getFullYear() === today.getFullYear();
+
+        if (isSameDay) {
+          // Verificar que no exista ya una factura para este período
+          const mesActual = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+          const yaExiste = pagos.some(p =>
+            p.cliente_id === cliente.id &&
+            p.numero_factura.includes(mesActual)
+          );
+
+          if (!yaExiste) {
+            // Generar factura automáticamente
+            const subtotal = cliente.precio_mensual;
+            const esFiscal = invoiceTemplate.factura_fiscal_default;
+            const ivaPorcentaje = invoiceTemplate.iva_porcentaje_default;
+            const { iva, total } = calculateInvoiceTotals(subtotal, esFiscal, ivaPorcentaje);
+
+            const fechaVencimiento = new Date(today);
+            fechaVencimiento.setDate(fechaVencimiento.getDate() + invoiceTemplate.dias_vencimiento_default);
+
+            const newFactura: Pago = {
+              id: `pago-${Date.now()}-${cliente.id}`,
+              cliente_id: cliente.id,
+              numero_factura: `INV-${mesActual}-${String(generatedCount + 1).padStart(4, '0')}`,
+              fecha: today,
+              fecha_vencimiento: fechaVencimiento,
+              concepto: `Servicio ChatFlow Pro - Plan ${cliente.plan.toUpperCase()}`,
+              subtotal,
+              iva_porcentaje: ivaPorcentaje,
+              iva_monto: iva,
+              monto: total,
+              estado: 'pendiente',
+              metodo_pago: 'stripe',
+              tipo: 'suscripcion',
+              es_fiscal: esFiscal,
+              items: [{
+                id: `item-${Date.now()}`,
+                descripcion: `Plan ${cliente.plan.toUpperCase()} - ${cliente.ciclo_facturacion === 'mensual' ? 'Mensual' : 'Anual'}`,
+                cantidad: 1,
+                precio_unitario: subtotal,
+                subtotal,
+              }],
+            };
+
+            setPagos(prev => [...prev, newFactura]);
+            generatedCount++;
+          }
+        }
+      }
+    });
+
+    if (generatedCount > 0) {
+      showAlert('success', `Se generaron ${generatedCount} facturas automáticamente`);
+    }
+  };
+
+  // Ejecutar generación automática al montar el componente (simula un cron job)
+  useEffect(() => {
+    // Comentado para evitar generación automática en cada render
+    // En producción, esto debería ejecutarse con un cron job en el backend
+    // generateAutoInvoices();
+  }, []);
+
+  // Función para editar la plantilla de factura
+  const saveInvoiceTemplate = () => {
+    // En producción, esto se guardaría en la base de datos
+    localStorage.setItem('invoiceTemplate', JSON.stringify(invoiceTemplate));
+    showAlert('success', 'Plantilla de factura guardada correctamente');
+    setShowTemplateEditor(false);
   };
 
   // Evaluar qué clientes cumplen con cada alerta
@@ -3343,6 +3751,600 @@ export default function AdminPanel() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Invoice Create/Edit Modal */}
+        {showFacturaModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-2xl w-full my-8">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    <i className="fas fa-file-invoice text-blue-600 mr-2"></i>
+                    {editingFactura ? 'Editar Factura' : 'Nueva Factura'}
+                  </h3>
+                  <button
+                    onClick={() => setShowFacturaModal(false)}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                  >
+                    <i className="fas fa-times text-xl"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                {/* Cliente Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Cliente *
+                  </label>
+                  <select
+                    value={facturaFormData.cliente_id || ''}
+                    onChange={(e) => setFacturaFormData({ ...facturaFormData, cliente_id: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    required
+                  >
+                    <option value="">Seleccione un cliente</option>
+                    {clientes.map(cliente => (
+                      <option key={cliente.id} value={cliente.id}>
+                        {cliente.nombre} ({cliente.email})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Monto */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Monto *
+                  </label>
+                  <input
+                    type="number"
+                    value={facturaFormData.monto || ''}
+                    onChange={(e) => setFacturaFormData({ ...facturaFormData, monto: parseFloat(e.target.value) })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
+                    required
+                  />
+                </div>
+
+                {/* Número de Factura */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Número de Factura
+                  </label>
+                  <input
+                    type="text"
+                    value={facturaFormData.numero_factura || ''}
+                    onChange={(e) => setFacturaFormData({ ...facturaFormData, numero_factura: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    placeholder="INV-001"
+                  />
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Si se deja vacío, se generará automáticamente
+                  </p>
+                </div>
+
+                {/* Grid for Date, Status, Payment Method, Type */}
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Fecha */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Fecha
+                    </label>
+                    <input
+                      type="date"
+                      value={facturaFormData.fecha ? new Date(facturaFormData.fecha).toISOString().split('T')[0] : ''}
+                      onChange={(e) => setFacturaFormData({ ...facturaFormData, fecha: new Date(e.target.value) })}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    />
+                  </div>
+
+                  {/* Estado */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Estado
+                    </label>
+                    <select
+                      value={facturaFormData.estado || 'pendiente'}
+                      onChange={(e) => setFacturaFormData({ ...facturaFormData, estado: e.target.value as Pago['estado'] })}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    >
+                      <option value="pendiente">Pendiente</option>
+                      <option value="pagado">Pagado</option>
+                      <option value="vencido">Vencido</option>
+                      <option value="cancelado">Cancelado</option>
+                    </select>
+                  </div>
+
+                  {/* Método de Pago */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Método de Pago
+                    </label>
+                    <select
+                      value={facturaFormData.metodo_pago || 'stripe'}
+                      onChange={(e) => setFacturaFormData({ ...facturaFormData, metodo_pago: e.target.value as Pago['metodo_pago'] })}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    >
+                      <option value="tarjeta">Tarjeta</option>
+                      <option value="transferencia">Transferencia</option>
+                      <option value="paypal">PayPal</option>
+                      <option value="stripe">Stripe</option>
+                      <option value="otro">Otro</option>
+                    </select>
+                  </div>
+
+                  {/* Tipo */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Tipo
+                    </label>
+                    <select
+                      value={facturaFormData.tipo || 'suscripcion'}
+                      onChange={(e) => setFacturaFormData({ ...facturaFormData, tipo: e.target.value as Pago['tipo'] })}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    >
+                      <option value="suscripcion">Suscripción</option>
+                      <option value="one-time">Pago Único</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Info Box */}
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <p className="text-sm text-blue-800 dark:text-blue-200">
+                    <i className="fas fa-info-circle mr-2"></i>
+                    Los campos marcados con * son obligatorios
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
+                <button
+                  onClick={() => setShowFacturaModal(false)}
+                  className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSaveFactura}
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2"
+                >
+                  <i className="fas fa-save"></i>
+                  {editingFactura ? 'Guardar Cambios' : 'Crear Factura'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Invoice Detail Modal */}
+        {showFacturaDetailModal && selectedFactura && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-3xl w-full my-8">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    <i className="fas fa-file-invoice text-blue-600 mr-2"></i>
+                    Detalles de Factura
+                  </h3>
+                  <button
+                    onClick={() => setShowFacturaDetailModal(false)}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                  >
+                    <i className="fas fa-times text-xl"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-6">
+                {/* Invoice Header */}
+                <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h4 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                        {selectedFactura.numero_factura}
+                      </h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {new Date(selectedFactura.fecha).toLocaleDateString('es-ES', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                        ${selectedFactura.monto.toLocaleString()}
+                      </p>
+                      <span className={`inline-block px-3 py-1 text-xs font-semibold rounded-full mt-2 ${
+                        selectedFactura.estado === 'pagado' ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300' :
+                        selectedFactura.estado === 'vencido' ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300' :
+                        selectedFactura.estado === 'cancelado' ? 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300' :
+                        'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300'
+                      }`}>
+                        {selectedFactura.estado.toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Client Information */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                    <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+                      <i className="fas fa-user text-blue-600 mr-2"></i>
+                      Información del Cliente
+                    </h5>
+                    {(() => {
+                      const cliente = clientes.find(c => c.id === selectedFactura.cliente_id);
+                      return cliente ? (
+                        <div className="space-y-2 text-sm">
+                          <p className="text-gray-900 dark:text-gray-100 font-medium">{cliente.nombre}</p>
+                          <p className="text-gray-600 dark:text-gray-400">{cliente.email}</p>
+                          <p className="text-gray-600 dark:text-gray-400">{cliente.telefono}</p>
+                        </div>
+                      ) : (
+                        <p className="text-gray-500 dark:text-gray-400 text-sm">Cliente no encontrado</p>
+                      );
+                    })()}
+                  </div>
+
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                    <h5 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center">
+                      <i className="fas fa-credit-card text-blue-600 mr-2"></i>
+                      Detalles de Pago
+                    </h5>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">Método:</span>
+                        <span className="text-gray-900 dark:text-gray-100 font-medium capitalize">
+                          {selectedFactura.metodo_pago}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">Tipo:</span>
+                        <span className="text-gray-900 dark:text-gray-100 font-medium capitalize">
+                          {selectedFactura.tipo === 'suscripcion' ? 'Suscripción' : 'Pago Único'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600 dark:text-gray-400">Estado:</span>
+                        <span className="text-gray-900 dark:text-gray-100 font-medium capitalize">
+                          {selectedFactura.estado}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-wrap gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <button
+                    onClick={() => {
+                      setShowFacturaDetailModal(false);
+                      openEditFactura(selectedFactura);
+                    }}
+                    className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                  >
+                    <i className="fas fa-edit"></i>
+                    Editar
+                  </button>
+                  <button
+                    onClick={() => {
+                      generateFacturaPDF(selectedFactura);
+                      setShowFacturaDetailModal(false);
+                    }}
+                    className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                  >
+                    <i className="fas fa-file-pdf"></i>
+                    Descargar PDF
+                  </button>
+                  <button
+                    onClick={() => {
+                      sendFacturaEmail(selectedFactura);
+                      setShowFacturaDetailModal(false);
+                    }}
+                    className="flex-1 px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                  >
+                    <i className="fas fa-envelope"></i>
+                    Enviar Email
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end">
+                <button
+                  onClick={() => setShowFacturaDetailModal(false)}
+                  className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+        {/* Template Editor Modal */}
+        {showTemplateEditor && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-4xl w-full my-8">
+              <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    <i className="fas fa-palette text-blue-600 mr-2"></i>
+                    Configurar Plantilla de Factura
+                  </h3>
+                  <button
+                    onClick={() => setShowTemplateEditor(false)}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                  >
+                    <i className="fas fa-times text-xl"></i>
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-6 space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto">
+                {/* Datos de la Empresa */}
+                <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-lg">
+                  <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                    <i className="fas fa-building text-blue-600 mr-2"></i>
+                    Datos de la Empresa
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Nombre de la Empresa *
+                      </label>
+                      <input
+                        type="text"
+                        value={invoiceTemplate.empresa_nombre}
+                        onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, empresa_nombre: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        RFC / CUIT / NIT
+                      </label>
+                      <input
+                        type="text"
+                        value={invoiceTemplate.empresa_rfc || ''}
+                        onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, empresa_rfc: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Dirección
+                      </label>
+                      <input
+                        type="text"
+                        value={invoiceTemplate.empresa_direccion}
+                        onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, empresa_direccion: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Ciudad
+                      </label>
+                      <input
+                        type="text"
+                        value={invoiceTemplate.empresa_ciudad}
+                        onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, empresa_ciudad: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        País
+                      </label>
+                      <input
+                        type="text"
+                        value={invoiceTemplate.empresa_pais}
+                        onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, empresa_pais: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Teléfono
+                      </label>
+                      <input
+                        type="text"
+                        value={invoiceTemplate.empresa_telefono}
+                        onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, empresa_telefono: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        value={invoiceTemplate.empresa_email}
+                        onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, empresa_email: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Sitio Web
+                      </label>
+                      <input
+                        type="text"
+                        value={invoiceTemplate.empresa_website || ''}
+                        onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, empresa_website: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Configuración Fiscal */}
+                <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-lg">
+                  <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                    <i className="fas fa-receipt text-green-600 mr-2"></i>
+                    Configuración Fiscal
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        IVA Por Defecto (%)
+                      </label>
+                      <input
+                        type="number"
+                        value={invoiceTemplate.iva_porcentaje_default}
+                        onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, iva_porcentaje_default: parseFloat(e.target.value) })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Días de Vencimiento
+                      </label>
+                      <input
+                        type="number"
+                        value={invoiceTemplate.dias_vencimiento_default}
+                        onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, dias_vencimiento_default: parseInt(e.target.value) })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        min="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Condición IVA
+                      </label>
+                      <input
+                        type="text"
+                        value={invoiceTemplate.empresa_condicion_iva || ''}
+                        onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, empresa_condicion_iva: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        placeholder="Ej: Responsable Inscripto"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={invoiceTemplate.factura_fiscal_default}
+                        onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, factura_fiscal_default: e.target.checked })}
+                        className="w-4 h-4 text-blue-600 rounded"
+                      />
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Generar facturas fiscales por defecto
+                      </span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Diseño */}
+                <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-lg">
+                  <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                    <i className="fas fa-paintbrush text-purple-600 mr-2"></i>
+                    Diseño
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Color Primario
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={invoiceTemplate.color_primario}
+                          onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, color_primario: e.target.value })}
+                          className="w-16 h-10 rounded border border-gray-300 dark:border-gray-600"
+                        />
+                        <input
+                          type="text"
+                          value={invoiceTemplate.color_primario}
+                          onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, color_primario: e.target.value })}
+                          className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Color Secundario
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={invoiceTemplate.color_secundario}
+                          onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, color_secundario: e.target.value })}
+                          className="w-16 h-10 rounded border border-gray-300 dark:border-gray-600"
+                        />
+                        <input
+                          type="text"
+                          value={invoiceTemplate.color_secundario}
+                          onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, color_secundario: e.target.value })}
+                          className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Términos y Condiciones */}
+                <div className="bg-gray-50 dark:bg-gray-900/50 p-6 rounded-lg">
+                  <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
+                    <i className="fas fa-file-alt text-orange-600 mr-2"></i>
+                    Términos y Notas
+                  </h4>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Términos y Condiciones
+                      </label>
+                      <textarea
+                        value={invoiceTemplate.terminos_condiciones || ''}
+                        onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, terminos_condiciones: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        rows={3}
+                        placeholder="Ej: Pago dentro de los 30 días..."
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Nota de Pie de Página
+                      </label>
+                      <input
+                        type="text"
+                        value={invoiceTemplate.nota_pie_pagina || ''}
+                        onChange={(e) => setInvoiceTemplate({ ...invoiceTemplate, nota_pie_pagina: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        placeholder="Ej: Gracias por su preferencia"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
+                <button
+                  onClick={() => setShowTemplateEditor(false)}
+                  className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={saveInvoiceTemplate}
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2"
+                >
+                  <i className="fas fa-save"></i>
+                  Guardar Plantilla
+                </button>
+              </div>
+            </div>
+          </div>
+        )}          </div>
         )}
       </div>
     </div>

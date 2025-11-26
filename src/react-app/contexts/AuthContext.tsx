@@ -1,11 +1,13 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { authAPI } from '../services/api';
+import { supabase } from '../lib/supabase';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface User {
   id: string;
   email: string;
   organizationId: string;
   role: string;
+  fullName?: string;
 }
 
 interface Organization {
@@ -13,6 +15,7 @@ interface Organization {
   name: string;
   plan: string;
   aiEnabled: boolean;
+  whatsappConnected?: boolean;
 }
 
 interface AuthContextType {
@@ -22,7 +25,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, organizationName: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,81 +37,203 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     // Check if user is already logged in
-    const token = localStorage.getItem('accessToken');
-    const savedUser = localStorage.getItem('user');
-    const savedOrg = localStorage.getItem('organization');
+    checkUser();
 
-    if (token && savedUser && savedOrg) {
-      try {
-        setUser(JSON.parse(savedUser));
-        setOrganization(JSON.parse(savedOrg));
-      } catch (error) {
-        console.error('Error parsing saved auth data:', error);
-        localStorage.clear();
-      }
+    // Listen for auth state changes
+    let subscription: any = null;
+
+    try {
+      const result = supabase.auth.onAuthStateChange(async (event, session) => {
+        console.log('[AuthContext] Auth state changed:', event);
+
+        if (event === 'SIGNED_IN' && session) {
+          await loadUserData(session.user);
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+          setOrganization(null);
+        }
+      });
+
+      subscription = result.data.subscription;
+    } catch (error: any) {
+      console.warn('[AuthContext] Could not set up auth listener - offline mode:', error.message);
     }
 
-    setIsLoading(false);
+    return () => {
+      if (subscription) {
+        subscription.unsubscribe();
+      }
+    };
   }, []);
+
+  const checkUser = async () => {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+
+      if (error) {
+        console.warn('[AuthContext] Supabase connection error:', error.message);
+        setIsLoading(false);
+        return;
+      }
+
+      if (session?.user) {
+        await loadUserData(session.user);
+      }
+    } catch (error: any) {
+      console.warn('[AuthContext] Error checking user - app will continue without auth:', error.message);
+      // Don't throw - allow app to continue without authentication
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadUserData = async (authUser: SupabaseUser) => {
+    try {
+      // Get user data from users table
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', authUser.id)
+        .single();
+
+      if (userError) {
+        console.error('[AuthContext] Error loading user data:', userError);
+        return;
+      }
+
+      // Get organization data
+      const { data: orgData, error: orgError } = await supabase
+        .from('organizations')
+        .select('*')
+        .eq('id', userData.organization_id)
+        .single();
+
+      if (orgError) {
+        console.error('[AuthContext] Error loading organization:', orgError);
+        return;
+      }
+
+      // Set user state
+      setUser({
+        id: userData.id,
+        email: userData.email,
+        organizationId: userData.organization_id,
+        role: userData.role,
+        fullName: userData.full_name,
+      });
+
+      // Set organization state
+      setOrganization({
+        id: orgData.id,
+        name: orgData.name,
+        plan: orgData.plan || 'free',
+        aiEnabled: orgData.ai_enabled || false,
+        whatsappConnected: orgData.whatsapp_connected || false,
+      });
+
+      console.log('[AuthContext] User data loaded successfully');
+    } catch (error) {
+      console.error('[AuthContext] Error in loadUserData:', error);
+    }
+  };
 
   const login = async (email: string, password: string) => {
     try {
-      console.log('[AuthContext] Attempting login with:', { email });
-      console.log('[AuthContext] API URL:', import.meta.env.VITE_API_URL || 'http://localhost:3001/api');
+      console.log('[AuthContext] Attempting login with Supabase:', { email });
 
-      const response = await authAPI.login({ email, password });
-      console.log('[AuthContext] Login response received:', response.status);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-      const { user, organization, accessToken } = response.data;
+      if (error) {
+        throw error;
+      }
 
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('user', JSON.stringify(user));
-      localStorage.setItem('organization', JSON.stringify(organization));
-
-      setUser(user);
-      setOrganization(organization);
+      if (data.user) {
+        await loadUserData(data.user);
+      }
 
       console.log('[AuthContext] Login successful');
     } catch (error: any) {
       console.error('[AuthContext] Login error:', error);
-      console.error('[AuthContext] Error response:', error.response?.data);
-      console.error('[AuthContext] Error status:', error.response?.status);
-      throw new Error(error.response?.data?.message || 'Login failed');
+      throw new Error(error.message || 'Login failed');
     }
   };
 
   const register = async (email: string, password: string, organizationName: string) => {
     try {
-      console.log('[AuthContext] Attempting register with:', { email, organizationName });
-      console.log('[AuthContext] API URL:', import.meta.env.VITE_API_URL || 'http://localhost:3001/api');
+      console.log('[AuthContext] Attempting register with Supabase:', { email, organizationName });
 
-      const response = await authAPI.register({ email, password, organizationName });
-      console.log('[AuthContext] Register response received:', response.status);
+      // 1. Create auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: email.split('@')[0], // Use email prefix as default name
+          },
+        },
+      });
 
-      const { user, organization, accessToken } = response.data;
+      if (authError) {
+        throw authError;
+      }
 
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('user', JSON.stringify(user));
-      localStorage.setItem('organization', JSON.stringify(organization));
+      if (!authData.user) {
+        throw new Error('Failed to create user');
+      }
 
-      setUser(user);
-      setOrganization(organization);
+      // 2. Create organization
+      const { data: orgData, error: orgError } = await supabase
+        .from('organizations')
+        .insert({
+          name: organizationName,
+          plan: 'free',
+          ai_enabled: false,
+          whatsapp_connected: false,
+        })
+        .select()
+        .single();
+
+      if (orgError) {
+        throw orgError;
+      }
+
+      // 3. Create user record in users table
+      const { error: userError } = await supabase
+        .from('users')
+        .insert({
+          id: authData.user.id,
+          organization_id: orgData.id,
+          email: email,
+          full_name: email.split('@')[0],
+          role: 'admin',
+          is_active: true,
+        });
+
+      if (userError) {
+        throw userError;
+      }
+
+      // Load user data
+      await loadUserData(authData.user);
 
       console.log('[AuthContext] Registration successful');
     } catch (error: any) {
       console.error('[AuthContext] Register error:', error);
-      console.error('[AuthContext] Error response:', error.response?.data);
-      console.error('[AuthContext] Error status:', error.response?.status);
-      throw new Error(error.response?.data?.message || 'Registration failed');
+      throw new Error(error.message || 'Registration failed');
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('user');
-    localStorage.removeItem('organization');
-    setUser(null);
-    setOrganization(null);
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      setOrganization(null);
+    } catch (error) {
+      console.error('[AuthContext] Logout error:', error);
+    }
   };
 
   return (

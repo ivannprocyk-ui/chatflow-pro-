@@ -12,7 +12,8 @@
   ],
   "git": {
     "deploymentEnabled": {
-      "main": true
+      "main": true,
+      "claude/advanced-followup-system-01BFFp1Xr9wyHVftW4xizAyc": true
     }
   }
 }

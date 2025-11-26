@@ -93,12 +93,16 @@ export default function FollowUpSequenceEditor({ sequence, onSave, onCancel, bus
 
     let preview = message.message_template;
     const exampleVars: Record<string, string> = {
-      nombre: 'Juan',
+      nombre: 'Juan Pérez',
+      empresa: businessName || 'Mi Empresa',
+      email: 'juan@example.com',
+      telefono: '+54 11 1234-5678',
       producto: 'Plan Premium',
       precio: '$99',
-      empresa: businessName || 'Mi Empresa',
       fecha: new Date().toLocaleDateString('es-ES'),
       hora: new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+      plan: 'Pro',
+      estado: 'activo',
     };
 
     Object.entries(exampleVars).forEach(([key, value]) => {
@@ -513,7 +517,7 @@ export default function FollowUpSequenceEditor({ sequence, onSave, onCancel, bus
 
                           {/* Tipo de mensaje */}
                           <div className="flex items-center gap-2 mb-2">
-                            <i className={`fas ${msg.message_type === 'fixed' ? 'fa-file-alt' : 'fa-robot'} text-xs`}></i>
+                            <i className={`fas ${msg.message_type === 'fixed' ? 'fa-file-alt' : 'fa-robot'} text-xs text-gray-500 dark:text-gray-400`}></i>
                             <span className={`text-xs px-2 py-1 rounded ${
                               msg.message_type === 'fixed'
                                 ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
@@ -604,7 +608,7 @@ export default function FollowUpSequenceEditor({ sequence, onSave, onCancel, bus
                                 : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800'
                             }`}
                           >
-                            <i className="fas fa-file-alt text-lg mb-1"></i>
+                            <i className="fas fa-file-alt text-lg mb-1 text-gray-500 dark:text-gray-400"></i>
                             <p className="text-xs font-semibold text-gray-900 dark:text-white">Fijo</p>
                           </button>
                           <button
@@ -616,7 +620,7 @@ export default function FollowUpSequenceEditor({ sequence, onSave, onCancel, bus
                                 : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800'
                             }`}
                           >
-                            <i className="fas fa-robot text-lg mb-1"></i>
+                            <i className="fas fa-robot text-lg mb-1 text-gray-500 dark:text-gray-400"></i>
                             <p className="text-xs font-semibold text-gray-900 dark:text-white">IA</p>
                           </button>
                         </div>
@@ -628,17 +632,63 @@ export default function FollowUpSequenceEditor({ sequence, onSave, onCancel, bus
                           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Mensaje
                           </label>
+
+                          {/* Variable Selector */}
+                          <div className="mb-3 p-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                            <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-1">
+                              <i className="fas fa-code text-blue-600"></i>
+                              Variables disponibles - Haz clic para insertar:
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {[
+                                { label: 'Nombre', value: '{nombre}', icon: 'fa-user', desc: 'Nombre del contacto' },
+                                { label: 'Empresa', value: '{empresa}', icon: 'fa-building', desc: 'Nombre de la empresa' },
+                                { label: 'Email', value: '{email}', icon: 'fa-envelope', desc: 'Email del contacto' },
+                                { label: 'Teléfono', value: '{telefono}', icon: 'fa-phone', desc: 'Teléfono del contacto' },
+                                { label: 'Producto', value: '{producto}', icon: 'fa-box', desc: 'Producto/servicio' },
+                                { label: 'Precio', value: '{precio}', icon: 'fa-dollar-sign', desc: 'Precio del producto' },
+                                { label: 'Fecha', value: '{fecha}', icon: 'fa-calendar', desc: 'Fecha actual' },
+                                { label: 'Hora', value: '{hora}', icon: 'fa-clock', desc: 'Hora actual' },
+                                { label: 'Plan', value: '{plan}', icon: 'fa-star', desc: 'Plan del cliente' },
+                                { label: 'Estado', value: '{estado}', icon: 'fa-info-circle', desc: 'Estado del contacto' },
+                              ].map((variable) => (
+                                <button
+                                  key={variable.value}
+                                  type="button"
+                                  onClick={() => {
+                                    const textarea = document.activeElement as HTMLTextAreaElement;
+                                    const currentValue = selectedMessage.message_template || '';
+                                    const cursorPos = textarea?.selectionStart || currentValue.length;
+                                    const newValue =
+                                      currentValue.substring(0, cursorPos) +
+                                      variable.value +
+                                      currentValue.substring(cursorPos);
+                                    updateMessage(selectedMessageIndex, {
+                                      message_template: newValue,
+                                    });
+                                  }}
+                                  className="px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:border-blue-500 transition-colors text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5"
+                                  title={variable.desc}
+                                >
+                                  <i className={`fas ${variable.icon} text-blue-600 dark:text-blue-400`}></i>
+                                  {variable.label}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
                           <textarea
+                            id={`message-textarea-${selectedMessageIndex}`}
                             value={selectedMessage.message_template}
                             onChange={(e) => updateMessage(selectedMessageIndex, {
                               message_template: e.target.value,
                             })}
                             className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white transition-colors"
                             rows={5}
-                            placeholder="Escribe el mensaje aquí. Usa {nombre}, {producto}, {precio}, {empresa}, etc."
+                            placeholder="Escribe el mensaje aquí. Haz clic en las variables de arriba para insertarlas."
                           />
                           <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                            Variables: {'{nombre}'}, {'{producto}'}, {'{precio}'}, {'{empresa}'}, {'{fecha}'}, {'{hora}'}
+                            <i className="fas fa-lightbulb text-yellow-500"></i> Las variables se reemplazarán automáticamente con los datos reales del contacto al enviar el mensaje
                           </p>
                         </div>
                       ) : (
